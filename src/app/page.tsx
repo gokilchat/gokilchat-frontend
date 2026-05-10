@@ -5,6 +5,7 @@ import { useState } from "react";
 import { loginWithGoogle, setAuthToken } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { MessageSquare } from "lucide-react";
+import clsx from "clsx";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -39,31 +40,53 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-primary p-4">
-      <div className="w-full max-w-md bg-secondary border border-accent-subtle rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+    <div className={clsx(
+      "min-h-screen flexc p-4",
+      "bg-primary"
+    )}>
+      <div className={clsx(
+        "w-full max-w-md p-8 relative overflow-hidden",
+        "bg-secondary border border-accent-subtle rounded-2xl shadow-2xl",
+        "max-sm:p-6"
+      )}>
         {/* Glow effect */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-accent-default/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-accent-default/20 rounded-full blur-3xl pointer-events-none" />
+        <div className={clsx(
+          "w-48 h-48 absolute -top-24 -right-24 pointer-events-none",
+          "bg-accent-default/20 rounded-full blur-3xl"
+        )} />
+        <div className={clsx(
+          "w-48 h-48 absolute -bottom-24 -left-24 pointer-events-none",
+          "bg-accent-default/20 rounded-full blur-3xl"
+        )} />
 
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="w-16 h-16 bg-accent-subtle rounded-2xl flex items-center justify-center mb-6 border border-accent-default/30">
+        <div className="relative z-10 flexcc">
+          <div className={clsx(
+            "w-16 h-16 flexcc mb-6",
+            "bg-accent-subtle border border-accent-default/30 rounded-2xl"
+          )}>
             <MessageSquare className="w-8 h-8 text-text-on-accent" />
           </div>
           
-          <h1 className="text-3xl font-bold text-text-primary mb-2">GokilChat</h1>
-          <p className="text-text-secondary text-center mb-10">
+          <h1 className={clsx("text-3xl font-bold mb-2", "text-text-primary")}>GokilChat</h1>
+          <p className={clsx("text-center mb-10", "text-text-secondary")}>
             Sistem chat realtime terdistribusi untuk kolaborasi tanpa batas.
           </p>
 
           {error && (
-            <div className="w-full bg-red-900/30 border border-red-900/50 text-red-200 p-3 rounded-lg text-sm mb-6 text-center">
+            <div className={clsx(
+              "w-full p-3 mb-6 text-sm text-center",
+              "bg-red-900/30 border border-red-900/50 text-red-200 rounded-lg"
+            )}>
               {error}
             </div>
           )}
 
-          <div className="w-full flex justify-center h-11 relative">
+          <div className="w-full flexc h-11 relative">
             {loading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-secondary z-20 rounded-md">
+              <div className={clsx(
+                "absolute inset-0 flexc z-20",
+                "bg-secondary rounded-md"
+              )}>
                 <div className="w-5 h-5 border-2 border-accent-default border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
