@@ -1,65 +1,80 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { GoogleLogin } from "@react-oauth/google";
+import { useState } from "react";
+import { loginWithGoogle, setAuthToken } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { MessageSquare } from "lucide-react";
+
+export default function LoginPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  const handleSuccess = async (credentialResponse: any) => {
+    try {
+      setLoading(true);
+      setError("");
+      
+      const idToken = credentialResponse.credential;
+      if (!idToken) throw new Error("Gagal mendapatkan ID token dari Google");
+
+      const response = await loginWithGoogle(idToken);
+      
+      if (response.success && response.data?.token) {
+        setAuthToken(response.data.token);
+        router.push("/chat");
+      } else {
+        throw new Error(response.error || "Login gagal dari server");
+      }
+    } catch (err: any) {
+      setError(err.message || "Terjadi kesalahan saat login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen flex items-center justify-center bg-primary p-4">
+      <div className="w-full max-w-md bg-secondary border border-accent-subtle rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+        {/* Glow effect */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-accent-default/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-accent-default/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="w-16 h-16 bg-accent-subtle rounded-2xl flex items-center justify-center mb-6 border border-accent-default/30">
+            <MessageSquare className="w-8 h-8 text-text-on-accent" />
+          </div>
+          
+          <h1 className="text-3xl font-bold text-text-primary mb-2">GokilChat</h1>
+          <p className="text-text-secondary text-center mb-10">
+            Sistem chat realtime terdistribusi untuk kolaborasi tanpa batas.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+          {error && (
+            <div className="w-full bg-red-900/30 border border-red-900/50 text-red-200 p-3 rounded-lg text-sm mb-6 text-center">
+              {error}
+            </div>
+          )}
+
+          <div className="w-full flex justify-center h-11 relative">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-secondary z-20 rounded-md">
+                <div className="w-5 h-5 border-2 border-accent-default border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            <GoogleLogin
+              onSuccess={handleSuccess}
+              onError={() => setError("Login dibatalkan atau gagal")}
+              useOneTap
+              theme="outline"
+              shape="rectangular"
+              size="large"
+              text="signin_with"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
