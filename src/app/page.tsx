@@ -1,6 +1,6 @@
 "use client";
 
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { useState } from "react";
 import { loginWithGoogle, setAuthToken } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSuccess = async (credentialResponse: any) => {
+  const handleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
       setLoading(true);
       setError("");
@@ -27,8 +27,12 @@ export default function LoginPage() {
       } else {
         throw new Error(response.error || "Login gagal dari server");
       }
-    } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan saat login");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "Terjadi kesalahan saat login");
+      } else {
+        setError("Terjadi kesalahan saat login");
+      }
     } finally {
       setLoading(false);
     }
