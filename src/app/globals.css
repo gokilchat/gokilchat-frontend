@@ -23,3 +23,12 @@
     @apply bg-primary text-text-primary antialiased;
   }
 }
+
+@layer utilities {
+  .flexc        { @apply flex flex-row justify-center items-center; }
+  .flexcc       { @apply flex flex-col justify-center items-center; }
+  .transall     { @apply transition-all ease-in-out duration-150; }
+  .transcenter  { @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2; }
+  .atranscenter { @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2; }
+}
+
