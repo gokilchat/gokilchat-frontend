@@ -9,8 +9,26 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "GokilChat — Ngobrol Gokil Bareng Temen",
-  description: "Aplikasi chat terdistribusi dengan fitur realtime dan desain premium.",
+  title: "GokilChat — Chat Biasa Tetap Bisa, Terstruktur Juga Ada.",
+  description: "Aplikasi chat web gokil yang ngasih kebebasan buat lu komunikasi sesederhana atau seterstruktur yang lu butuhin. Privasi tanpa kompromi, tanpa intip-intip percakapan.",
+  keywords: ["chat", "messaging", "grup", "komunikasi terstruktur", "privasi", "produktivitas", "Indonesia"],
+  authors: [{ name: "Dier" }],
+  openGraph: {
+    title: "GokilChat",
+    description: "Ngobrol gokil, tanpa batas, desain premium buat lu yang gokil.",
+    url: "https://gokilchat.com",
+    siteName: "GokilChat",
+    images: [
+      {
+        url: "/images/logo-white.png",
+        width: 800,
+        height: 800,
+        alt: "GokilChat Logo",
+      },
+    ],
+    locale: "id_ID",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
