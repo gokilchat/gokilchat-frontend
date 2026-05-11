@@ -179,14 +179,14 @@ export default function ChatPage() {
 
         {/* Sidebar Header */}
         <div className="h-16 px-6 flex items-center justify-between border-b border-border-divider bg-secondary/50 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
             <Image
               src="/images/logo-white.png"
               alt="Lion"
               width={40}
               height={40}
             />
-            <span className="font-black text-2xl tracking-tight text-white">
+            <span className="font-black text-xl tracking-tight text-white">
               GokilChat
             </span>
           </div>

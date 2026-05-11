@@ -28,7 +28,8 @@ export default function LoginPage() {
         throw new Error(response.error || "Login gagal dari server");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Gagal masuk dengan Google";
+      const errorMessage =
+        err instanceof Error ? err.message : "Gagal masuk dengan Google";
       setError(errorMessage);
       console.error(err);
     }
