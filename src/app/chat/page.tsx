@@ -9,10 +9,10 @@ import { useEffect, useState, useRef } from "react";
 import { User } from "@/types/chat";
 
 // Components
-import Sidebar from "@/components/chat/Sidebar";
-import ChatWindow from "@/components/chat/ChatWindow";
-import CreateRoomModal from "@/components/chat/modals/CreateRoomModal";
-import InviteMemberModal from "@/components/chat/modals/InviteMemberModal";
+import Sidebar from "./_components/Sidebar";
+import ChatWindow from "./_components/ChatWindow";
+import CreateRoomModal from "./_components/modals/CreateRoomModal";
+import InviteMemberModal from "./_components/modals/InviteMemberModal";
 
 export default function ChatPage() {
   const { user, token, logout } = useAuthStore();

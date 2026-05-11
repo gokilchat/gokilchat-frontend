@@ -1,4 +1,4 @@
-import { Message, User } from "@/types/chat";
+import { Message } from "@/types/chat";
 import clsx from "clsx";
 import Image from "next/image";
 import { motion } from "motion/react";
@@ -6,17 +6,16 @@ import { motion } from "motion/react";
 interface MessageBubbleProps {
   message: Message;
   isMe: boolean;
-  user: User;
 }
 
-export default function MessageBubble({ message, isMe, user }: MessageBubbleProps) {
+export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={clsx(
         "flex gap-4 group",
-        isMe ? "flex-row-reverse" : "flex-row"
+        isMe ? "flex-row-reverse" : "flex-row",
       )}
     >
       {!isMe && (
@@ -34,7 +33,7 @@ export default function MessageBubble({ message, isMe, user }: MessageBubbleProp
       <div
         className={clsx(
           "flex flex-col max-w-[70%]",
-          isMe ? "items-end" : "items-start"
+          isMe ? "items-end" : "items-start",
         )}
       >
         {!isMe && (
@@ -47,7 +46,7 @@ export default function MessageBubble({ message, isMe, user }: MessageBubbleProp
             "px-5 py-3.5 shadow-xl relative",
             isMe
               ? "bg-accent-default text-text-on-accent rounded-3xl rounded-tr-sm"
-              : "bg-secondary border border-border-divider text-text-primary rounded-3xl rounded-tl-sm"
+              : "bg-secondary border border-border-divider text-text-primary rounded-3xl rounded-tl-sm",
           )}
         >
           <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -57,7 +56,7 @@ export default function MessageBubble({ message, isMe, user }: MessageBubbleProp
           <div
             className={clsx(
               "flex items-center gap-1.5 mt-2",
-              isMe ? "justify-end" : "justify-start"
+              isMe ? "justify-end" : "justify-start",
             )}
           >
             <span className="text-[9px] font-bold opacity-60">

@@ -1,7 +1,7 @@
-import { MessageCircle, Search, Info, MoreVertical, Paperclip, Smile, Send } from "lucide-react";
+import { MessageCircle, Search, Info, MoreVertical, Paperclip, Smile, Send, UserPlus } from "lucide-react";
 import { User, Room, Message } from "@/types/chat";
 import MessageBubble from "./MessageBubble";
-import { UserPlus } from "lucide-react";
+import clsx from "clsx";
 
 interface ChatWindowProps {
   activeRoom: Room | null;
@@ -24,7 +24,7 @@ export default function ChatWindow({
   onMessageInputChange,
   onSendMessage,
   messagesEndRef,
-  inputRef
+  inputRef,
 }: ChatWindowProps) {
   if (!activeRoom) {
     return (
@@ -112,7 +112,6 @@ export default function ChatWindow({
                 key={msg.id || idx}
                 message={msg}
                 isMe={msg.sender_id === user.id}
-                user={user}
               />
             ))}
             <div ref={messagesEndRef} />

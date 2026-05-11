@@ -1,20 +1,5 @@
 import { create } from 'zustand';
-
-export interface Room {
-  id: string;
-  name: string;
-  type: string;
-}
-
-export interface Message {
-  id: string;
-  room_id: string;
-  sender_id: string;
-  sender_username: string;
-  sender_avatar: string;
-  content: string;
-  created_at: string;
-}
+import { Room, Message } from '@/types/chat';
 
 interface ChatState {
   rooms: Room[];

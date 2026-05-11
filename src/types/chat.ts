@@ -8,9 +8,9 @@ export interface User {
 export interface Room {
   id: string;
   name: string;
-  type: 'group' | 'private';
-  owner_id: string;
-  created_at: string;
+  type?: string;
+  owner_id?: string;
+  created_at?: string;
 }
 
 export interface Message {

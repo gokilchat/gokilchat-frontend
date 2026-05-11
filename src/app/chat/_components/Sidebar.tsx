@@ -1,4 +1,4 @@
-import { MessageCircle, Search, Edit, Settings, LogOut } from "lucide-react";
+import { Search, Edit, Settings, LogOut } from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
 import { User, Room } from "@/types/chat";
@@ -20,7 +20,7 @@ export default function Sidebar({
   onRoomClick,
   onCreateRoom,
   user,
-  onLogout
+  onLogout,
 }: SidebarProps) {
   return (
     <aside
@@ -71,7 +71,7 @@ export default function Sidebar({
               "w-full p-3 rounded-2xl flex items-center gap-3 transall group",
               activeRoomId === room.id
                 ? "bg-accent-default shadow-lg shadow-accent-default/20 text-text-on-accent"
-                : "text-text-secondary hover:bg-elevated hover:text-white"
+                : "text-text-secondary hover:bg-elevated hover:text-white",
             )}
           >
             <div
@@ -79,7 +79,7 @@ export default function Sidebar({
                 "w-11 h-11 rounded-xl flexcc font-black text-lg shrink-0 transall shadow-sm",
                 activeRoomId === room.id
                   ? "bg-white/20 text-white"
-                  : "bg-secondary border border-border-divider text-accent-default group-hover:scale-105"
+                  : "bg-secondary border border-border-divider text-accent-default group-hover:scale-105",
               )}
             >
               {room.name?.charAt(0) || "#"}
@@ -92,7 +92,7 @@ export default function Sidebar({
                 <span
                   className={clsx(
                     "text-[9px] font-bold opacity-60",
-                    activeRoomId === room.id ? "text-white" : "text-text-muted"
+                    activeRoomId === room.id ? "text-white" : "text-text-muted",
                   )}
                 >
                   12:45
@@ -101,7 +101,9 @@ export default function Sidebar({
               <p
                 className={clsx(
                   "text-[11px] truncate leading-tight font-medium",
-                  activeRoomId === room.id ? "text-white/80" : "text-text-muted"
+                  activeRoomId === room.id
+                    ? "text-white/80"
+                    : "text-text-muted",
                 )}
               >
                 Pesan terakhir gokil di sini...
