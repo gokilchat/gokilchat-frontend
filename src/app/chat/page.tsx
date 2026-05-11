@@ -16,6 +16,7 @@ export default function ChatPage() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [messageInput, setMessageInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   // Handle hydration to prevent mismatch and ensure store is ready
@@ -59,6 +60,13 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Focus input when room changes
+  useEffect(() => {
+    if (activeRoomId) {
+      inputRef.current?.focus();
+    }
+  }, [activeRoomId]);
+
   // Handle Room Change
   const handleRoomClick = async (roomId: string) => {
     if (activeRoomId === roomId) return;
@@ -73,8 +81,8 @@ export default function ChatPage() {
     try {
       const res = await apiFetch(`/rooms/${roomId}/messages`);
       if (res.success) setMessages(res.data);
-    } catch (error) {
-      console.error(error);
+    } catch {
+      console.error("Gagal mengambil pesan");
     }
   };
 
@@ -101,7 +109,7 @@ export default function ChatPage() {
         setRooms([res.data, ...rooms]);
         handleRoomClick(res.data.id);
       }
-    } catch (error) {
+    } catch {
       alert("Gagal bikin room");
     }
   };
@@ -196,40 +204,47 @@ export default function ChatPage() {
             </header>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {messages.map((msg, idx) => {
-                const isMe = msg.sender_id === user.id;
-                return (
-                  <div key={msg.id || idx} className={clsx("flex gap-4 max-w-2xl", isMe ? "ml-auto flex-row-reverse" : "")}>
-                    {msg.sender_avatar && !isMe && (
-                      <Image 
-                        src={msg.sender_avatar} 
-                        alt="avatar" 
-                        width={36} 
-                        height={36} 
-                        className="w-9 h-9 rounded-full mt-1 border border-border-divider" 
-                      />
-                    )}
-                    <div className={clsx("flex flex-col", isMe ? "items-end" : "items-start")}>
-                      {!isMe && <span className="text-xs text-text-secondary mb-1 ml-1">{msg.sender_username}</span>}
-                      <div className={clsx(
-                        "p-3 rounded-2xl text-sm shadow-sm",
-                        isMe ? "bg-accent-default text-text-on-accent rounded-tr-none" : "bg-elevated border border-border-divider text-text-primary rounded-tl-none"
-                      )}>
-                        {msg.content}
+              {messages.length === 0 ? (
+                <div className="h-full flexcc text-text-muted text-sm italic">
+                  Belum ada pesan, ayo mulai obrolan gokilnya!
+                </div>
+              ) : (
+                messages.map((msg, idx) => {
+                  const isMe = msg.sender_id === user.id;
+                  return (
+                    <div key={msg.id || idx} className={clsx("flex gap-4 max-w-2xl", isMe ? "ml-auto flex-row-reverse" : "")}>
+                      {msg.sender_avatar && !isMe && (
+                        <Image 
+                          src={msg.sender_avatar} 
+                          alt="avatar" 
+                          width={36} 
+                          height={36} 
+                          className="w-9 h-9 rounded-full mt-1 border border-border-divider" 
+                        />
+                      )}
+                      <div className={clsx("flex flex-col", isMe ? "items-end" : "items-start")}>
+                        {!isMe && <span className="text-xs text-text-secondary mb-1 ml-1">{msg.sender_username}</span>}
+                        <div className={clsx(
+                          "p-3 rounded-2xl text-sm shadow-sm",
+                          isMe ? "bg-accent-default text-text-on-accent rounded-tr-none" : "bg-elevated border border-border-divider text-text-primary rounded-tl-none"
+                        )}>
+                          {msg.content}
+                        </div>
+                        <span className="text-[10px] text-text-muted mt-1 mx-1">
+                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-text-muted mt-1 mx-1">
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
               <div ref={messagesEndRef} />
             </div>
 
             <div className="p-4 bg-secondary border-t border-border-divider">
               <form onSubmit={handleSendMessage} className="flex gap-3">
                 <input
+                  ref={inputRef}
                   type="text"
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
