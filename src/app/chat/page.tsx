@@ -197,9 +197,9 @@ export default function ChatPage() {
         const ghostRoom = {
           id: 'temp-' + targetUserId,
           name: targetUser.username,
-          type: 'private'
+          type: 'private',
         };
-        setRooms([ghostRoom as any, ...rooms]);
+        setRooms([ghostRoom, ...rooms]);
         setActiveRoomId(ghostRoom.id);
       }
       
