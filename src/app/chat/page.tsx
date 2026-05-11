@@ -181,13 +181,12 @@ export default function ChatPage() {
         <div className="h-16 px-6 flex items-center justify-between border-b border-border-divider bg-secondary/50 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <Image
-              src="/images/logo.png"
+              src="/images/logo.svg"
               alt="Lion"
-              width={24}
-              height={24}
-              className="brightness-125"
+              width={32}
+              height={32}
             />
-            <span className="font-black text-lg tracking-tight text-white">
+            <span className="font-black text-xl tracking-tight text-white">
               GokilChat
             </span>
           </div>
