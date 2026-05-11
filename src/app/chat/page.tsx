@@ -117,19 +117,17 @@ export default function ChatPage() {
       // If it's a ghost room, create it first
       if (activeRoomId.startsWith('temp-')) {
         const targetUserId = activeRoomId.replace('temp-', '');
-        const res = await apiFetch("/rooms", {
+        const res = await apiFetch("/rooms/dm", {
           method: "POST",
           body: JSON.stringify({ 
-            type: 'dm', 
-            target_user_id: targetUserId,
-            name: activeRoom?.name
+            target_user_id: targetUserId
           }),
         });
         
         if (res.success) {
           const newRoom = res.data;
           // Replace temp room with real room in list
-          setRooms(rooms.map(r => r.id === activeRoomId ? newRoom : r));
+          setRooms(rooms.map(r => r.id === activeRoomId ? { ...newRoom, name: activeRoom?.name } : r));
           setActiveRoomId(newRoom.id);
           currentRoomId = newRoom.id;
         } else {
@@ -166,16 +164,18 @@ export default function ChatPage() {
     }
   };
 
-  const handleSearchUsers = async (query: string) => {
-    setSearchQuery(query);
-    if (query.length < 2) {
+  const handleSearchUsers = async (q: string) => {
+    setSearchQuery(q);
+    if (q.length < 2) {
       setSearchResults([]);
       return;
     }
     setIsSearching(true);
     try {
-      const res = await apiFetch(`/users?query=${query}`);
-      if (res.success) setSearchResults(res.data);
+      const res = await apiFetch(`/users/search?username=${q}`);
+      if (res.success) {
+        setSearchResults(res.data);
+      }
     } catch (err) {
       console.error(err);
     } finally {
