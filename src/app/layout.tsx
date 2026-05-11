@@ -9,14 +9,15 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: "GokilChat — Chat Biasa Tetap Bisa, Terstruktur Juga Ada.",
   description: "Aplikasi chat web gokil yang ngasih kebebasan buat lu komunikasi sesederhana atau seterstruktur yang lu butuhin. Privasi tanpa kompromi, tanpa intip-intip percakapan.",
-  keywords: ["chat", "messaging", "grup", "komunikasi terstruktur", "privasi", "produktivitas", "Indonesia"],
+  keywords: ["chat", "messaging", "grup", "komunikasi terstructured", "privasi", "produktivitas", "Indonesia"],
   authors: [{ name: "Dier" }],
   openGraph: {
     title: "GokilChat",
     description: "Ngobrol gokil, tanpa batas, desain premium buat lu yang gokil.",
-    url: "https://gokilchat.com",
+    url: "/",
     siteName: "GokilChat",
     images: [
       {
