@@ -1,13 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  avatar_url: string;
-  system_role: string;
-}
+import { User } from '@/types/chat';
 
 interface AuthState {
   user: User | null;

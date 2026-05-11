@@ -36,7 +36,7 @@ export default function ChatPage() {
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const isResizing = useRef(false);
   const router = useRouter();
 
@@ -185,7 +185,7 @@ export default function ChatPage() {
         activeRoomId={activeRoomId}
         onRoomClick={handleRoomClick}
         onCreateRoom={() => setShowCreateRoomModal(true)}
-        user={user as any}
+        user={user}
         onLogout={logout}
       />
 
@@ -200,9 +200,9 @@ export default function ChatPage() {
       </div>
 
       <ChatWindow 
-        activeRoom={activeRoom as any}
+        activeRoom={activeRoom}
         messages={messages}
-        user={user as any}
+        user={user}
         onInviteClick={() => setShowInviteModal(true)}
         messageInput={messageInput}
         onMessageInputChange={setMessageInput}

@@ -1,4 +1,13 @@
-import { MessageCircle, Search, Info, MoreVertical, Paperclip, Smile, Send, UserPlus } from "lucide-react";
+import {
+  MessageCircle,
+  Search,
+  Info,
+  MoreVertical,
+  Paperclip,
+  Smile,
+  Send,
+  UserPlus,
+} from "lucide-react";
 import { User, Room, Message } from "@/types/chat";
 import MessageBubble from "./MessageBubble";
 import clsx from "clsx";
@@ -12,7 +21,7 @@ interface ChatWindowProps {
   onMessageInputChange: (val: string) => void;
   onSendMessage: (e: React.FormEvent) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export default function ChatWindow({
@@ -123,7 +132,7 @@ export default function ChatWindow({
       <div className="p-6 bg-primary">
         <form
           onSubmit={onSendMessage}
-          className="relative bg-secondary border border-border-divider rounded-[2rem] p-2 pr-4 flex items-end gap-2 shadow-2xl focus-within:border-accent-default/50 transall"
+          className="relative bg-secondary border border-border-divider rounded-4xl p-2 pr-4 flex items-end gap-2 shadow-2xl focus-within:border-accent-default/50 transall"
         >
           <div className="flex items-center gap-1 pl-2 mb-1.5">
             <button
@@ -140,7 +149,7 @@ export default function ChatWindow({
             </button>
           </div>
           <textarea
-            ref={inputRef as any}
+            ref={inputRef}
             value={messageInput}
             onChange={(e) => onMessageInputChange(e.target.value)}
             onKeyDown={(e) => {
@@ -160,7 +169,7 @@ export default function ChatWindow({
               "w-11 h-11 rounded-full flexcc transall mb-0.5 shadow-lg",
               messageInput.trim()
                 ? "bg-accent-default text-text-on-accent scale-100 rotate-0 hover:bg-accent-hover"
-                : "bg-elevated text-text-muted scale-90 -rotate-12 opacity-50"
+                : "bg-elevated text-text-muted scale-90 -rotate-12 opacity-50",
             )}
           >
             <Send className="w-5 h-5 ml-0.5" />
