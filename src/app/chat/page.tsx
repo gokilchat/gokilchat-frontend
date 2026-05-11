@@ -14,7 +14,10 @@ export default function ChatPage() {
 
   // Handle hydration to prevent mismatch and ensure store is ready
   useEffect(() => {
-    setIsHydrated(true);
+    const timer = setTimeout(() => {
+      setIsHydrated(true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
