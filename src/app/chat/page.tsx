@@ -2,22 +2,28 @@
 
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LogOut, Settings, MessageCircle } from "lucide-react";
 import clsx from "clsx";
 import Image from "next/image";
 
 export default function ChatPage() {
   const { user, logout } = useAuthStore();
+  const [isHydrated, setIsHydrated] = useState(false);
   const router = useRouter();
 
+  // Handle hydration to prevent mismatch and ensure store is ready
   useEffect(() => {
-    if (!user) {
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && !user) {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, router, isHydrated]);
 
-  if (!user) return null;
+  if (!isHydrated || !user) return null;
 
   const handleLogout = () => {
     logout();
@@ -62,13 +68,15 @@ export default function ChatPage() {
         {/* User Profile Area */}
         <div className="p-4 border-t border-border-divider bg-elevated/30">
           <div className="flex items-center gap-3">
-            <Image
-              src={user.avatar_url}
-              alt={user.username}
-              width={40}
-              height={40}
-              className="rounded-full border border-accent-default/30"
-            />
+            {user.avatar_url && (
+              <Image
+                src={user.avatar_url}
+                alt={user.username}
+                width={40}
+                height={40}
+                className="rounded-full border border-accent-default/30"
+              />
+            )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{user.username}</p>
               <p className="text-xs text-text-secondary truncate">
