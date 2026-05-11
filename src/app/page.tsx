@@ -6,11 +6,13 @@ import { loginWithGoogle, setAuthToken } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import clsx from "clsx";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
@@ -24,6 +26,7 @@ export default function LoginPage() {
       
       if (response.success && response.data?.token) {
         setAuthToken(response.data.token);
+        setAuth(response.data.user, response.data.token);
         router.push("/chat");
       } else {
         throw new Error(response.error || "Login gagal dari server");
