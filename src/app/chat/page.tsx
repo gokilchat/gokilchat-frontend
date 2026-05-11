@@ -120,7 +120,7 @@ export default function ChatPage() {
         const res = await apiFetch("/rooms", {
           method: "POST",
           body: JSON.stringify({ 
-            type: 'private', 
+            type: 'dm', 
             target_user_id: targetUserId,
             name: activeRoom?.name
           }),
@@ -197,7 +197,7 @@ export default function ChatPage() {
         const ghostRoom = {
           id: 'temp-' + targetUserId,
           name: targetUser.username,
-          type: 'private',
+          type: 'dm',
         };
         setRooms([ghostRoom, ...rooms]);
         setActiveRoomId(ghostRoom.id);
