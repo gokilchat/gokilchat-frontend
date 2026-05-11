@@ -36,6 +36,7 @@ export default function ChatPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [modalContext, setModalContext] = useState<'dm' | 'invite'>('dm');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -109,8 +110,34 @@ export default function ChatPage() {
     e.preventDefault();
     if (!messageInput.trim() || !activeRoomId) return;
 
+    let currentRoomId = activeRoomId;
+    const activeRoom = rooms.find(r => r.id === activeRoomId);
+
     try {
-      const res = await apiFetch(`/rooms/${activeRoomId}/messages`, {
+      // If it's a ghost room, create it first
+      if (activeRoomId.startsWith('temp-')) {
+        const targetUserId = activeRoomId.replace('temp-', '');
+        const res = await apiFetch("/rooms", {
+          method: "POST",
+          body: JSON.stringify({ 
+            type: 'private', 
+            target_user_id: targetUserId,
+            name: activeRoom?.name
+          }),
+        });
+        
+        if (res.success) {
+          const newRoom = res.data;
+          // Replace temp room with real room in list
+          setRooms(rooms.map(r => r.id === activeRoomId ? newRoom : r));
+          setActiveRoomId(newRoom.id);
+          currentRoomId = newRoom.id;
+        } else {
+          throw new Error("Gagal membuat chat room");
+        }
+      }
+
+      const res = await apiFetch(`/rooms/${currentRoomId}/messages`, {
         method: "POST",
         body: JSON.stringify({ content: messageInput }),
       });
@@ -157,6 +184,31 @@ export default function ChatPage() {
   };
 
   const handleInviteUser = async (targetUserId: string) => {
+    if (modalContext === 'dm') {
+      const targetUser = searchResults.find(u => u.id === targetUserId);
+      if (!targetUser) return;
+
+      // Check if we already have a room with this user (UI check)
+      // This is a simple check, ideally we check backend
+      const existingRoom = rooms.find(r => r.id === 'temp-' + targetUserId);
+      if (existingRoom) {
+        setActiveRoomId(existingRoom.id);
+      } else {
+        const ghostRoom = {
+          id: 'temp-' + targetUserId,
+          name: targetUser.username,
+          type: 'private'
+        };
+        setRooms([ghostRoom as any, ...rooms]);
+        setActiveRoomId(ghostRoom.id);
+      }
+      
+      setShowInviteModal(false);
+      setSearchQuery("");
+      setSearchResults([]);
+      return;
+    }
+
     if (!activeRoomId) return;
     try {
       const res = await apiFetch(`/rooms/${activeRoomId}/members`, {
@@ -205,7 +257,10 @@ export default function ChatPage() {
         activeRoom={activeRoom}
         messages={messages}
         user={user}
-        onInviteClick={() => setShowInviteModal(true)}
+        onInviteClick={() => {
+          setModalContext('invite');
+          setShowInviteModal(true);
+        }}
         messageInput={messageInput}
         onMessageInputChange={setMessageInput}
         onSendMessage={handleSendMessage}
@@ -217,6 +272,7 @@ export default function ChatPage() {
         isOpen={showNewChatModal}
         onClose={() => setShowNewChatModal(false)}
         onSelectDM={() => {
+          setModalContext('dm');
           setShowNewChatModal(false);
           setShowInviteModal(true);
         }}
@@ -240,6 +296,7 @@ export default function ChatPage() {
         searchResults={searchResults}
         isSearching={isSearching}
         onInvite={handleInviteUser}
+        title={modalContext === 'dm' ? "Mulai DM Baru" : "Invite ke Grup"}
       />
 
       <style jsx global>{`

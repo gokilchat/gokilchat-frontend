@@ -11,6 +11,7 @@ interface InviteMemberModalProps {
   searchResults: User[];
   isSearching: boolean;
   onInvite: (userId: string) => void;
+  title?: string;
 }
 
 export default function InviteMemberModal({
@@ -20,7 +21,8 @@ export default function InviteMemberModal({
   onSearchChange,
   searchResults,
   isSearching,
-  onInvite
+  onInvite,
+  title = "Invite Member"
 }: InviteMemberModalProps) {
   return (
     <AnimatePresence>
@@ -40,7 +42,7 @@ export default function InviteMemberModal({
             className="relative w-full max-w-md bg-secondary border border-border-divider rounded-3xl shadow-2xl overflow-hidden"
           >
             <div className="p-6 border-b border-border-divider flex items-center justify-between">
-              <h3 className="text-lg font-black text-white">Invite Member</h3>
+              <h3 className="text-lg font-black text-white">{title}</h3>
               <button onClick={onClose} className="p-2 hover:bg-elevated rounded-xl transall">
                 <X className="w-5 h-5 text-text-secondary" />
               </button>
@@ -72,7 +74,6 @@ export default function InviteMemberModal({
                       <Image src={u.avatar_url || "/images/default-avatar.png"} alt={u.username} width={40} height={40} className="rounded-xl border border-border-divider" />
                       <div className="flex-1">
                         <p className="text-sm font-bold text-white group-hover:text-accent-default transall">{u.username}</p>
-                        <p className="text-[10px] text-text-secondary">{u.email}</p>
                       </div>
                       <Plus className="w-4 h-4 text-accent-default opacity-0 group-hover:opacity-100 transall" />
                     </div>
