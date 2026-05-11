@@ -11,6 +11,7 @@ import { User } from "@/types/chat";
 // Components
 import Sidebar from "./_components/Sidebar";
 import ChatWindow from "./_components/ChatWindow";
+import NewChatModal from "./_components/modals/NewChatModal";
 import CreateRoomModal from "./_components/modals/CreateRoomModal";
 import InviteMemberModal from "./_components/modals/InviteMemberModal";
 
@@ -34,6 +35,7 @@ export default function ChatPage() {
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -184,7 +186,7 @@ export default function ChatPage() {
         rooms={rooms}
         activeRoomId={activeRoomId}
         onRoomClick={handleRoomClick}
-        onCreateRoom={() => setShowCreateRoomModal(true)}
+        onCreateRoom={() => setShowNewChatModal(true)}
         user={user}
         onLogout={logout}
       />
@@ -209,6 +211,19 @@ export default function ChatPage() {
         onSendMessage={handleSendMessage}
         messagesEndRef={messagesEndRef}
         inputRef={inputRef}
+      />
+
+      <NewChatModal 
+        isOpen={showNewChatModal}
+        onClose={() => setShowNewChatModal(false)}
+        onSelectDM={() => {
+          setShowNewChatModal(false);
+          setShowInviteModal(true);
+        }}
+        onSelectGroup={() => {
+          setShowNewChatModal(false);
+          setShowCreateRoomModal(true);
+        }}
       />
 
       <CreateRoomModal 
