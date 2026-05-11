@@ -19,6 +19,7 @@ import {
   Edit,
   UserPlus,
   X,
+  Plus,
 } from "lucide-react";
 import clsx from "clsx";
 import Image from "next/image";
@@ -188,8 +189,9 @@ export default function ChatPage() {
         setSearchQuery("");
         setSearchResults([]);
       }
-    } catch (err: any) {
-      alert(err.message || "Gagal invite user");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Gagal invite user";
+      alert(msg);
     }
   };
 
