@@ -59,7 +59,7 @@ export default function LoginPage() {
           <div className="relative">
             <div className="absolute inset-0 bg-accent-default blur-2xl opacity-20" />
             <Image
-              src="/images/logo-white.png"
+              src="/images/logo-light.png"
               alt="GokilChat Logo"
               width={120}
               height={120}

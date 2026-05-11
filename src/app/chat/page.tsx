@@ -226,7 +226,7 @@ export default function ChatPage() {
         <div className="h-16 px-6 flex items-center justify-between border-b border-border-divider bg-secondary/50 backdrop-blur-sm">
           <div className="flex items-center gap-1">
             <Image
-              src="/images/logo-white.png"
+              src="/images/logo-light.png"
               alt="Lion"
               width={40}
               height={40}

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     siteName: "GokilChat",
     images: [
       {
-        url: "/images/logo-white.png",
+        url: "/images/logo-light.png",
         width: 800,
         height: 800,
         alt: "GokilChat Logo",
