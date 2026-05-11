@@ -6,22 +6,38 @@ import { initSocket, getSocket, disconnectSocket } from "@/lib/socket";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { 
-  LogOut, Settings, MessageCircle, Send, Hash, Plus, 
-  Search, Info, MoreVertical, Paperclip, Smile, Edit 
+import {
+  LogOut,
+  Settings,
+  MessageCircle,
+  Send,
+  Search,
+  Info,
+  MoreVertical,
+  Paperclip,
+  Smile,
+  Edit,
 } from "lucide-react";
 import clsx from "clsx";
 import Image from "next/image";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 
 export default function ChatPage() {
   const { user, token, logout } = useAuthStore();
-  const { rooms, activeRoomId, messages, setRooms, setActiveRoomId, setMessages, addMessage } = useChatStore();
-  
+  const {
+    rooms,
+    activeRoomId,
+    messages,
+    setRooms,
+    setActiveRoomId,
+    setMessages,
+    addMessage,
+  } = useChatStore();
+
   const [isHydrated, setIsHydrated] = useState(false);
   const [messageInput, setMessageInput] = useState("");
   const [sidebarWidth, setSidebarWidth] = useState(280);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isResizing = useRef(false);
@@ -44,13 +60,13 @@ export default function ChatPage() {
     };
     const handleMouseUp = () => {
       isResizing.current = false;
-      document.body.style.cursor = 'default';
+      document.body.style.cursor = "default";
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
 
@@ -66,16 +82,18 @@ export default function ChatPage() {
     const socket = initSocket(token);
     socket.connect();
 
-    socket.on('new_message', (message) => {
+    socket.on("new_message", (message) => {
       addMessage(message);
     });
 
-    apiFetch('/rooms').then(res => {
-      if (res.success) setRooms(res.data);
-    }).catch(console.error);
+    apiFetch("/rooms")
+      .then((res) => {
+        if (res.success) setRooms(res.data);
+      })
+      .catch(console.error);
 
     return () => {
-      socket.off('new_message');
+      socket.off("new_message");
       disconnectSocket();
     };
   }, [isHydrated, user, token, setRooms, addMessage]);
@@ -93,7 +111,7 @@ export default function ChatPage() {
     setActiveRoomId(roomId);
 
     const socket = getSocket();
-    if (socket) socket.emit('join_room', roomId);
+    if (socket) socket.emit("join_room", roomId);
 
     try {
       const res = await apiFetch(`/rooms/${roomId}/messages`);
@@ -109,7 +127,10 @@ export default function ChatPage() {
 
     const socket = getSocket();
     if (socket) {
-      socket.emit('send_message', { room_id: activeRoomId, content: messageInput });
+      socket.emit("send_message", {
+        room_id: activeRoomId,
+        content: messageInput,
+      });
       setMessageInput("");
     }
   };
@@ -118,9 +139,9 @@ export default function ChatPage() {
     const name = prompt("Masukkan nama room baru:");
     if (!name) return;
     try {
-      const res = await apiFetch('/rooms', {
-        method: 'POST',
-        body: JSON.stringify({ name })
+      const res = await apiFetch("/rooms", {
+        method: "POST",
+        body: JSON.stringify({ name }),
       });
       if (res.success) {
         setRooms([res.data, ...rooms]);
@@ -138,31 +159,39 @@ export default function ChatPage() {
     router.push("/");
   };
 
-  const activeRoom = rooms.find(r => r.id === activeRoomId);
+  const activeRoom = rooms.find((r) => r.id === activeRoomId);
 
   return (
     <div className="flex h-screen overflow-hidden bg-primary font-sans">
       {/* Sidebar */}
-      <aside 
+      <aside
         style={{ width: sidebarWidth }}
         className="flex flex-col h-full bg-secondary border-r border-border-divider relative group"
       >
         {/* Resize Handle */}
-        <div 
+        <div
           onMouseDown={() => {
             isResizing.current = true;
-            document.body.style.cursor = 'col-resize';
+            document.body.style.cursor = "col-resize";
           }}
-          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-accent-default/30 transall z-20" 
+          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-accent-default/30 transall z-20"
         />
 
         {/* Sidebar Header */}
         <div className="h-16 px-6 flex items-center justify-between border-b border-border-divider bg-secondary/50 backdrop-blur-sm">
           <div className="flex items-center gap-2">
-            <Image src="/images/logo.png" alt="Lion" width={24} height={24} className="brightness-125" />
-            <span className="font-black text-lg tracking-tight text-white">GokilChat</span>
+            <Image
+              src="/images/logo.png"
+              alt="Lion"
+              width={24}
+              height={24}
+              className="brightness-125"
+            />
+            <span className="font-black text-lg tracking-tight text-white">
+              GokilChat
+            </span>
           </div>
-          <button 
+          <button
             onClick={handleCreateRoom}
             className="w-8 h-8 rounded-full bg-elevated border border-border-divider flexcc hover:border-accent-default transall text-text-secondary hover:text-accent-default"
           >
@@ -174,9 +203,9 @@ export default function ChatPage() {
         <div className="p-4">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-accent-default transall" />
-            <input 
-              type="text" 
-              placeholder="Cari obrolan..." 
+            <input
+              type="text"
+              placeholder="Cari obrolan..."
               className="w-full bg-elevated border border-border-subtle rounded-xl py-2.5 pl-10 pr-4 text-xs text-text-primary focus:outline-none focus:border-accent-default transall"
             />
           </div>
@@ -186,33 +215,39 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="px-3 space-y-1">
             {rooms.map((room) => (
-              <div 
+              <div
                 key={room.id}
                 onClick={() => handleRoomClick(room.id)}
                 className={clsx(
                   "group p-3 rounded-2xl flex items-center gap-3 cursor-pointer transall relative",
-                  activeRoomId === room.id 
-                    ? "bg-accent-default/10 border border-accent-default/20" 
-                    : "hover:bg-elevated/50 border border-transparent"
+                  activeRoomId === room.id
+                    ? "bg-accent-default/10 border border-accent-default/20"
+                    : "hover:bg-elevated/50 border border-transparent",
                 )}
               >
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent-default to-primary-hover flexcc text-white font-bold shadow-lg">
+                  <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-accent-default to-primary-hover flexcc text-white font-bold shadow-lg">
                     {room.name?.charAt(0) || "P"}
                   </div>
                   {/* Status online dot mock */}
                   <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-status-online rounded-full border-2 border-secondary shadow-sm" />
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <h3 className={clsx(
-                      "font-bold text-sm truncate",
-                      activeRoomId === room.id ? "text-white" : "text-text-primary"
-                    )}>
+                    <h3
+                      className={clsx(
+                        "font-bold text-sm truncate",
+                        activeRoomId === room.id
+                          ? "text-white"
+                          : "text-text-primary",
+                      )}
+                    >
                       {room.name || "Private Chat"}
                     </h3>
-                    <span className="text-[10px] text-text-muted font-medium">12:45</span>
+                    <span className="text-[10px] text-text-muted font-medium">
+                      12:45
+                    </span>
                   </div>
                   <p className="text-xs text-text-secondary truncate pr-4">
                     Pesan gokil terakhir lu di sini...
@@ -221,7 +256,9 @@ export default function ChatPage() {
 
                 {/* Unread Badge mock */}
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transall">
-                  <div className="w-5 h-5 bg-accent-default rounded-full flexcc text-[10px] font-black text-white shadow-md">2</div>
+                  <div className="w-5 h-5 bg-accent-default rounded-full flexcc text-[10px] font-black text-white shadow-md">
+                    2
+                  </div>
                 </div>
               </div>
             ))}
@@ -233,17 +270,34 @@ export default function ChatPage() {
           <div className="flex items-center gap-3 p-2 rounded-2xl bg-secondary/40 backdrop-blur-md border border-white/5">
             <div className="relative">
               {user.avatar_url && (
-                <Image src={user.avatar_url} alt="Profile" width={42} height={42} className="rounded-2xl border border-accent-default/30 shadow-md" />
+                <Image
+                  src={user.avatar_url}
+                  alt="Profile"
+                  width={42}
+                  height={42}
+                  className="rounded-2xl border border-accent-default/30 shadow-md"
+                />
               )}
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-status-online rounded-full border-2 border-[#222] shadow-sm" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-black text-white truncate">{user.username}</p>
-              <p className="text-[10px] text-text-secondary truncate uppercase tracking-widest font-bold">Online</p>
+              <p className="text-sm font-black text-white truncate">
+                {user.username}
+              </p>
+              <p className="text-[10px] text-text-secondary truncate uppercase tracking-widest font-bold">
+                Online
+              </p>
             </div>
             <div className="flex items-center gap-1">
-              <button className="p-2 text-text-secondary hover:text-white transall"><Settings className="w-4.5 h-4.5" /></button>
-              <button onClick={handleLogout} className="p-2 text-text-secondary hover:text-red-400 transall"><LogOut className="w-4.5 h-4.5" /></button>
+              <button className="p-2 text-text-secondary hover:text-white transall">
+                <Settings className="w-4.5 h-4.5" />
+              </button>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-text-secondary hover:text-red-400 transall"
+              >
+                <LogOut className="w-4.5 h-4.5" />
+              </button>
             </div>
           </div>
         </div>
@@ -260,17 +314,27 @@ export default function ChatPage() {
                   {activeRoom.name?.charAt(0) || "#"}
                 </div>
                 <div>
-                  <h3 className="font-black text-white tracking-tight">{activeRoom.name || "Private Chat"}</h3>
+                  <h3 className="font-black text-white tracking-tight">
+                    {activeRoom.name || "Private Chat"}
+                  </h3>
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-status-online shadow-[0_0_8px_var(--color-status-online)]" />
-                    <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">12 member online</span>
+                    <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">
+                      12 member online
+                    </span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-text-secondary">
-                <button className="p-2.5 hover:bg-elevated/50 rounded-xl transall hover:text-white"><Search className="w-5 h-5" /></button>
-                <button className="p-2.5 hover:bg-elevated/50 rounded-xl transall hover:text-white"><Info className="w-5 h-5" /></button>
-                <button className="p-2.5 hover:bg-elevated/50 rounded-xl transall hover:text-white"><MoreVertical className="w-5 h-5" /></button>
+                <button className="p-2.5 hover:bg-elevated/50 rounded-xl transall hover:text-white">
+                  <Search className="w-5 h-5" />
+                </button>
+                <button className="p-2.5 hover:bg-elevated/50 rounded-xl transall hover:text-white">
+                  <Info className="w-5 h-5" />
+                </button>
+                <button className="p-2.5 hover:bg-elevated/50 rounded-xl transall hover:text-white">
+                  <MoreVertical className="w-5 h-5" />
+                </button>
               </div>
             </header>
 
@@ -281,9 +345,12 @@ export default function ChatPage() {
                   <div className="w-24 h-24 bg-accent-default/5 rounded-full flexcc mb-6 border border-accent-default/10 animate-pulse">
                     <MessageCircle className="w-10 h-10 text-accent-default/40" />
                   </div>
-                  <h3 className="text-lg font-black text-white mb-2">Belum ada gokil-gokilan di sini.</h3>
+                  <h3 className="text-lg font-black text-white mb-2">
+                    Belum ada gokil-gokilan di sini.
+                  </h3>
                   <p className="text-text-secondary text-sm max-w-xs leading-relaxed">
-                    Jadilah yang pertama ngirim pesan dan bikin suasana jadi pecah! 🗿
+                    Jadilah yang pertama ngirim pesan dan bikin suasana jadi
+                    pecah! 🗿
                   </p>
                 </div>
               ) : (
@@ -298,47 +365,71 @@ export default function ChatPage() {
                   {messages.map((msg, idx) => {
                     const isMe = msg.sender_id === user.id;
                     return (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        key={msg.id || idx} 
-                        className={clsx("flex gap-4 group", isMe ? "flex-row-reverse" : "flex-row")}
+                        key={msg.id || idx}
+                        className={clsx(
+                          "flex gap-4 group",
+                          isMe ? "flex-row-reverse" : "flex-row",
+                        )}
                       >
                         {!isMe && (
                           <div className="relative shrink-0">
-                            <Image 
-                              src={msg.sender_avatar || "/images/default-avatar.png"} 
-                              alt="avatar" 
-                              width={40} 
-                              height={40} 
-                              className="rounded-xl border border-border-divider shadow-sm" 
+                            <Image
+                              src={
+                                msg.sender_avatar ||
+                                "/images/default-avatar.png"
+                              }
+                              alt="avatar"
+                              width={40}
+                              height={40}
+                              className="rounded-xl border border-border-divider shadow-sm"
                             />
                             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-status-online rounded-full border-2 border-primary shadow-sm" />
                           </div>
                         )}
-                        <div className={clsx("flex flex-col max-w-[70%]", isMe ? "items-end" : "items-start")}>
+                        <div
+                          className={clsx(
+                            "flex flex-col max-w-[70%]",
+                            isMe ? "items-end" : "items-start",
+                          )}
+                        >
                           {!isMe && (
                             <span className="text-[10px] font-black text-text-secondary mb-1.5 ml-1 uppercase tracking-widest">
                               {msg.sender_username}
                             </span>
                           )}
-                          <div className={clsx(
-                            "px-5 py-3.5 shadow-xl relative",
-                            isMe 
-                              ? "bg-accent-default text-text-on-accent rounded-[24px] rounded-tr-[4px]" 
-                              : "bg-secondary border border-border-divider text-text-primary rounded-[24px] rounded-tl-[4px]"
-                          )}>
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                            
+                          <div
+                            className={clsx(
+                              "px-5 py-3.5 shadow-xl relative",
+                              isMe
+                                ? "bg-accent-default text-text-on-accent rounded-3xl rounded-tr-sm"
+                                : "bg-secondary border border-border-divider text-text-primary rounded-3xl rounded-tl-sm",
+                            )}
+                          >
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                              {msg.content}
+                            </p>
+
                             {/* Read Receipt Mock */}
-                            <div className={clsx(
-                              "flex items-center gap-1.5 mt-2",
-                              isMe ? "justify-end" : "justify-start"
-                            )}>
+                            <div
+                              className={clsx(
+                                "flex items-center gap-1.5 mt-2",
+                                isMe ? "justify-end" : "justify-start",
+                              )}
+                            >
                               <span className="text-[9px] font-bold opacity-60">
-                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(msg.created_at).toLocaleTimeString(
+                                  [],
+                                  { hour: "2-digit", minute: "2-digit" },
+                                )}
                               </span>
-                              {isMe && <span className="text-text-on-accent/80 font-bold text-[10px]">✓✓</span>}
+                              {isMe && (
+                                <span className="text-text-on-accent/80 font-bold text-[10px]">
+                                  ✓✓
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -352,13 +443,19 @@ export default function ChatPage() {
 
             {/* Input Bar */}
             <div className="p-4 pb-6 bg-secondary/80 backdrop-blur-xl border-t border-border-divider">
-              <form onSubmit={handleSendMessage} className="flex items-end gap-3 max-w-5xl mx-auto">
+              <form
+                onSubmit={handleSendMessage}
+                className="flex items-end gap-3 max-w-5xl mx-auto"
+              >
                 <div className="flex items-center gap-1 mb-1">
-                  <button type="button" className="p-2.5 hover:bg-elevated/80 rounded-xl transall text-text-secondary hover:text-accent-default">
+                  <button
+                    type="button"
+                    className="p-2.5 hover:bg-elevated/80 rounded-xl transall text-text-secondary hover:text-accent-default"
+                  >
                     <Paperclip className="w-5.5 h-5.5" />
                   </button>
                 </div>
-                
+
                 <div className="flex-1 relative">
                   <input
                     ref={inputRef}
@@ -368,13 +465,16 @@ export default function ChatPage() {
                     placeholder="Tulis pesan gokil..."
                     className="w-full bg-elevated/50 border border-border-divider rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-accent-default transall text-text-primary pr-12 shadow-inner"
                   />
-                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-text-muted hover:text-accent-default transall">
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-text-muted hover:text-accent-default transall"
+                  >
                     <Smile className="w-5.5 h-5.5" />
                   </button>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={!messageInput.trim()}
                   className="w-14 h-14 bg-accent-default hover:bg-accent-hover text-text-on-accent rounded-2xl flexcc disabled:opacity-30 disabled:grayscale transall shadow-[0_8px_20px_-5px_rgba(107,52,16,0.5)] active:scale-95"
                 >
@@ -385,7 +485,7 @@ export default function ChatPage() {
           </>
         ) : (
           <div className="flex-1 flexcc text-center p-10 bg-primary">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="w-32 h-32 bg-elevated rounded-full flexcc mb-8 border border-accent-default/20 relative"
@@ -393,9 +493,12 @@ export default function ChatPage() {
               <div className="absolute inset-0 bg-accent-default blur-3xl opacity-10" />
               <MessageCircle className="w-14 h-14 text-accent-default/30" />
             </motion.div>
-            <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Selamat Datang di GokilChat!</h2>
+            <h2 className="text-3xl font-black text-white mb-4 tracking-tight">
+              Selamat Datang di GokilChat!
+            </h2>
             <p className="text-text-secondary max-w-md text-sm leading-relaxed">
-              Pilih ruangan di sebelah kiri buat mulai ngobrol gokil bareng temen-temen lu. Nggak ada temen? Ya nasib. 🗿
+              Pilih ruangan di sebelah kiri buat mulai ngobrol gokil bareng
+              temen-temen lu. Nggak ada temen? Ya nasib. 🗿
             </p>
           </div>
         )}
@@ -413,7 +516,7 @@ export default function ChatPage() {
           border-radius: 20px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #6B3410;
+          background: #6b3410;
         }
       `}</style>
     </div>
