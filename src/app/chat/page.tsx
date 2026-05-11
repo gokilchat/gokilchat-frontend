@@ -25,6 +25,8 @@ import clsx from "clsx";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 
+import { User } from "@/types/chat";
+
 export default function ChatPage() {
   const { user, token, logout } = useAuthStore();
   const {
@@ -42,7 +44,7 @@ export default function ChatPage() {
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
