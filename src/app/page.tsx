@@ -1,28 +1,24 @@
 "use client";
 
-import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { useState } from "react";
+import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { loginWithGoogle, setAuthToken } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { MessageSquare } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
+import Image from "next/image";
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
-      setLoading(true);
-      setError("");
+      if (!credentialResponse.credential) throw new Error("No credential returned");
       
-      const idToken = credentialResponse.credential;
-      if (!idToken) throw new Error("Gagal mendapatkan ID token dari Google");
-
-      const response = await loginWithGoogle(idToken);
+      const response = await loginWithGoogle(credentialResponse.credential);
       
       if (response.success && response.data?.token) {
         setAuthToken(response.data.token);
@@ -31,78 +27,71 @@ export default function LoginPage() {
       } else {
         throw new Error(response.error || "Login gagal dari server");
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "Terjadi kesalahan saat login");
-      } else {
-        setError("Terjadi kesalahan saat login");
-      }
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      setError(err.message || "Gagal masuk dengan Google");
+      console.error(err);
     }
   };
 
   return (
     <div className={clsx(
-      "min-h-screen flexc p-4",
-      "bg-primary"
+      "min-h-screen w-full flexcc p-4",
+      "bg-[#0A0E17]" // Dark navy background as requested
     )}>
-      <div className={clsx(
-        "w-full max-w-md p-8 relative overflow-hidden",
-        "bg-secondary border border-accent-subtle rounded-2xl shadow-2xl",
-        "max-sm:p-6"
-      )}>
-        {/* Glow effect */}
-        <div className={clsx(
-          "w-48 h-48 absolute -top-24 -right-24 pointer-events-none",
-          "bg-accent-default/20 rounded-full blur-3xl"
-        )} />
-        <div className={clsx(
-          "w-48 h-48 absolute -bottom-24 -left-24 pointer-events-none",
-          "bg-accent-default/20 rounded-full blur-3xl"
-        )} />
+      {/* Decorative Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-default/10 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="relative z-10 flexcc">
-          <div className={clsx(
-            "w-16 h-16 flexcc mb-6",
-            "bg-accent-subtle border border-accent-default/30 rounded-2xl"
-          )}>
-            <MessageSquare className="w-8 h-8 text-text-on-accent" />
+      <div className={clsx(
+        "w-full max-w-md p-10 rounded-3xl relative z-10",
+        "bg-secondary/40 backdrop-blur-xl border border-white/5",
+        "shadow-2xl shadow-black/50"
+      )}>
+        {/* Accent Border Glow */}
+        <div className="absolute inset-0 rounded-3xl border border-accent-default/20 pointer-events-none" />
+
+        <div className="flexcc gap-6 text-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-accent-default blur-2xl opacity-20" />
+            <Image 
+              src="/images/logo.png" 
+              alt="GokilChat Logo" 
+              width={100} 
+              height={100} 
+              className="relative drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+            />
           </div>
-          
-          <h1 className={clsx("text-3xl font-bold mb-2", "text-text-primary")}>GokilChat</h1>
-          <p className={clsx("text-center mb-10", "text-text-secondary")}>
-            Sistem chat realtime terdistribusi untuk kolaborasi tanpa batas.
-          </p>
+
+          <div>
+            <h1 className="text-4xl font-black tracking-tighter text-white mb-2">
+              Gokil<span className="text-accent-default">Chat</span>
+            </h1>
+            <p className="text-text-secondary text-sm font-medium leading-relaxed max-w-[240px] mx-auto">
+              Ngobrol gokil, tanpa batas, <br/> 
+              desain premium buat lu yang gokil. 🗿
+            </p>
+          </div>
+
+          <div className="w-full mt-4 h-px bg-gradient-to-r from-transparent via-border-divider to-transparent" />
 
           {error && (
-            <div className={clsx(
-              "w-full p-3 mb-6 text-sm text-center",
-              "bg-red-900/30 border border-red-900/50 text-red-200 rounded-lg"
-            )}>
+            <div className="text-red-400 text-xs font-medium bg-red-400/10 py-2 px-4 rounded-lg border border-red-400/20 w-full">
               {error}
             </div>
           )}
 
-          <div className="w-full flexc h-11 relative">
-            {loading && (
-              <div className={clsx(
-                "absolute inset-0 flexc z-20",
-                "bg-secondary rounded-md"
-              )}>
-                <div className="w-5 h-5 border-2 border-accent-default border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            )}
+          <div className="w-full flex justify-center py-2">
             <GoogleLogin
               onSuccess={handleSuccess}
               onError={() => setError("Login dibatalkan atau gagal")}
               useOneTap
               theme="outline"
-              shape="rectangular"
-              size="large"
-              text="signin_with"
+              shape="pill"
             />
           </div>
+
+          <p className="text-[10px] text-text-muted mt-4">
+            Dengan masuk, lu setuju buat jadi <span className="text-text-secondary">anak gokil</span> selamanya.
+          </p>
         </div>
       </div>
     </div>

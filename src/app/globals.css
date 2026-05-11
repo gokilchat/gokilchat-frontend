@@ -15,7 +15,9 @@
   --color-border-divider: #3D2A18;
   --color-status-online: #22C55E;
   --color-status-unread: #6B3410;
-  --color-status-draft: #F59E0B;
+  --color-status-sent: #5C4030;
+  
+  --font-sans: var(--font-plus-jakarta-sans);
 }
 
 @layer base {

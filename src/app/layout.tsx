@@ -9,8 +9,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "GokilChat",
-  description: "Distributed Chat System",
+  title: "GokilChat — Ngobrol Gokil Bareng Temen",
+  description: "Aplikasi chat terdistribusi dengan fitur realtime dan desain premium.",
 };
 
 export default function RootLayout({
