@@ -86,18 +86,30 @@ export default function ChatPage() {
 
       addMessage(formattedMessage);
       // Update last message in rooms list for realtime sidebar
-      setRooms((prevRooms: Room[]) => prevRooms.map(r => 
-        r.id === message.room_id 
-          ? { 
-              ...r, 
-              last_message: { 
-                content: formattedMessage.content, 
-                created_at: message.created_at,
-                sender: { username: message.sender_username }
+      setRooms((prevRooms: Room[]) => {
+        const roomExists = prevRooms.some(r => r.id === message.room_id);
+        
+        if (!roomExists) {
+          // Jika room belum ada di sidebar, refresh list room dari API
+          apiFetch("/rooms").then(res => {
+            if (res.success) setRooms(res.data);
+          });
+          return prevRooms;
+        }
+
+        return prevRooms.map(r => 
+          r.id === message.room_id 
+            ? { 
+                ...r, 
+                last_message: { 
+                  content: formattedMessage.content, 
+                  created_at: message.created_at,
+                  sender: { username: message.sender_username }
+                } 
               } 
-            } 
-          : r
-      ));
+            : r
+        );
+      });
     });
 
     apiFetch("/rooms")
@@ -128,9 +140,9 @@ export default function ChatPage() {
   const handleRoomClick = async (roomId: string) => {
     setActiveRoomId(roomId);
     getSocket()?.emit("room:join", { room_id: roomId });
+    
     if (roomId.startsWith('temp-')) {
       setMessages([]);
-      setActiveRoomId(roomId);
       return;
     }
 
@@ -138,7 +150,6 @@ export default function ChatPage() {
       const res = await apiFetch(`/rooms/${roomId}/messages`);
       if (res.success) {
         setMessages(res.data);
-        setActiveRoomId(roomId);
       }
     } catch (err) {
       console.error(err);
