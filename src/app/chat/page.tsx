@@ -79,7 +79,6 @@ export default function ChatPage() {
 
     socket.on("new_message", (message) => addMessage(message));
 
-    setIsLoadingRooms(true);
     apiFetch("/rooms")
       .then((res) => {
         if (res.success) {
@@ -250,6 +249,7 @@ export default function ChatPage() {
         onCreateRoom={() => setShowNewChatModal(true)}
         user={user}
         onLogout={logout}
+        isLoading={isLoadingRooms}
       />
 
       <div
