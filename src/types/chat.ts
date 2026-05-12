@@ -13,6 +13,7 @@ export interface Room {
   type?: string;
   owner_id?: string;
   avatar_url?: string;
+  dm_user_id?: string;
   created_at?: string;
 }
 

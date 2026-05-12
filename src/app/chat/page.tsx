@@ -196,19 +196,25 @@ export default function ChatPage() {
       const targetUser = searchResults.find(u => u.id === targetUserId);
       if (!targetUser) return;
 
-      // Check if we already have a room with this user (UI check)
-      // This is a simple check, ideally we check backend
-      const existingRoom = rooms.find(r => r.id === 'temp-' + targetUserId);
+      // Check if we already have a room with this user
+      const existingRoom = rooms.find(r => 
+        r.id === 'temp-' + targetUserId || 
+        (r.type === 'dm' && r.dm_user_id === targetUserId)
+      );
+
       if (existingRoom) {
-        setActiveRoomId(existingRoom.id);
+        handleRoomClick(existingRoom.id);
       } else {
-        const ghostRoom = {
+        const ghostRoom: Room = {
           id: 'temp-' + targetUserId,
-          name: targetUser.username,
+          name: targetUser.full_name || targetUser.username,
+          avatar_url: targetUser.avatar_url,
+          dm_user_id: targetUserId,
           type: 'dm',
         };
         setRooms([ghostRoom, ...rooms]);
         setActiveRoomId(ghostRoom.id);
+        getSocket()?.emit("join_room", ghostRoom.id);
       }
       
       setShowInviteModal(false);
