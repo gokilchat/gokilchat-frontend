@@ -62,7 +62,7 @@ export default function ChatWindow({
       {/* Chat Header */}
       <header className="h-16 flex items-center justify-between px-6 bg-primary/80 backdrop-blur-xl border-b border-border-divider z-10 sticky top-0">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-accent-default/20 flexcc border border-accent-default/20 text-accent-default font-black">
+          <div className="w-10 h-10 rounded-full bg-accent-default/20 flexcc border border-accent-default/20 text-accent-default font-black">
             {activeRoom.name?.charAt(0) || "#"}
           </div>
           <div>

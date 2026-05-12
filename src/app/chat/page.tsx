@@ -114,6 +114,7 @@ export default function ChatPage() {
     });
 
     socket.on("presence:status", (data: { user_id: string, online: boolean }) => {
+      console.log(`[PRESENCE] User ${data.user_id} is now ${data.online ? 'ONLINE' : 'OFFLINE'}`);
       setPresenceStatus(prev => ({ ...prev, [data.user_id]: data.online }));
     });
 
@@ -121,9 +122,12 @@ export default function ChatPage() {
       .then((res) => {
         if (res.success) {
           setRooms(res.data);
-          // Auto-join all rooms for real-time notifications
           res.data.forEach((room: Room) => {
             socket.emit("room:join", { room_id: room.id });
+            // Initial presence check for all DM partners
+            if (room.type === 'dm' && room.dm_user_id) {
+              socket.emit("presence:check", { user_id: room.dm_user_id });
+            }
           });
         }
       })
@@ -136,6 +140,29 @@ export default function ChatPage() {
       disconnectSocket();
     };
   }, [isHydrated, user, token, setRooms, addMessage]);
+
+  // Patroli Status On-Demand (Hemat Resource) 🗿
+  useEffect(() => {
+    if (!isHydrated || !user || !token) return;
+    
+    const pollPresence = () => {
+      const socket = getSocket();
+      if (!socket) return;
+
+      // Cek semua user yang ada di sidebar (rooms)
+      rooms.forEach(room => {
+        if (room.type === 'dm' && room.dm_user_id) {
+          socket.emit("presence:check", { user_id: room.dm_user_id });
+        }
+      });
+    };
+
+    // Jalankan patroli pertama kali, lalu tiap 20 detik
+    pollPresence();
+    const interval = setInterval(pollPresence, 20000); 
+
+    return () => clearInterval(interval);
+  }, [isHydrated, user, token, rooms]);
 
   const handleRoomClick = async (roomId: string) => {
     if (roomId === activeRoomId) return; // Udah di sini, gausah fetch lagi 🗿
@@ -324,6 +351,7 @@ export default function ChatPage() {
         user={user}
         onLogout={logout}
         isLoading={isLoadingRooms}
+        presenceStatus={presenceStatus}
       />
 
       <div

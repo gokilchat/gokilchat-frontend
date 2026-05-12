@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #1E1008;
-  --color-secondary: #2A1A0A;
-  --color-elevated: #341F0D;
-  --color-text-primary: #C8A882;
-  --color-text-secondary: #8C6B4A;
-  --color-text-muted: #5C4030;
-  --color-text-on-accent: #F0E6D3;
-  --color-accent-default: #6B3410;
-  --color-accent-hover: #7A3D13;
-  --color-accent-subtle: #3D1E08;
-  --color-border-subtle: #341F0D;
-  --color-border-divider: #3D2A18;
-  --color-status-online: #22C55E;
-  --color-status-unread: #6B3410;
-  --color-status-sent: #5C4030;
-  
+  --color-primary: #1e1008;
+  --color-secondary: #1b0d00;
+  --color-elevated: #341f0d;
+  --color-text-primary: #c8a882;
+  --color-text-secondary: #8c6b4a;
+  --color-text-muted: #5c4030;
+  --color-text-on-accent: #f0e6d3;
+  --color-accent-default: #6b3410;
+  --color-accent-hover: #7a3d13;
+  --color-accent-subtle: #3d1e08;
+  --color-border-subtle: #341f0d;
+  --color-border-divider: #3d2a18;
+  --color-status-online: #22c55e;
+  --color-status-unread: #6b3410;
+  --color-status-sent: #5c4030;
+
   --font-sans: var(--font-plus-jakarta-sans);
 }
 
@@ -27,10 +27,19 @@
 }
 
 @layer utilities {
-  .flexc        { @apply flex flex-row justify-center items-center; }
-  .flexcc       { @apply flex flex-col justify-center items-center; }
-  .transall     { @apply transition-all ease-in-out duration-150; }
-  .transcenter  { @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2; }
-  .atranscenter { @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2; }
+  .flexc {
+    @apply flex flex-row justify-center items-center;
+  }
+  .flexcc {
+    @apply flex flex-col justify-center items-center;
+  }
+  .transall {
+    @apply transition-all ease-in-out duration-150;
+  }
+  .transcenter {
+    @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+  }
+  .atranscenter {
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+  }
 }
-

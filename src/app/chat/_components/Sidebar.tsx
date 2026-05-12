@@ -13,6 +13,7 @@ interface SidebarProps {
   user: User;
   onLogout: () => void;
   isLoading?: boolean;
+  presenceStatus?: Record<string, boolean>;
 }
 
 export default function Sidebar({
@@ -24,11 +25,12 @@ export default function Sidebar({
   user,
   onLogout,
   isLoading = false,
+  presenceStatus = {},
 }: SidebarProps) {
   return (
     <aside
       style={{ width }}
-      className="bg-secondary/40 backdrop-blur-xl border-r border-border-divider flex flex-col relative shrink-0 z-20 group/sidebar"
+      className="bg-secondary backdrop-blur-xl border-r border-border-divider flex flex-col relative shrink-0 z-20 group/sidebar"
     >
       {/* Sidebar Header */}
       <div className="h-16 px-6 flex items-center justify-between border-b border-border-divider bg-secondary/50 backdrop-blur-sm">
@@ -80,25 +82,34 @@ export default function Sidebar({
                   : "text-text-secondary hover:bg-elevated hover:text-white",
               )}
             >
-              <div
-                className={clsx(
-                  "w-11 h-11 rounded-xl flexcc font-black text-lg shrink-0 transall shadow-sm overflow-hidden",
-                  activeRoomId === room.id
-                    ? "bg-white/20 text-white"
-                    : "bg-secondary border border-border-divider text-accent-default group-hover:scale-105",
-                )}
-              >
-                {room.avatar_url ? (
-                  <Image 
-                    src={room.avatar_url} 
-                    alt={room.name || ""} 
-                    width={44} 
-                    height={44} 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  room.name?.charAt(0) || "#"
-                )}
+              <div className="relative shrink-0">
+                <div
+                  className={clsx(
+                    "size-[3.3rem] rounded-full flexcc font-black text-lg transall shadow-sm overflow-hidden",
+                    activeRoomId === room.id
+                      ? "bg-white/20 text-white"
+                      : "bg-secondary text-accent-default",
+                  )}
+                >
+                  {room.avatar_url ? (
+                    <Image
+                      src={room.avatar_url}
+                      alt={room.name || ""}
+                      width={55}
+                      height={50}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    room.name?.charAt(0) || "#"
+                  )}
+                </div>
+
+                {/* Dot Online On-Demand - Premium Cut-out Effect 🗿🟢 */}
+                {room.type === "dm" &&
+                  room.dm_user_id &&
+                  presenceStatus[room.dm_user_id] && (
+                    <div className="absolute bottom-[0.05rem] right-[0.05rem] size-[0.8rem] border-[1.5px] border-secondary bg-status-online rounded-full z-30" />
+                  )}
               </div>
               <div className="flex-1 text-left min-w-0">
                 <div className="flex justify-between items-center mb-0.5">
@@ -108,7 +119,9 @@ export default function Sidebar({
                   <span
                     className={clsx(
                       "text-[9px] font-bold opacity-60",
-                      activeRoomId === room.id ? "text-white" : "text-text-muted",
+                      activeRoomId === room.id
+                        ? "text-white"
+                        : "text-text-muted",
                     )}
                   >
                     12:45
