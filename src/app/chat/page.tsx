@@ -80,7 +80,7 @@ export default function ChatPage() {
     socket.on("new_message", (message) => {
       addMessage(message);
       // Update last message in rooms list for realtime sidebar
-      setRooms(prevRooms => prevRooms.map(r => 
+      setRooms((prevRooms: Room[]) => prevRooms.map(r => 
         r.id === message.room_id 
           ? { 
               ...r, 
