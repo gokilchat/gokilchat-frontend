@@ -2,6 +2,7 @@ import { Search, Edit, Settings, LogOut } from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
 import { User, Room } from "@/types/chat";
+import SidebarSkeleton from "./SidebarSkeleton";
 
 interface SidebarProps {
   width: number;
@@ -11,6 +12,7 @@ interface SidebarProps {
   onCreateRoom: () => void;
   user: User;
   onLogout: () => void;
+  isLoading?: boolean;
 }
 
 export default function Sidebar({
@@ -21,6 +23,7 @@ export default function Sidebar({
   onCreateRoom,
   user,
   onLogout,
+  isLoading = false,
 }: SidebarProps) {
   return (
     <aside
@@ -62,56 +65,70 @@ export default function Sidebar({
       </div>
 
       {/* Rooms List */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar">
-        {rooms.map((room) => (
-          <button
-            key={room.id}
-            onClick={() => onRoomClick(room.id)}
-            className={clsx(
-              "w-full p-3 rounded-2xl flex items-center gap-3 transall group",
-              activeRoomId === room.id
-                ? "bg-accent-default shadow-lg shadow-accent-default/20 text-text-on-accent"
-                : "text-text-secondary hover:bg-elevated hover:text-white",
-            )}
-          >
-            <div
+      {isLoading ? (
+        <SidebarSkeleton />
+      ) : (
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar">
+          {rooms.map((room) => (
+            <button
+              key={room.id}
+              onClick={() => onRoomClick(room.id)}
               className={clsx(
-                "w-11 h-11 rounded-xl flexcc font-black text-lg shrink-0 transall shadow-sm",
+                "w-full p-3 rounded-2xl flex items-center gap-3 transall group",
                 activeRoomId === room.id
-                  ? "bg-white/20 text-white"
-                  : "bg-secondary border border-border-divider text-accent-default group-hover:scale-105",
+                  ? "bg-accent-default shadow-lg shadow-accent-default/20 text-text-on-accent"
+                  : "text-text-secondary hover:bg-elevated hover:text-white",
               )}
             >
-              {room.name?.charAt(0) || "#"}
-            </div>
-            <div className="flex-1 text-left min-w-0">
-              <div className="flex justify-between items-center mb-0.5">
-                <span className="font-black text-sm truncate tracking-tight">
-                  {room.name}
-                </span>
-                <span
-                  className={clsx(
-                    "text-[9px] font-bold opacity-60",
-                    activeRoomId === room.id ? "text-white" : "text-text-muted",
-                  )}
-                >
-                  12:45
-                </span>
-              </div>
-              <p
+              <div
                 className={clsx(
-                  "text-[11px] truncate leading-tight font-medium",
+                  "w-11 h-11 rounded-xl flexcc font-black text-lg shrink-0 transall shadow-sm overflow-hidden",
                   activeRoomId === room.id
-                    ? "text-white/80"
-                    : "text-text-muted",
+                    ? "bg-white/20 text-white"
+                    : "bg-secondary border border-border-divider text-accent-default group-hover:scale-105",
                 )}
               >
-                Pesan terakhir gokil di sini...
-              </p>
-            </div>
-          </button>
-        ))}
-      </div>
+                {room.avatar_url ? (
+                  <Image 
+                    src={room.avatar_url} 
+                    alt={room.name || ""} 
+                    width={44} 
+                    height={44} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  room.name?.charAt(0) || "#"
+                )}
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <div className="flex justify-between items-center mb-0.5">
+                  <span className="font-black text-sm truncate tracking-tight">
+                    {room.name}
+                  </span>
+                  <span
+                    className={clsx(
+                      "text-[9px] font-bold opacity-60",
+                      activeRoomId === room.id ? "text-white" : "text-text-muted",
+                    )}
+                  >
+                    12:45
+                  </span>
+                </div>
+                <p
+                  className={clsx(
+                    "text-[11px] truncate leading-tight font-medium",
+                    activeRoomId === room.id
+                      ? "text-white/80"
+                      : "text-text-muted",
+                  )}
+                >
+                  Pesan terakhir gokil di sini...
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* User Profile Footer */}
       <div className="p-4 border-t border-border-divider bg-secondary/30">

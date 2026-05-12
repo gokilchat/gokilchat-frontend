@@ -37,6 +37,7 @@ export default function ChatPage() {
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [modalContext, setModalContext] = useState<'dm' | 'invite'>('dm');
+  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -78,6 +79,7 @@ export default function ChatPage() {
 
     socket.on("new_message", (message) => addMessage(message));
 
+    setIsLoadingRooms(true);
     apiFetch("/rooms")
       .then((res) => {
         if (res.success) {
@@ -88,7 +90,8 @@ export default function ChatPage() {
           });
         }
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setIsLoadingRooms(false));
 
     return () => {
       socket.off("new_message");
