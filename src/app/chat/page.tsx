@@ -6,7 +6,7 @@ import { initSocket, disconnectSocket, getSocket } from "@/lib/socket";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { User } from "@/types/chat";
+import { User, Room } from "@/types/chat";
 
 // Components
 import Sidebar from "./_components/Sidebar";
@@ -83,7 +83,7 @@ export default function ChatPage() {
         if (res.success) {
           setRooms(res.data);
           // Auto-join all rooms for real-time notifications
-          res.data.forEach((room: any) => {
+          res.data.forEach((room: Room) => {
             socket.emit("join_room", room.id);
           });
         }
