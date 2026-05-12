@@ -16,6 +16,7 @@ interface ChatWindowProps {
   activeRoom: Room | null;
   messages: Message[];
   user: User;
+  isOnline: boolean;
   onInviteClick: () => void;
   messageInput: string;
   onMessageInputChange: (val: string) => void;
@@ -28,6 +29,7 @@ export default function ChatWindow({
   activeRoom,
   messages,
   user,
+  isOnline,
   onInviteClick,
   messageInput,
   onMessageInputChange,
@@ -68,9 +70,12 @@ export default function ChatWindow({
               {activeRoom.name || "Private Chat"}
             </h3>
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-status-online shadow-[0_0_8px_var(--color-status-online)]" />
+              <div className={clsx(
+                "w-1.5 h-1.5 rounded-full",
+                isOnline ? "bg-status-online shadow-[0_0_8px_var(--color-status-online)]" : "bg-text-muted"
+              )} />
               <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">
-                12 member online
+                {activeRoom.type === 'dm' ? (isOnline ? 'Online' : 'Offline') : '12 member online'}
               </span>
             </div>
           </div>

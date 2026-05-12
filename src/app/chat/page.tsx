@@ -38,6 +38,7 @@ export default function ChatPage() {
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [modalContext, setModalContext] = useState<'dm' | 'invite'>('dm');
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+  const [presenceStatus, setPresenceStatus] = useState<Record<string, boolean>>({});
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -112,6 +113,10 @@ export default function ChatPage() {
       });
     });
 
+    socket.on("presence:status", (data: { user_id: string, online: boolean }) => {
+      setPresenceStatus(prev => ({ ...prev, [data.user_id]: data.online }));
+    });
+
     apiFetch("/rooms")
       .then((res) => {
         if (res.success) {
@@ -127,19 +132,23 @@ export default function ChatPage() {
 
     return () => {
       socket.off("message:new");
+      socket.off("presence:status");
       disconnectSocket();
     };
   }, [isHydrated, user, token, setRooms, addMessage]);
 
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
-
   const handleRoomClick = async (roomId: string) => {
+    if (roomId === activeRoomId) return; // Udah di sini, gausah fetch lagi 🗿
+    
+    const room = rooms.find(r => r.id === roomId);
     setActiveRoomId(roomId);
-    getSocket()?.emit("room:join", { room_id: roomId });
+    const socket = getSocket();
+    socket?.emit("room:join", { room_id: roomId });
+    
+    // Check presence if it's a DM
+    if (room?.type === 'dm' && room.dm_user_id) {
+      socket?.emit("presence:check", { user_id: room.dm_user_id });
+    }
     
     if (roomId.startsWith('temp-')) {
       setMessages([]);
@@ -292,9 +301,17 @@ export default function ChatPage() {
     }
   };
 
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   if (!isHydrated || !user) return null;
 
   const activeRoom = rooms.find((r) => r.id === activeRoomId) || null;
+  const targetUserId = activeRoom?.dm_user_id;
+  const isOnline = targetUserId ? !!presenceStatus[targetUserId] : false;
 
   return (
     <div className="flex h-screen bg-primary font-sans text-text-primary overflow-hidden">
@@ -323,6 +340,7 @@ export default function ChatPage() {
         activeRoom={activeRoom}
         messages={messages}
         user={user}
+        isOnline={isOnline}
         onInviteClick={() => {
           setModalContext('invite');
           setShowInviteModal(true);
