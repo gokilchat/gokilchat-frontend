@@ -77,15 +77,21 @@ export default function ChatPage() {
     const socket = initSocket(token);
     socket.connect();
 
-    socket.on("new_message", (message) => {
-      addMessage(message);
+    socket.on("message:new", (message) => {
+      // Backend spec v2 wraps content inside `data`
+      const formattedMessage = {
+        ...message,
+        content: message.data?.content || ""
+      };
+
+      addMessage(formattedMessage);
       // Update last message in rooms list for realtime sidebar
       setRooms((prevRooms: Room[]) => prevRooms.map(r => 
         r.id === message.room_id 
           ? { 
               ...r, 
               last_message: { 
-                content: message.content, 
+                content: formattedMessage.content, 
                 created_at: message.created_at,
                 sender: { username: message.sender_username }
               } 
@@ -100,7 +106,7 @@ export default function ChatPage() {
           setRooms(res.data);
           // Auto-join all rooms for real-time notifications
           res.data.forEach((room: Room) => {
-            socket.emit("join_room", room.id);
+            socket.emit("room:join", { room_id: room.id });
           });
         }
       })
@@ -108,7 +114,7 @@ export default function ChatPage() {
       .finally(() => setIsLoadingRooms(false));
 
     return () => {
-      socket.off("new_message");
+      socket.off("message:new");
       disconnectSocket();
     };
   }, [isHydrated, user, token, setRooms, addMessage]);
@@ -121,7 +127,7 @@ export default function ChatPage() {
 
   const handleRoomClick = async (roomId: string) => {
     setActiveRoomId(roomId);
-    getSocket()?.emit("join_room", roomId);
+    getSocket()?.emit("room:join", { room_id: roomId });
     if (roomId.startsWith('temp-')) {
       setMessages([]);
       setActiveRoomId(roomId);
@@ -173,15 +179,16 @@ export default function ChatPage() {
           setActiveRoomId(newRoom.id);
           currentRoomId = newRoom.id;
           // IMPORTANT: Join the newly created room socket
-          getSocket()?.emit("join_room", newRoom.id);
+          getSocket()?.emit("room:join", { room_id: newRoom.id });
         } else {
           throw new Error("Gagal membuat chat room");
         }
       }
 
-      getSocket()?.emit("send_message", { 
+      getSocket()?.emit("message:send", { 
         room_id: currentRoomId, 
-        content: messageInput 
+        template_id: '00000000-0000-0000-0000-000000000001',
+        data: { content: messageInput } 
       });
       setMessageInput("");
     } catch (err) {
@@ -247,7 +254,7 @@ export default function ChatPage() {
         };
         setRooms([ghostRoom, ...rooms]);
         setActiveRoomId(ghostRoom.id);
-        getSocket()?.emit("join_room", ghostRoom.id);
+        getSocket()?.emit("room:join", { room_id: ghostRoom.id });
       }
       
       setShowInviteModal(false);
