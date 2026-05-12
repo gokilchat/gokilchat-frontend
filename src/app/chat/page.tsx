@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/store/useAuthStore";
 import { useChatStore } from "@/store/useChatStore";
-import { initSocket, disconnectSocket } from "@/lib/socket";
+import { initSocket, disconnectSocket, getSocket } from "@/lib/socket";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
@@ -135,14 +135,11 @@ export default function ChatPage() {
         }
       }
 
-      const res = await apiFetch(`/rooms/${currentRoomId}/messages`, {
-        method: "POST",
-        body: JSON.stringify({ content: messageInput }),
+      getSocket()?.emit("send_message", { 
+        room_id: currentRoomId, 
+        content: messageInput 
       });
-      if (res.success) {
-        addMessage(res.data);
-        setMessageInput("");
-      }
+      setMessageInput("");
     } catch (err) {
       console.error(err);
     }
