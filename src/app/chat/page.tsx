@@ -98,6 +98,7 @@ export default function ChatPage() {
 
   const handleRoomClick = async (roomId: string) => {
     setActiveRoomId(roomId);
+    getSocket()?.emit("join_room", roomId);
     try {
       const res = await apiFetch(`/rooms/${roomId}/messages`);
       if (res.success) setMessages(res.data);
@@ -130,6 +131,8 @@ export default function ChatPage() {
           setRooms(rooms.map(r => r.id === activeRoomId ? { ...newRoom, name: activeRoom?.name } : r));
           setActiveRoomId(newRoom.id);
           currentRoomId = newRoom.id;
+          // IMPORTANT: Join the newly created room socket
+          getSocket()?.emit("join_room", newRoom.id);
         } else {
           throw new Error("Gagal membuat chat room");
         }
