@@ -80,7 +80,13 @@ export default function ChatPage() {
 
     apiFetch("/rooms")
       .then((res) => {
-        if (res.success) setRooms(res.data);
+        if (res.success) {
+          setRooms(res.data);
+          // Auto-join all rooms for real-time notifications
+          res.data.forEach((room: any) => {
+            socket.emit("join_room", room.id);
+          });
+        }
       })
       .catch(console.error);
 
