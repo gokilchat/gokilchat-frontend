@@ -160,7 +160,7 @@ export default function ChatWindow({
             }}
             placeholder="Tulis pesan gokil lu di sini..."
             rows={1}
-            className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-text-primary placeholder:text-text-muted/50 py-3 resize-none max-h-40 custom-scrollbar"
+            className="flex-1 bg-secondary border-none outline-none focus:outline-none focus:ring-0 text-sm text-text-primary placeholder:text-text-muted/50 py-3 resize-none max-h-40 custom-scrollbar"
           />
           <button
             type="submit"
