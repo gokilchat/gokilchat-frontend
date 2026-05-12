@@ -77,7 +77,22 @@ export default function ChatPage() {
     const socket = initSocket(token);
     socket.connect();
 
-    socket.on("new_message", (message) => addMessage(message));
+    socket.on("new_message", (message) => {
+      addMessage(message);
+      // Update last message in rooms list for realtime sidebar
+      setRooms(prevRooms => prevRooms.map(r => 
+        r.id === message.room_id 
+          ? { 
+              ...r, 
+              last_message: { 
+                content: message.content, 
+                created_at: message.created_at,
+                sender: { username: message.sender_username }
+              } 
+            } 
+          : r
+      ));
+    });
 
     apiFetch("/rooms")
       .then((res) => {
@@ -107,9 +122,18 @@ export default function ChatPage() {
   const handleRoomClick = async (roomId: string) => {
     setActiveRoomId(roomId);
     getSocket()?.emit("join_room", roomId);
+    if (roomId.startsWith('temp-')) {
+      setMessages([]);
+      setActiveRoomId(roomId);
+      return;
+    }
+
     try {
       const res = await apiFetch(`/rooms/${roomId}/messages`);
-      if (res.success) setMessages(res.data);
+      if (res.success) {
+        setMessages(res.data);
+        setActiveRoomId(roomId);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -135,8 +159,17 @@ export default function ChatPage() {
         
         if (res.success) {
           const newRoom = res.data;
-          // Replace temp room with real room in list
-          setRooms(rooms.map(r => r.id === activeRoomId ? { ...newRoom, name: activeRoom?.name } : r));
+          // Replace temp room with real room in list while PRESERVING ghost room metadata (Google Name & Avatar)
+          setRooms(prevRooms => prevRooms.map(r => 
+            r.id === activeRoomId 
+              ? { 
+                  ...newRoom, 
+                  name: activeRoom?.name || newRoom.name,
+                  avatar_url: activeRoom?.avatar_url || newRoom.avatar_url,
+                  dm_user_id: targetUserId 
+                } 
+              : r
+          ));
           setActiveRoomId(newRoom.id);
           currentRoomId = newRoom.id;
           // IMPORTANT: Join the newly created room socket
