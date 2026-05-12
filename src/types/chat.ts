@@ -11,6 +11,7 @@ export interface Room {
   name: string;
   type?: string;
   owner_id?: string;
+  avatar_url?: string;
   created_at?: string;
 }
 
