@@ -14,6 +14,11 @@ export interface Room {
   owner_id?: string;
   avatar_url?: string;
   dm_user_id?: string;
+  last_message?: {
+    content: string;
+    created_at: string;
+    sender: { username: string };
+  };
   created_at?: string;
 }
 
