@@ -72,8 +72,13 @@ export default function InviteMemberModal({
                       className="p-3 rounded-2xl bg-primary/40 border border-transparent hover:border-accent-default/30 hover:bg-accent-default/5 flex items-center gap-3 cursor-pointer transall group"
                     >
                       <Image src={u.avatar_url || "/images/default-avatar.png"} alt={u.username} width={40} height={40} className="rounded-xl border border-border-divider" />
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-white group-hover:text-accent-default transall">{u.username}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-white group-hover:text-accent-default transall truncate">
+                          {u.full_name || u.username}
+                        </p>
+                        <p className="text-[10px] text-text-muted font-bold tracking-wider">
+                          @{u.username}
+                        </p>
                       </div>
                       <Plus className="w-4 h-4 text-accent-default opacity-0 group-hover:opacity-100 transall" />
                     </div>
