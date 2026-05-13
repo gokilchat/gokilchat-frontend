@@ -78,7 +78,7 @@ export default function Sidebar({
               className={clsx(
                 "w-full p-3 rounded-2xl flex items-center gap-3 transall group",
                 activeRoomId === room.id
-                  ? "bg-accent-default shadow-lg shadow-accent-default/20 text-text-on-accent"
+                  ? "bg-accent-default text-text-on-accent"
                   : "text-text-secondary hover:bg-elevated hover:text-white",
               )}
             >
@@ -154,7 +154,6 @@ export default function Sidebar({
               height={42}
               className="rounded-full border border-border-divider"
             />
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-status-online rounded-full border-2 border-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-black text-white truncate">

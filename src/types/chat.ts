@@ -27,6 +27,7 @@ export interface Message {
   room_id: string;
   sender_id: string;
   sender_username: string;
+  sender_full_name?: string;
   sender_avatar?: string;
   content: string;
   created_at: string;

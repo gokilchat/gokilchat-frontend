@@ -43,20 +43,22 @@ export default function MessageBubble({
           isMe ? "items-end" : "items-start",
         )}
       >
-        {!isMe && (
-          <span className="text-[10px] font-black text-text-secondary mb-1.5 ml-1 uppercase tracking-widest">
-            {message.sender_username}
-          </span>
-        )}
         <div
           className={clsx(
-            "px-5 py-3.5 shadow-xl relative",
+            "px-5 py-3 shadow-lg shadow-secondary relative",
             isMe
               ? "bg-accent-default text-text-on-accent rounded-3xl rounded-tr-sm"
-              : "bg-secondary border border-border-divider text-text-primary rounded-3xl rounded-tl-sm",
+              : "bg-secondary border border-border-divider/50 text-text-primary rounded-3xl rounded-tl-sm",
           )}
         >
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">
+          {/* Nama Pengirim ala Telegram 🗿✈️ */}
+          {!isMe && (
+            <p className="text-[0.8rem] font-medium text-text-secondary mb-1.5 tracking-wide">
+              {message.sender_full_name || message.sender_username}
+            </p>
+          )}
+
+          <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">
             {message.content}
           </p>
 
