@@ -30,10 +30,10 @@ export default function Sidebar({
   return (
     <aside
       style={{ width }}
-      className="bg-secondary backdrop-blur-xl border-r border-border-divider flex flex-col relative shrink-0 z-20 group/sidebar"
+      className="bg-primary backdrop-blur-xl flex flex-col relative shrink-0 z-20 group/sidebar"
     >
       {/* Sidebar Header */}
-      <div className="h-16 px-6 flex items-center justify-between border-b border-border-divider bg-secondary/50 backdrop-blur-sm">
+      <div className="h-16 px-3.5 flex items-center justify-between border-b border-border-divider bg-secondary/50 backdrop-blur-sm">
         <div className="flex items-center gap-1">
           <Image
             src="/images/logo-light.png"
@@ -76,7 +76,7 @@ export default function Sidebar({
               key={room.id}
               onClick={() => onRoomClick(room.id)}
               className={clsx(
-                "w-full p-3 rounded-2xl flex items-center gap-3 transall group",
+                "cursor-pointer w-full p-2.5 rounded-2xl flex items-center gap-3 transall group",
                 activeRoomId === room.id
                   ? "bg-accent-default text-text-on-accent"
                   : "text-text-secondary hover:bg-elevated hover:text-white",
@@ -108,12 +108,12 @@ export default function Sidebar({
                 {room.type === "dm" &&
                   room.dm_user_id &&
                   presenceStatus[room.dm_user_id] && (
-                    <div className="absolute bottom-[0.05rem] right-[0.05rem] size-[0.8rem] border-[1.5px] border-secondary bg-status-online rounded-full z-30" />
+                    <div className="absolute bottom-[0.05rem] right-[0.05rem] size-[0.8rem] border-[2.5px] border-secondary bg-status-online rounded-full z-30" />
                   )}
               </div>
               <div className="flex-1 text-left min-w-0">
                 <div className="flex justify-between items-center mb-0.5">
-                  <span className="font-black text-sm truncate tracking-tight">
+                  <span className="font-black text-[0.9rem] truncate tracking-tight">
                     {room.name}
                   </span>
                   <span

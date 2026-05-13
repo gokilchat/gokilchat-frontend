@@ -8,6 +8,7 @@ import {
   Send,
   UserPlus,
 } from "lucide-react";
+import Image from "next/image";
 import { User, Room, Message } from "@/types/chat";
 import MessageBubble from "./MessageBubble";
 import ChatSkeleton from "./ChatSkeleton";
@@ -69,30 +70,52 @@ export default function ChatWindow({
   return (
     <main className="flex-1 flex flex-col relative bg-primary overflow-hidden">
       {/* Chat Header */}
-      <header className="h-16 flex items-center justify-between px-6 bg-primary/80 backdrop-blur-xl border-b border-border-divider z-10 sticky top-0">
+      <header className="h-20 flex items-center justify-between px-6 bg-primary/80 backdrop-blur-xl border-b border-border-divider/50 z-20 sticky top-0">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-accent-default/20 flexcc border border-accent-default/20 text-accent-default font-black">
-            {activeRoom.name?.charAt(0) || "#"}
+          {/* Avatar Header Gokil 🗿 */}
+          <div className="relative shrink-0">
+            <div className="size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner">
+              {activeRoom.avatar_url ? (
+                <Image
+                  src={activeRoom.avatar_url}
+                  alt={activeRoom.name || ""}
+                  width={44}
+                  height={44}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="font-black text-accent-default text-lg">
+                  {activeRoom.name?.charAt(0) || "#"}
+                </span>
+              )}
+            </div>
+
+            {/* Dot Online On-Demand di Header 🗿🟢 */}
+            {activeRoom.type === "dm" && isOnline && (
+              <div className="absolute -bottom-0.5 -right-0.5 size-3.5 bg-status-online rounded-full border-[2.5px] border-primary shadow-sm" />
+            )}
           </div>
+
           <div>
-            <h3 className="font-black text-white tracking-tight">
+            <h3 className="font-black text-white text-base tracking-tight leading-none mb-1.5">
               {activeRoom.name || "Private Chat"}
             </h3>
-            <div className="flex items-center gap-2">
-              <div
+            <div className="flex items-center gap-1.5">
+              <span
                 className={clsx(
-                  "w-1.5 h-1.5 rounded-full",
-                  isOnline
-                    ? "bg-status-online shadow-[0_0_8px_var(--color-status-online)]"
-                    : "bg-text-muted",
+                  "text-[10px] font-bold uppercase tracking-widest",
+                  activeRoom.type === "dm"
+                    ? isOnline
+                      ? "text-status-online"
+                      : "text-text-muted"
+                    : "text-accent-default",
                 )}
-              />
-              <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">
+              >
                 {activeRoom.type === "dm"
                   ? isOnline
                     ? "Online"
                     : "Offline"
-                  : "12 member online"}
+                  : "Group Chat"}
               </span>
             </div>
           </div>

@@ -36,10 +36,12 @@ export default function ChatPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
-  const [modalContext, setModalContext] = useState<'dm' | 'invite'>('dm');
+  const [modalContext, setModalContext] = useState<"dm" | "invite">("dm");
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  const [presenceStatus, setPresenceStatus] = useState<Record<string, boolean>>({});
+  const [presenceStatus, setPresenceStatus] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -83,41 +85,46 @@ export default function ChatPage() {
       // Backend spec v2 wraps content inside `data`
       const formattedMessage = {
         ...message,
-        content: message.data?.content || ""
+        content: message.data?.content || "",
       };
 
       addMessage(formattedMessage);
       // Update last message in rooms list for realtime sidebar
       setRooms((prevRooms: Room[]) => {
-        const roomExists = prevRooms.some(r => r.id === message.room_id);
-        
+        const roomExists = prevRooms.some((r) => r.id === message.room_id);
+
         if (!roomExists) {
           // Jika room belum ada di sidebar, refresh list room dari API
-          apiFetch("/rooms").then(res => {
+          apiFetch("/rooms").then((res) => {
             if (res.success) setRooms(res.data);
           });
           return prevRooms;
         }
 
-        return prevRooms.map(r => 
-          r.id === message.room_id 
-            ? { 
-                ...r, 
-                last_message: { 
-                  content: formattedMessage.content, 
+        return prevRooms.map((r) =>
+          r.id === message.room_id
+            ? {
+                ...r,
+                last_message: {
+                  content: formattedMessage.content,
                   created_at: message.created_at,
-                  sender: { username: message.sender_username }
-                } 
-              } 
-            : r
+                  sender: { username: message.sender_username },
+                },
+              }
+            : r,
         );
       });
     });
 
-    socket.on("presence:status", (data: { user_id: string, online: boolean }) => {
-      console.log(`[PRESENCE] User ${data.user_id} is now ${data.online ? 'ONLINE' : 'OFFLINE'}`);
-      setPresenceStatus(prev => ({ ...prev, [data.user_id]: data.online }));
-    });
+    socket.on(
+      "presence:status",
+      (data: { user_id: string; online: boolean }) => {
+        console.log(
+          `[PRESENCE] User ${data.user_id} is now ${data.online ? "ONLINE" : "OFFLINE"}`,
+        );
+        setPresenceStatus((prev) => ({ ...prev, [data.user_id]: data.online }));
+      },
+    );
 
     apiFetch("/rooms")
       .then((res) => {
@@ -126,7 +133,7 @@ export default function ChatPage() {
           res.data.forEach((room: Room) => {
             socket.emit("room:join", { room_id: room.id });
             // Initial presence check for all DM partners
-            if (room.type === 'dm' && room.dm_user_id) {
+            if (room.type === "dm" && room.dm_user_id) {
               socket.emit("presence:check", { user_id: room.dm_user_id });
             }
           });
@@ -145,14 +152,14 @@ export default function ChatPage() {
   // Patroli Status On-Demand (Hemat Resource) 🗿
   useEffect(() => {
     if (!isHydrated || !user || !token) return;
-    
+
     const pollPresence = () => {
       const socket = getSocket();
       if (!socket) return;
 
       // Cek semua user yang ada di sidebar (rooms)
-      rooms.forEach(room => {
-        if (room.type === 'dm' && room.dm_user_id) {
+      rooms.forEach((room) => {
+        if (room.type === "dm" && room.dm_user_id) {
           socket.emit("presence:check", { user_id: room.dm_user_id });
         }
       });
@@ -160,26 +167,26 @@ export default function ChatPage() {
 
     // Jalankan patroli pertama kali, lalu tiap 3 detik biar sat-set 🗿⚡
     pollPresence();
-    const interval = setInterval(pollPresence, 3000); 
+    const interval = setInterval(pollPresence, 3000);
 
     return () => clearInterval(interval);
   }, [isHydrated, user, token, rooms]);
 
   const handleRoomClick = async (roomId: string) => {
     if (roomId === activeRoomId) return; // Udah di sini, gausah fetch lagi 🗿
-    
-    const room = rooms.find(r => r.id === roomId);
+
+    const room = rooms.find((r) => r.id === roomId);
     setActiveRoomId(roomId);
     setIsLoadingMessages(true);
     const socket = getSocket();
     socket?.emit("room:join", { room_id: roomId });
-    
+
     // Check presence if it's a DM
-    if (room?.type === 'dm' && room.dm_user_id) {
+    if (room?.type === "dm" && room.dm_user_id) {
       socket?.emit("presence:check", { user_id: room.dm_user_id });
     }
-    
-    if (roomId.startsWith('temp-')) {
+
+    if (roomId.startsWith("temp-")) {
       setMessages([]);
       setIsLoadingMessages(false);
       return;
@@ -202,32 +209,34 @@ export default function ChatPage() {
     if (!messageInput.trim() || !activeRoomId) return;
 
     let currentRoomId = activeRoomId;
-    const activeRoom = rooms.find(r => r.id === activeRoomId);
+    const activeRoom = rooms.find((r) => r.id === activeRoomId);
 
     try {
       // If it's a ghost room, create it first
-      if (activeRoomId.startsWith('temp-')) {
-        const targetUserId = activeRoomId.replace('temp-', '');
+      if (activeRoomId.startsWith("temp-")) {
+        const targetUserId = activeRoomId.replace("temp-", "");
         const res = await apiFetch("/rooms/dm", {
           method: "POST",
-          body: JSON.stringify({ 
-            target_user_id: targetUserId
+          body: JSON.stringify({
+            target_user_id: targetUserId,
           }),
         });
-        
+
         if (res.success) {
           const newRoom = res.data;
           // Replace temp room with real room in list while PRESERVING ghost room metadata (Google Name & Avatar)
-          setRooms(prevRooms => prevRooms.map(r => 
-            r.id === activeRoomId 
-              ? { 
-                  ...newRoom, 
-                  name: activeRoom?.name || newRoom.name,
-                  avatar_url: activeRoom?.avatar_url || newRoom.avatar_url,
-                  dm_user_id: targetUserId 
-                } 
-              : r
-          ));
+          setRooms((prevRooms) =>
+            prevRooms.map((r) =>
+              r.id === activeRoomId
+                ? {
+                    ...newRoom,
+                    name: activeRoom?.name || newRoom.name,
+                    avatar_url: activeRoom?.avatar_url || newRoom.avatar_url,
+                    dm_user_id: targetUserId,
+                  }
+                : r,
+            ),
+          );
           setActiveRoomId(newRoom.id);
           currentRoomId = newRoom.id;
           // IMPORTANT: Join the newly created room socket
@@ -237,10 +246,10 @@ export default function ChatPage() {
         }
       }
 
-      getSocket()?.emit("message:send", { 
-        room_id: currentRoomId, 
-        template_id: '00000000-0000-0000-0000-000000000001',
-        data: { content: messageInput } 
+      getSocket()?.emit("message:send", {
+        room_id: currentRoomId,
+        template_id: "00000000-0000-0000-0000-000000000001",
+        data: { content: messageInput },
       });
       setMessageInput("");
     } catch (err) {
@@ -284,31 +293,32 @@ export default function ChatPage() {
   };
 
   const handleInviteUser = async (targetUserId: string) => {
-    if (modalContext === 'dm') {
-      const targetUser = searchResults.find(u => u.id === targetUserId);
+    if (modalContext === "dm") {
+      const targetUser = searchResults.find((u) => u.id === targetUserId);
       if (!targetUser) return;
 
       // Check if we already have a room with this user
-      const existingRoom = rooms.find(r => 
-        r.id === 'temp-' + targetUserId || 
-        (r.type === 'dm' && r.dm_user_id === targetUserId)
+      const existingRoom = rooms.find(
+        (r) =>
+          r.id === "temp-" + targetUserId ||
+          (r.type === "dm" && r.dm_user_id === targetUserId),
       );
 
       if (existingRoom) {
         handleRoomClick(existingRoom.id);
       } else {
         const ghostRoom: Room = {
-          id: 'temp-' + targetUserId,
+          id: "temp-" + targetUserId,
           name: targetUser.full_name || targetUser.username,
           avatar_url: targetUser.avatar_url,
           dm_user_id: targetUserId,
-          type: 'dm',
+          type: "dm",
         };
         setRooms([ghostRoom, ...rooms]);
         setActiveRoomId(ghostRoom.id);
         getSocket()?.emit("room:join", { room_id: ghostRoom.id });
       }
-      
+
       setShowInviteModal(false);
       setSearchQuery("");
       setSearchResults([]);
@@ -318,8 +328,8 @@ export default function ChatPage() {
     if (!activeRoomId) return;
     try {
       const res = await apiFetch(`/rooms/${activeRoomId}/members`, {
-        method: 'POST',
-        body: JSON.stringify({ user_id: targetUserId })
+        method: "POST",
+        body: JSON.stringify({ user_id: targetUserId }),
       });
       if (res.success) {
         alert("User berhasil di-invite!");
@@ -347,7 +357,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen bg-primary font-sans text-text-primary overflow-hidden">
-      <Sidebar 
+      <Sidebar
         width={sidebarWidth}
         rooms={rooms}
         activeRoomId={activeRoomId}
@@ -364,18 +374,18 @@ export default function ChatPage() {
           isResizing.current = true;
           document.body.style.cursor = "col-resize";
         }}
-        className="w-1.5 h-full hover:bg-accent-default/30 cursor-col-resize transall z-30 relative group"
+        className="w-0 h-full hover:bg-accent-default/30 cursor-col-resize transall z-30 relative group"
       >
-        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-border-divider group-hover:bg-accent-default/50 transall" />
+        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[0.5px] bg-border-divider group-hover:bg-accent-default/50 transall" />
       </div>
 
-      <ChatWindow 
+      <ChatWindow
         activeRoom={activeRoom}
         messages={messages}
         user={user}
         isOnline={isOnline}
         onInviteClick={() => {
-          setModalContext('invite');
+          setModalContext("invite");
           setShowInviteModal(true);
         }}
         messageInput={messageInput}
@@ -387,11 +397,11 @@ export default function ChatPage() {
         isLoading={isLoadingMessages}
       />
 
-      <NewChatModal 
+      <NewChatModal
         isOpen={showNewChatModal}
         onClose={() => setShowNewChatModal(false)}
         onSelectDM={() => {
-          setModalContext('dm');
+          setModalContext("dm");
           setShowNewChatModal(false);
           setShowInviteModal(true);
         }}
@@ -401,13 +411,13 @@ export default function ChatPage() {
         }}
       />
 
-      <CreateRoomModal 
+      <CreateRoomModal
         isOpen={showCreateRoomModal}
         onClose={() => setShowCreateRoomModal(false)}
         onSubmit={handleCreateRoom}
       />
 
-      <InviteMemberModal 
+      <InviteMemberModal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
         searchQuery={searchQuery}
@@ -415,10 +425,8 @@ export default function ChatPage() {
         searchResults={searchResults}
         isSearching={isSearching}
         onInvite={handleInviteUser}
-        title={modalContext === 'dm' ? "Mulai DM Baru" : "Invite ke Grup"}
+        title={modalContext === "dm" ? "Mulai DM Baru" : "Invite ke Grup"}
       />
-
-
     </div>
   );
 }
