@@ -48,8 +48,16 @@ export default function ChatWindow({
       <main className="flex-1 flexcc bg-primary relative overflow-hidden group">
         <div className="absolute inset-0 bg-[url('/images/chat-bg.png')] bg-fixed opacity-5" />
         <div className="relative text-center p-12">
-          <div className="w-32 h-32 bg-accent-default/10 rounded-[2.5rem] flexcc mx-auto mb-8 border border-accent-default/20 rotate-6 group-hover:rotate-12 transall shadow-2xl">
-            <MessageCircle className="w-16 h-16 text-accent-default" />
+          <div className="size-52 flexcc mx-auto mb-4 relative">
+            <div>
+              <Image
+                src="/images/logo-light.png"
+                alt="logo"
+                fill
+                className="object-cover"
+              />
+            </div>
+            {/* <MessageCircle className="w-16 h-16 text-accent-default" /> */}
           </div>
           <h2 className="text-3xl font-black text-white mb-4 tracking-tighter">
             Selamat Datang di GokilChat!
