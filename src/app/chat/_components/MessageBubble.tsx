@@ -9,7 +9,11 @@ interface MessageBubbleProps {
   isOnline?: boolean;
 }
 
-export default function MessageBubble({ message, isMe, isOnline = false }: MessageBubbleProps) {
+export default function MessageBubble({
+  message,
+  isMe,
+  isOnline = false,
+}: MessageBubbleProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -26,10 +30,10 @@ export default function MessageBubble({ message, isMe, isOnline = false }: Messa
             alt="avatar"
             width={40}
             height={40}
-            className="rounded-full border border-border-divider shadow-sm"
+            className="rounded-full shadow-sm"
           />
           {isOnline && (
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-status-online rounded-full border-2 border-primary shadow-sm" />
+            <div className="absolute bottom-[0.05rem] right-[0.05rem] size-[0.65rem] bg-status-online rounded-full border-[1.5px] border-primary shadow-sm" />
           )}
         </div>
       )}
