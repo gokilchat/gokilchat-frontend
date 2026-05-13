@@ -48,7 +48,7 @@ export default function Sidebar({
         </div>
         <button
           onClick={onCreateRoom}
-          className="w-8 h-8 rounded-full bg-elevated border border-border-divider flexcc hover:border-accent-default transall text-text-secondary hover:text-accent-default"
+          className="size-8.5 cursor-pointer rounded-full bg-elevated border border-border-divider flexcc hover:border-accent-default transall text-text-secondary hover:text-accent-default"
         >
           <Edit className="w-4 h-4" />
         </button>

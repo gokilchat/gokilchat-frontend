@@ -47,8 +47,8 @@ export default function MessageBubble({
           className={clsx(
             "px-5 py-3 shadow-lg shadow-secondary relative",
             isMe
-              ? "bg-accent-default text-text-on-accent rounded-3xl rounded-tr-sm"
-              : "bg-secondary border border-border-divider/50 text-text-primary rounded-3xl rounded-tl-sm",
+              ? "bg-accent-hover text-text-on-accent rounded-3xl rounded-tr-sm"
+              : "bg-elevated text-text-primary rounded-3xl rounded-tl-sm",
           )}
         >
           {/* Nama Pengirim ala Telegram 🗿✈️ */}
