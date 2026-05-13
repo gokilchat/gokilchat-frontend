@@ -23,6 +23,7 @@ interface ChatWindowProps {
   onSendMessage: (e: React.FormEvent) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  presenceStatus?: Record<string, boolean>;
 }
 
 export default function ChatWindow({
@@ -36,6 +37,7 @@ export default function ChatWindow({
   onSendMessage,
   messagesEndRef,
   inputRef,
+  presenceStatus = {},
 }: ChatWindowProps) {
   if (!activeRoom) {
     return (
@@ -126,6 +128,7 @@ export default function ChatWindow({
                 key={msg.id || idx}
                 message={msg}
                 isMe={msg.sender_id === user.id}
+                isOnline={!!presenceStatus[msg.sender_id]}
               />
             ))}
             <div ref={messagesEndRef} />

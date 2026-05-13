@@ -43,7 +43,7 @@ export default function NewChatModal({
                 onClick={onSelectDM}
                 className="w-full p-4 rounded-2xl bg-primary/40 border border-border-divider hover:border-accent-default hover:bg-accent-default/5 flex items-center gap-4 transall group"
               >
-                <div className="w-12 h-12 rounded-xl bg-accent-default/10 flexcc text-accent-default group-hover:scale-110 transall">
+                <div className="w-12 h-12 rounded-full bg-accent-default/10 flexcc text-accent-default group-hover:scale-110 transall">
                   <User className="w-6 h-6" />
                 </div>
                 <div className="text-left">

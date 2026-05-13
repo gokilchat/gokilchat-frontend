@@ -71,7 +71,7 @@ export default function InviteMemberModal({
                       onClick={() => onInvite(u.id)}
                       className="p-3 rounded-2xl bg-primary/40 border border-transparent hover:border-accent-default/30 hover:bg-accent-default/5 flex items-center gap-3 cursor-pointer transall group"
                     >
-                      <Image src={u.avatar_url || "/images/default-avatar.png"} alt={u.username} width={40} height={40} className="rounded-xl border border-border-divider" />
+                      <Image src={u.avatar_url || "/images/default-avatar.png"} alt={u.username} width={40} height={40} className="rounded-full border border-border-divider" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-black text-white group-hover:text-accent-default transall truncate">
                           {u.full_name || u.username}

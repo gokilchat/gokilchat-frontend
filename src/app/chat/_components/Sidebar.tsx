@@ -152,7 +152,7 @@ export default function Sidebar({
               alt="avatar"
               width={42}
               height={42}
-              className="rounded-xl border border-border-divider"
+              className="rounded-full border border-border-divider"
             />
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-status-online rounded-full border-2 border-primary" />
           </div>

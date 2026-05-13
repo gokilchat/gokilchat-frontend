@@ -157,9 +157,9 @@ export default function ChatPage() {
       });
     };
 
-    // Jalankan patroli pertama kali, lalu tiap 20 detik
+    // Jalankan patroli pertama kali, lalu tiap 3 detik biar sat-set 🗿⚡
     pollPresence();
-    const interval = setInterval(pollPresence, 20000); 
+    const interval = setInterval(pollPresence, 3000); 
 
     return () => clearInterval(interval);
   }, [isHydrated, user, token, rooms]);
@@ -378,6 +378,7 @@ export default function ChatPage() {
         onSendMessage={handleSendMessage}
         messagesEndRef={messagesEndRef}
         inputRef={inputRef}
+        presenceStatus={presenceStatus}
       />
 
       <NewChatModal 
