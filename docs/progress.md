@@ -12,6 +12,9 @@
 - Persistensi Pesan (Database binding, message history fetch)
 - Sistem Presence On-Demand (Status Online/Offline hemat resource via polling)
 - UI/UX Polishing (Circular avatars, premium online indicator with cut-out, auto-scroll fix)
+- Privacy & Data Flow (Perbaikan kebocoran data DM room, injeksi `full_name` dari database ke socket payload)
+- Telegram-style Messaging UX (Teks nama asli pengirim di dalam gelembung pesan)
+- Micro-interactions & Polish (Chat skeleton loading, resizer tipis tapi lebar hitbox-nya, custom scrollbar gemoy 16px, efek gradient fade di dasar list chat, dan perampingan tombol Header DM)
 
 ## Fitur Selanjutnya (Pending)
 - [ ] Group Chat functionality
