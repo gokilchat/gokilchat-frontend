@@ -374,9 +374,10 @@ export default function ChatPage() {
           isResizing.current = true;
           document.body.style.cursor = "col-resize";
         }}
-        className="w-0 h-full hover:bg-accent-default/30 cursor-col-resize transall z-30 relative group"
+        className="w-px h-full bg-border-divider relative z-30 group cursor-col-resize"
       >
-        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[0.5px] bg-border-divider group-hover:bg-accent-default/50 transall" />
+        {/* Area Drag "Hantu" 👻 - Lebar tapi nggak nampak */}
+        <div className="atranscenter h-full w-3.5 z-40 transall hover:bg-accent-default/20" />
       </div>
 
       <ChatWindow

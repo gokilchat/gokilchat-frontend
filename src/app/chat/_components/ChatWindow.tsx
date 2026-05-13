@@ -120,20 +120,25 @@ export default function ChatWindow({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-text-secondary">
-          <button
-            onClick={onInviteClick}
-            className="p-2.5 hover:bg-elevated/50 rounded-xl transall hover:text-accent-default text-accent-default"
-          >
-            <UserPlus className="w-5 h-5" />
-          </button>
-          <button className="p-2.5 hover:bg-elevated/50 rounded-xl transall hover:text-white">
+        <div className="flex items-center gap-1">
+          {activeRoom.type !== "dm" && (
+            <>
+              <button
+                onClick={onInviteClick}
+                className="p-2 text-text-secondary hover:text-white transall"
+                title="Tambah Anggota"
+              >
+                <UserPlus className="w-5 h-5" />
+              </button>
+              <button className="p-2 text-text-secondary hover:text-white transall">
+                <Info className="w-5 h-5" />
+              </button>
+            </>
+          )}
+          <button className="p-2 text-text-secondary hover:text-white transall">
             <Search className="w-5 h-5" />
           </button>
-          <button className="p-2.5 hover:bg-elevated/50 rounded-xl transall hover:text-white">
-            <Info className="w-5 h-5" />
-          </button>
-          <button className="p-2.5 hover:bg-elevated/50 rounded-xl transall hover:text-white">
+          <button className="p-2 text-text-secondary hover:text-white transall">
             <MoreVertical className="w-5 h-5" />
           </button>
         </div>
