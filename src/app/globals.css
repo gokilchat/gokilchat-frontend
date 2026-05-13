@@ -42,4 +42,36 @@
   .atranscenter {
     @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
   }
+
+  /* Custom Scrollbar Gokil 🗿🔥 (Plain CSS for Stability) */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: color-mix(
+      in srgb,
+      var(--color-border-divider) 50%,
+      transparent
+    );
+    border-radius: 9999px;
+    border: 4px solid transparent;
+    background-clip: content-box;
+    cursor: pointer; /* Experimental 🗿 */
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: color-mix(
+      in srgb,
+      var(--color-accent-default) 80%,
+      transparent
+    );
+    cursor: pointer;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:active {
+    background: var(--color-accent-default);
+    cursor: grabbing;
+  }
 }

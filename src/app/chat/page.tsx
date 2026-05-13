@@ -38,6 +38,7 @@ export default function ChatPage() {
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [modalContext, setModalContext] = useState<'dm' | 'invite'>('dm');
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [presenceStatus, setPresenceStatus] = useState<Record<string, boolean>>({});
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -169,6 +170,7 @@ export default function ChatPage() {
     
     const room = rooms.find(r => r.id === roomId);
     setActiveRoomId(roomId);
+    setIsLoadingMessages(true);
     const socket = getSocket();
     socket?.emit("room:join", { room_id: roomId });
     
@@ -179,6 +181,7 @@ export default function ChatPage() {
     
     if (roomId.startsWith('temp-')) {
       setMessages([]);
+      setIsLoadingMessages(false);
       return;
     }
 
@@ -189,6 +192,8 @@ export default function ChatPage() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsLoadingMessages(false);
     }
   };
 
@@ -379,6 +384,7 @@ export default function ChatPage() {
         messagesEndRef={messagesEndRef}
         inputRef={inputRef}
         presenceStatus={presenceStatus}
+        isLoading={isLoadingMessages}
       />
 
       <NewChatModal 
@@ -412,12 +418,7 @@ export default function ChatPage() {
         title={modalContext === 'dm' ? "Mulai DM Baru" : "Invite ke Grup"}
       />
 
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(61, 42, 24, 0.5); border-radius: 20px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b3410; }
-      `}</style>
+
     </div>
   );
 }

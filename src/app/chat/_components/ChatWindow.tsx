@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { User, Room, Message } from "@/types/chat";
 import MessageBubble from "./MessageBubble";
+import ChatSkeleton from "./ChatSkeleton";
 import clsx from "clsx";
 
 interface ChatWindowProps {
@@ -24,6 +25,7 @@ interface ChatWindowProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   presenceStatus?: Record<string, boolean>;
+  isLoading?: boolean;
 }
 
 export default function ChatWindow({
@@ -38,6 +40,7 @@ export default function ChatWindow({
   messagesEndRef,
   inputRef,
   presenceStatus = {},
+  isLoading = false,
 }: ChatWindowProps) {
   if (!activeRoom) {
     return (
@@ -57,6 +60,10 @@ export default function ChatWindow({
         </div>
       </main>
     );
+  }
+
+  if (isLoading) {
+    return <ChatSkeleton />;
   }
 
   return (
