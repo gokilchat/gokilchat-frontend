@@ -157,7 +157,7 @@ export default function Sidebar({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-black text-white truncate">
-              {user.username}
+              {user.full_name || user.username}
             </p>
             <p className="text-[10px] text-text-secondary truncate uppercase tracking-widest font-bold">
               Online
