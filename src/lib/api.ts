@@ -20,7 +20,9 @@ export const clearAuthToken = () => {
 };
 
 export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
-  const token = getAuthToken();
+  let token = getAuthToken();
+  if (token === 'null' || token === 'undefined') token = null;
+  
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
