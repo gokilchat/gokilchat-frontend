@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Users, Check, X } from "lucide-react";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { getSocket } from "@/lib/socket";
 import { useChatStore } from "@/store/useChatStore";
 
 interface MessageBubbleProps {
@@ -28,6 +29,18 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
       if (res.success) {
         setInviteStatus(action + 'ed' as any); // 'accepted' | 'rejected'
         if (action === 'accept') {
+          // Fetch ulang list room biar grup yang baru di-acc langsung muncul di sidebar
+          const roomsRes = await apiFetch("/rooms");
+          if (roomsRes.success) {
+            useChatStore.getState().setRooms(roomsRes.data);
+          }
+          
+          // Gabung ke socket room grup baru
+          const socket = getSocket();
+          if (socket) {
+            socket.emit("room:join", { room_id: message.invite_info.target_room_id });
+          }
+          
           // Arahin ke room yang baru dijoin
           setActiveRoomId(message.invite_info.target_room_id);
         }
