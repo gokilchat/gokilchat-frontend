@@ -14,6 +14,7 @@ import ChatWindow from "./_components/ChatWindow";
 import NewChatModal from "./_components/modals/NewChatModal";
 import CreateRoomModal from "./_components/modals/CreateRoomModal";
 import InviteMemberModal from "./_components/modals/InviteMemberModal";
+import GroupInfoModal from "./_components/modals/GroupInfoModal";
 import SettingsModal from "./_components/modals/SettingsModal";
 
 export default function ChatPage() {
@@ -38,6 +39,7 @@ export default function ChatPage() {
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
   const [modalContext, setModalContext] = useState<"dm" | "invite">("dm");
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -414,6 +416,7 @@ export default function ChatPage() {
           setModalContext("invite");
           setShowInviteModal(true);
         }}
+        onGroupInfoClick={() => setShowGroupInfoModal(true)}
         onLeaveGroupClick={handleLeaveGroup}
         messageInput={messageInput}
         onMessageInputChange={setMessageInput}
@@ -460,6 +463,14 @@ export default function ChatPage() {
 
       {showSettingsModal && (
         <SettingsModal onClose={() => setShowSettingsModal(false)} />
+      )}
+
+      {showGroupInfoModal && activeRoomId && (
+        <GroupInfoModal
+          isOpen={showGroupInfoModal}
+          onClose={() => setShowGroupInfoModal(false)}
+          roomId={activeRoomId}
+        />
       )}
     </div>
   );

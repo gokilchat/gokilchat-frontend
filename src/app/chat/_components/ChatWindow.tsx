@@ -21,6 +21,7 @@ interface ChatWindowProps {
   user: User;
   isOnline: boolean;
   onInviteClick: () => void;
+  onGroupInfoClick: () => void;
   onLeaveGroupClick?: () => void;
   messageInput: string;
   onMessageInputChange: (val: string) => void;
@@ -37,6 +38,7 @@ export default function ChatWindow({
   user,
   isOnline,
   onInviteClick,
+  onGroupInfoClick,
   onLeaveGroupClick,
   messageInput,
   onMessageInputChange,
@@ -142,6 +144,7 @@ export default function ChatWindow({
                 <UserPlus className="w-5 h-5" />
               </button>
               <button
+                onClick={onGroupInfoClick}
                 className="p-2 text-text-secondary hover:text-white transall"
                 title="Info Grup"
               >
