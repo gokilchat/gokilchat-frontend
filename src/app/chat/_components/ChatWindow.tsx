@@ -141,12 +141,15 @@ export default function ChatWindow({
               >
                 <UserPlus className="w-5 h-5" />
               </button>
-              <button className="p-2 text-text-secondary hover:text-white transall" title="Info Grup">
+              <button
+                className="p-2 text-text-secondary hover:text-white transall"
+                title="Info Grup"
+              >
                 <Info className="w-5 h-5" />
               </button>
-              <button 
+              <button
                 onClick={onLeaveGroupClick}
-                className="p-2 text-text-secondary hover:text-red-500 transall" 
+                className="p-2 text-text-secondary hover:text-red-500 transall"
                 title="Keluar Grup"
               >
                 <LogOut className="w-5 h-5" />

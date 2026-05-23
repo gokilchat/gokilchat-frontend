@@ -329,9 +329,12 @@ export default function ChatPage() {
 
     if (!activeRoomId) return;
     try {
-      const res = await apiFetch(`/rooms/${activeRoomId}/invites/${targetUserId}`, {
-        method: "POST",
-      });
+      const res = await apiFetch(
+        `/rooms/${activeRoomId}/invites/${targetUserId}`,
+        {
+          method: "POST",
+        },
+      );
       if (res.success) {
         alert("User berhasil di-invite!");
         setShowInviteModal(false);
@@ -358,6 +361,7 @@ export default function ChatPage() {
       } else {
         alert(res.error || "Gagal keluar grup");
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       alert("Terjadi kesalahan saat keluar grup");
     }
@@ -449,7 +453,9 @@ export default function ChatPage() {
         isSearching={isSearching}
         onInvite={handleInviteUser}
         title={modalContext === "dm" ? "Mulai DM Baru" : "Invite ke Grup"}
-        activeRoomId={modalContext === "invite" && activeRoomId ? activeRoomId : undefined}
+        activeRoomId={
+          modalContext === "invite" && activeRoomId ? activeRoomId : undefined
+        }
       />
 
       {showSettingsModal && (

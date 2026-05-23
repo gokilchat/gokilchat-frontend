@@ -13,13 +13,19 @@ export default function JoinGroupPage({ params }: { params: Promise<{ token: str
   const unwrappedParams = use(params);
   const token = unwrappedParams.token;
   const router = useRouter();
-  const { user, isHydrated } = useAuthStore();
+  const { user } = useAuthStore();
   const { setActiveRoomId } = useChatStore();
+  
+  const [isHydrated, setIsHydrated] = useState(false);
   
   const [room, setRoom] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (!isHydrated) return;
