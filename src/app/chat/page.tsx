@@ -14,6 +14,7 @@ import ChatWindow from "./_components/ChatWindow";
 import NewChatModal from "./_components/modals/NewChatModal";
 import CreateRoomModal from "./_components/modals/CreateRoomModal";
 import InviteMemberModal from "./_components/modals/InviteMemberModal";
+import SettingsModal from "./_components/modals/SettingsModal";
 
 export default function ChatPage() {
   const { user, token, logout } = useAuthStore();
@@ -36,6 +37,7 @@ export default function ChatPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [modalContext, setModalContext] = useState<"dm" | "invite">("dm");
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -327,9 +329,8 @@ export default function ChatPage() {
 
     if (!activeRoomId) return;
     try {
-      const res = await apiFetch(`/rooms/${activeRoomId}/members`, {
+      const res = await apiFetch(`/rooms/${activeRoomId}/invites/${targetUserId}`, {
         method: "POST",
-        body: JSON.stringify({ user_id: targetUserId }),
       });
       if (res.success) {
         alert("User berhasil di-invite!");
@@ -365,6 +366,7 @@ export default function ChatPage() {
         onCreateRoom={() => setShowNewChatModal(true)}
         user={user}
         onLogout={logout}
+        onSettingsClick={() => setShowSettingsModal(true)}
         isLoading={isLoadingRooms}
         presenceStatus={presenceStatus}
       />
@@ -427,7 +429,12 @@ export default function ChatPage() {
         isSearching={isSearching}
         onInvite={handleInviteUser}
         title={modalContext === "dm" ? "Mulai DM Baru" : "Invite ke Grup"}
+        activeRoomId={modalContext === "invite" && activeRoomId ? activeRoomId : undefined}
       />
+
+      {showSettingsModal && (
+        <SettingsModal onClose={() => setShowSettingsModal(false)} />
+      )}
     </div>
   );
 }

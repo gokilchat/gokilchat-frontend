@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Search, Plus } from "lucide-react";
+import { X, Search, Plus, Link as LinkIcon, RefreshCw, Copy, Check } from "lucide-react";
 import { User } from "@/types/chat";
 import Image from "next/image";
+import { apiFetch } from "@/lib/api";
 
 interface InviteMemberModalProps {
   isOpen: boolean;
@@ -12,6 +14,7 @@ interface InviteMemberModalProps {
   isSearching: boolean;
   onInvite: (userId: string) => void;
   title?: string;
+  activeRoomId?: string;
 }
 
 export default function InviteMemberModal({
@@ -22,8 +25,49 @@ export default function InviteMemberModal({
   searchResults,
   isSearching,
   onInvite,
-  title = "Invite Member"
+  title = "Invite Member",
+  activeRoomId
 }: InviteMemberModalProps) {
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && activeRoomId) {
+      apiFetch(`/rooms/${activeRoomId}`).then(res => {
+        if (res.success && res.data.invite_token) {
+          setInviteToken(res.data.invite_token);
+        }
+      });
+    } else {
+      setInviteToken(null);
+    }
+  }, [isOpen, activeRoomId]);
+
+  const inviteLink = inviteToken ? `${window.location.origin}/join/${inviteToken}` : "";
+
+  const handleCopy = () => {
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleRegenerate = async () => {
+    if (!activeRoomId) return;
+    setIsRegenerating(true);
+    try {
+      const res = await apiFetch(`/rooms/${activeRoomId}/invite-token/regenerate`, { method: 'POST' });
+      if (res.success) {
+        setInviteToken(res.data.invite_token);
+        setIsCopied(false);
+      }
+    } catch (err) {
+      alert("Gagal memperbarui link undangan. Pastikan kamu owner grup.");
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
   return (
     <AnimatePresence>
       {isOpen && (
@@ -49,6 +93,43 @@ export default function InviteMemberModal({
             </div>
 
             <div className="p-6">
+              {/* Bagian Link Undangan (Cuma Muncul di Grup) */}
+              {activeRoomId && (
+                <div className="mb-6 space-y-2">
+                  <label className="text-xs font-bold text-text-secondary uppercase tracking-wider pl-1">
+                    Link Undangan
+                  </label>
+                  {inviteToken ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex items-center bg-elevated border border-border-subtle rounded-2xl px-3 py-2 overflow-hidden group">
+                        <LinkIcon className="w-4 h-4 text-text-muted shrink-0 mr-2" />
+                        <span className="text-sm text-text-primary truncate font-medium">{inviteLink}</span>
+                      </div>
+                      <button 
+                        onClick={handleCopy}
+                        className="p-3 bg-accent-default hover:bg-accent-hover text-white rounded-2xl transall shrink-0 shadow-lg"
+                        title="Copy Link"
+                      >
+                        {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                      <button 
+                        onClick={handleRegenerate}
+                        disabled={isRegenerating}
+                        className="p-3 bg-secondary border border-border-divider hover:bg-elevated text-text-secondary rounded-2xl transall shrink-0"
+                        title="Reset Link"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="h-11 bg-elevated animate-pulse rounded-2xl" />
+                  )}
+                  <p className="text-[10px] text-text-muted px-1">
+                    Siapapun yang punya link ini bisa langsung masuk grup (gak terpengaruh setting privasi).
+                  </p>
+                </div>
+              )}
+
               <div className="relative mb-6">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                 <input 

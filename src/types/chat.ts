@@ -31,4 +31,12 @@ export interface Message {
   sender_avatar?: string;
   content: string;
   created_at: string;
+  template_type?: string;
+  invite_info?: {
+    invitee_id: string;
+    status: 'pending' | 'accepted' | 'rejected';
+    target_room_id: string;
+    target_room_name: string;
+    target_room_avatar?: string;
+  };
 }

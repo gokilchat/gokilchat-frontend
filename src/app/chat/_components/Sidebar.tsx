@@ -12,6 +12,7 @@ interface SidebarProps {
   onCreateRoom: () => void;
   user: User;
   onLogout: () => void;
+  onSettingsClick: () => void;
   isLoading?: boolean;
   presenceStatus?: Record<string, boolean>;
 }
@@ -24,6 +25,7 @@ export default function Sidebar({
   onCreateRoom,
   user,
   onLogout,
+  onSettingsClick,
   isLoading = false,
   presenceStatus = {},
 }: SidebarProps) {
@@ -164,7 +166,10 @@ export default function Sidebar({
             </p>
           </div>
           <div className="flex items-center gap-1">
-            <button className="p-2 text-text-secondary hover:text-white transall">
+            <button 
+              onClick={onSettingsClick}
+              className="p-2 text-text-secondary hover:text-white transall"
+            >
               <Settings className="w-4.5 h-4.5" />
             </button>
             <button
