@@ -108,8 +108,8 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-black text-white truncate flex items-center gap-1.5">
                             {m.user.full_name || m.user.username}
-                            {m.role === "owner" && <Crown className="w-3.5 h-3.5 text-yellow-500" title="Owner" />}
-                            {m.role === "admin" && <ShieldAlert className="w-3.5 h-3.5 text-accent-default" title="Admin" />}
+                            {m.role === "owner" && <span title="Owner" className="flex"><Crown className="w-3.5 h-3.5 text-yellow-500" /></span>}
+                            {m.role === "admin" && <span title="Admin" className="flex"><ShieldAlert className="w-3.5 h-3.5 text-accent-default" /></span>}
                           </p>
                           <p className="text-[10px] text-text-muted font-bold tracking-wider">
                             @{m.user.username}
