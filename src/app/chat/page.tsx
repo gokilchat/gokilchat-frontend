@@ -344,6 +344,25 @@ export default function ChatPage() {
     }
   };
 
+  const handleLeaveGroup = async () => {
+    if (!activeRoomId) return;
+    if (!confirm("Yakin mau cabut dari grup ini? Nggak asik lu 🗿")) return;
+
+    try {
+      const res = await apiFetch(`/rooms/${activeRoomId}/leave`, {
+        method: "POST",
+      });
+      if (res.success) {
+        setRooms(rooms.filter((r) => r.id !== activeRoomId));
+        setActiveRoomId(null);
+      } else {
+        alert(res.error || "Gagal keluar grup");
+      }
+    } catch (err) {
+      alert("Terjadi kesalahan saat keluar grup");
+    }
+  };
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -391,6 +410,7 @@ export default function ChatPage() {
           setModalContext("invite");
           setShowInviteModal(true);
         }}
+        onLeaveGroupClick={handleLeaveGroup}
         messageInput={messageInput}
         onMessageInputChange={setMessageInput}
         onSendMessage={handleSendMessage}

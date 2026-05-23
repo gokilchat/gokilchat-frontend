@@ -7,6 +7,7 @@ import {
   Smile,
   Send,
   UserPlus,
+  LogOut,
 } from "lucide-react";
 import Image from "next/image";
 import { User, Room, Message } from "@/types/chat";
@@ -20,6 +21,7 @@ interface ChatWindowProps {
   user: User;
   isOnline: boolean;
   onInviteClick: () => void;
+  onLeaveGroupClick?: () => void;
   messageInput: string;
   onMessageInputChange: (val: string) => void;
   onSendMessage: (e: React.FormEvent) => void;
@@ -35,6 +37,7 @@ export default function ChatWindow({
   user,
   isOnline,
   onInviteClick,
+  onLeaveGroupClick,
   messageInput,
   onMessageInputChange,
   onSendMessage,
@@ -138,8 +141,15 @@ export default function ChatWindow({
               >
                 <UserPlus className="w-5 h-5" />
               </button>
-              <button className="p-2 text-text-secondary hover:text-white transall">
+              <button className="p-2 text-text-secondary hover:text-white transall" title="Info Grup">
                 <Info className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={onLeaveGroupClick}
+                className="p-2 text-text-secondary hover:text-red-500 transall" 
+                title="Keluar Grup"
+              >
+                <LogOut className="w-5 h-5" />
               </button>
             </>
           )}
