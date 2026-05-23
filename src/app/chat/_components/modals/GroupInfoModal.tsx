@@ -28,7 +28,7 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
 
   useEffect(() => {
     if (isOpen && roomId) {
-      setIsLoading(true);
+      const timer = setTimeout(() => setIsLoading(true), 0);
       apiFetch(`/rooms/${roomId}`)
         .then((res) => {
           if (res.success && res.data) {
@@ -39,7 +39,10 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
           }
         })
         .catch(console.error)
-        .finally(() => setIsLoading(false));
+        .finally(() => {
+          clearTimeout(timer);
+          setIsLoading(false);
+        });
     } else {
       const timer = setTimeout(() => {
         setMembers([]);
@@ -90,7 +93,7 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
 
                   <div className="space-y-1">
                     <h5 className="text-[10px] font-black text-text-muted uppercase tracking-widest pl-2 mb-2">Daftar Anggota</h5>
-                    {members.sort((a, b) => a.role === "owner" ? -1 : 1).map((m) => (
+                    {[...members].sort((a, b) => (a.role === "owner" ? -1 : b.role === "owner" ? 1 : 0)).map((m) => (
                       <div
                         key={m.user.id}
                         className="p-3 rounded-2xl hover:bg-elevated/50 flex items-center gap-3 transall"

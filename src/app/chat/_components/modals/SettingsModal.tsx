@@ -4,7 +4,6 @@ import { apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import Image from "next/image";
 import clsx from "clsx";
-import { User } from "@/types/chat";
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -35,8 +34,8 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
           setFullName(res.data.full_name || "");
           setPrivacy(res.data.settings?.group_invite_privacy || "anyone");
         }
-      } catch (err: any) {
-        setMessage({ text: err.message || "Gagal memuat profil", type: "error" });
+      } catch (err: unknown) {
+        setMessage({ text: err instanceof Error ? err.message : "Gagal memuat profil", type: "error" });
       } finally {
         setIsLoading(false);
       }
@@ -62,8 +61,8 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
         showMessage("Profil berhasil diperbarui", "success");
         setAuth({ ...user, username: res.data.username, full_name: res.data.full_name }, token as string);
       }
-    } catch (err: any) {
-      showMessage(err.message || "Gagal menyimpan profil", "error");
+    } catch (err: unknown) {
+      showMessage(err instanceof Error ? err.message : "Gagal menyimpan profil", "error");
     } finally {
       setIsSaving(false);
     }
@@ -80,8 +79,8 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
       if (res.success) {
         showMessage("Privasi berhasil diperbarui", "success");
       }
-    } catch (err: any) {
-      showMessage(err.message || "Gagal menyimpan privasi", "error");
+    } catch (err: unknown) {
+      showMessage(err instanceof Error ? err.message : "Gagal menyimpan privasi", "error");
     }
   };
 
@@ -115,8 +114,8 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
         showMessage("Foto profil berhasil diupdate", "success");
         setAuth({ ...user, avatar_url: data.data.avatar_url }, token as string);
       }
-    } catch (err: any) {
-      showMessage(err.message || "Gagal upload foto profil", "error");
+    } catch (err: unknown) {
+      showMessage(err instanceof Error ? err.message : "Gagal upload foto profil", "error");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

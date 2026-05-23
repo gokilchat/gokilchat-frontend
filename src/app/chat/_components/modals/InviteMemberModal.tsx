@@ -64,6 +64,7 @@ export default function InviteMemberModal({
         setIsCopied(false);
       }
     } catch (err) {
+      console.error(err);
       alert("Gagal memperbarui link undangan. Pastikan kamu owner grup.");
     } finally {
       setIsRegenerating(false);
