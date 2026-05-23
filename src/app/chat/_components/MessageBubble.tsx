@@ -27,7 +27,7 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
         method: 'PATCH'
       });
       if (res.success) {
-        setInviteStatus(action + 'ed' as any); // 'accepted' | 'rejected'
+        setInviteStatus((action + 'ed') as 'accepted' | 'rejected');
         if (action === 'accept') {
           // Fetch ulang list room biar grup yang baru di-acc langsung muncul di sidebar
           const roomsRes = await apiFetch("/rooms");
@@ -46,6 +46,7 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
         }
       }
     } catch (err) {
+      console.error(err);
       alert(`Gagal ${action} undangan`);
     } finally {
       setIsProcessing(false);
