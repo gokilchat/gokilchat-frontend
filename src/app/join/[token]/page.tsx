@@ -28,7 +28,8 @@ export default function JoinGroupPage({
   const [isJoining, setIsJoining] = useState(false);
 
   useEffect(() => {
-    setIsHydrated(true);
+    const timer = setTimeout(() => setIsHydrated(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {

@@ -40,7 +40,8 @@ export default function InviteMemberModal({
         }
       });
     } else {
-      setInviteToken(null);
+      const timer = setTimeout(() => setInviteToken(null), 0);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, activeRoomId]);
 
