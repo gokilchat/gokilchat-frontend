@@ -9,16 +9,20 @@ import { apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useChatStore } from "@/store/useChatStore";
 
-export default function JoinGroupPage({ params }: { params: Promise<{ token: string }> }) {
+export default function JoinGroupPage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
   const unwrappedParams = use(params);
   const token = unwrappedParams.token;
   const router = useRouter();
   const { user } = useAuthStore();
   const { setActiveRoomId } = useChatStore();
-  
+
   const [isHydrated, setIsHydrated] = useState(false);
-  
-  const [room, setRoom] = useState<any>(null);
+
+  const [room, setRoom] = useState<import("@/types/chat").Room & { member_count?: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
@@ -29,7 +33,7 @@ export default function JoinGroupPage({ params }: { params: Promise<{ token: str
 
   useEffect(() => {
     if (!isHydrated) return;
-    
+
     if (!user) {
       // Belum login, arahin ke home (login) terus abis login redirect ke sini
       // Untuk MVP, kita set local storage buat nangkep callback
@@ -48,6 +52,7 @@ export default function JoinGroupPage({ params }: { params: Promise<{ token: str
         }
       })
       .catch((err) => {
+        console.error(err);
         setError("Gagal memuat info grup.");
       })
       .finally(() => {
@@ -72,6 +77,7 @@ export default function JoinGroupPage({ params }: { params: Promise<{ token: str
         setIsJoining(false);
       }
     } catch (err) {
+      console.error(err);
       setError("Terjadi kesalahan sistem.");
       setIsJoining(false);
     }
@@ -111,12 +117,12 @@ export default function JoinGroupPage({ params }: { params: Promise<{ token: str
   return (
     <div className="h-screen w-full bg-primary flexcc p-6 relative overflow-hidden">
       {/* Background Ornaments */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-accent-default/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 bg-accent-default/10 rounded-full blur-[120px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full max-w-sm bg-secondary border border-border-divider rounded-[2rem] p-8 flexcc flex-col text-center shadow-2xl z-10"
+        className="relative w-full max-w-sm bg-secondary border border-border-divider rounded-4xl p-8 flexcc flex-col text-center shadow-2xl z-10"
       >
         <div className="relative mb-6">
           <div className="w-24 h-24 rounded-3xl bg-elevated overflow-hidden border border-border-divider/50 shadow-inner flexcc">
@@ -142,7 +148,7 @@ export default function JoinGroupPage({ params }: { params: Promise<{ token: str
         <h1 className="text-2xl font-black text-white mb-2 tracking-tight">
           {room.name}
         </h1>
-        
+
         <p className="text-sm font-medium text-text-muted mb-8 flex items-center justify-center gap-1.5">
           <Users className="w-4 h-4" />
           <span>{room.member_count} Anggota</span>
