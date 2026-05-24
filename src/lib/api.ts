@@ -49,3 +49,9 @@ export const loginWithGoogle = async (google_id_token: string) => {
     body: JSON.stringify({ google_id_token }),
   });
 };
+
+export const kickMember = async (roomId: string, userId: string) => {
+  return apiFetch(`/rooms/${roomId}/members/${userId}`, {
+    method: 'DELETE',
+  });
+};

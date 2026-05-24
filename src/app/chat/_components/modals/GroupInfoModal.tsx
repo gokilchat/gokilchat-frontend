@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Users, ShieldAlert, Crown } from "lucide-react";
+import { X, Users, ShieldAlert, Crown, UserMinus, Loader2 } from "lucide-react";
 import Image from "next/image";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, kickMember } from "@/lib/api";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface Member {
   role: "owner" | "admin" | "user";
@@ -25,6 +26,30 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [roomName, setRoomName] = useState("");
+  const currentUser = useAuthStore((state) => state.user);
+  const [isKicking, setIsKicking] = useState<string | null>(null);
+
+  const currentUserRole = members.find(m => m.user.id === currentUser?.id)?.role;
+
+  const handleKick = async (userId: string) => {
+    if (!window.confirm("Yakin mau kick member ini?")) return;
+    try {
+      setIsKicking(userId);
+      await kickMember(roomId, userId);
+      setMembers(prev => prev.filter(m => m.user.id !== userId));
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Gagal kick member");
+    } finally {
+      setIsKicking(null);
+    }
+  };
+
+  const canKick = (targetRole: string, targetId: string) => {
+    if (targetId === currentUser?.id) return false;
+    if (currentUserRole === "owner") return true;
+    if (currentUserRole === "admin" && targetRole === "user") return true;
+    return false;
+  };
 
   useEffect(() => {
     if (isOpen && roomId) {
@@ -96,7 +121,7 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                     {[...members].sort((a, b) => (a.role === "owner" ? -1 : b.role === "owner" ? 1 : 0)).map((m) => (
                       <div
                         key={m.user.id}
-                        className="p-3 rounded-2xl hover:bg-elevated/50 flex items-center gap-3 transall"
+                        className="p-3 rounded-2xl hover:bg-elevated/50 flex items-center gap-3 transall group"
                       >
                         <Image
                           src={m.user.avatar_url || "/images/default-avatar.png"}
@@ -104,6 +129,11 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                           width={40}
                           height={40}
                           className="rounded-full border border-border-divider object-cover w-10 h-10 shrink-0 bg-primary"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.srcset = "";
+                            e.currentTarget.src = "/images/default-avatar.png";
+                          }}
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-black text-white truncate flex items-center gap-1.5">
@@ -115,6 +145,20 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                             @{m.user.username}
                           </p>
                         </div>
+                        {canKick(m.role, m.user.id) && (
+                          <button
+                            onClick={() => handleKick(m.user.id)}
+                            disabled={isKicking === m.user.id}
+                            className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl opacity-0 md:group-hover:opacity-100 transall disabled:opacity-50 disabled:cursor-not-allowed shrink-0 max-md:opacity-100"
+                            title="Kick Member"
+                          >
+                            {isKicking === m.user.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <UserMinus className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>

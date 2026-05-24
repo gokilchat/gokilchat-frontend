@@ -90,9 +90,19 @@ export default function ChatPage() {
       const formattedMessage = {
         ...message,
         content: message.data?.content || "",
+        receipts: message.receipts || []
       };
 
       addMessage(formattedMessage);
+      
+      if (message.sender_id !== user.id) {
+        const activeId = useChatStore.getState().activeRoomId;
+        if (activeId === message.room_id && !document.hidden) {
+          socket.emit("message:read:room", { room_id: message.room_id });
+        } else {
+          socket.emit("message:delivered", { message_id: message.id, room_id: message.room_id });
+        }
+      }
       // Update last message in rooms list for realtime sidebar
       setRooms((prevRooms: Room[]) => {
         const roomExists = prevRooms.some((r) => r.id === message.room_id);
@@ -130,6 +140,36 @@ export default function ChatPage() {
       },
     );
 
+    socket.on("receipt:update:batch", (data: { room_id: string, receipts: { message_id: string; user_id: string; delivered_at: string | null; read_at: string | null }[] }) => {
+      useChatStore.getState().updateReceipts(data.receipts);
+    });
+
+    socket.on("room:added", (data: { room_id: string }) => {
+      // Refresh list room dari API supaya grup baru muncul di sidebar
+      apiFetch("/rooms").then((res) => {
+        if (res.success) {
+          setRooms(res.data);
+          // Langsung join socket room-nya juga
+          socket.emit("room:join", { room_id: data.room_id });
+        }
+      });
+    });
+
+    socket.on("room:kicked", (data: { room_id: string }) => {
+      alert("Waduh, lu abis di-kick dari salah satu grup! Mampus 🗿");
+      
+      // Kalo lagi buka grupnya, tutup
+      if (useChatStore.getState().activeRoomId === data.room_id) {
+        useChatStore.getState().setActiveRoomId(null);
+      }
+      
+      // Hapus dari sidebar
+      setRooms((prevRooms: Room[]) => prevRooms.filter((r) => r.id !== data.room_id));
+      
+      // Leave socket room biar gak nerima chat lagi
+      socket.emit("room:leave", { room_id: data.room_id });
+    });
+
     apiFetch("/rooms")
       .then((res) => {
         if (res.success) {
@@ -149,6 +189,9 @@ export default function ChatPage() {
     return () => {
       socket.off("message:new");
       socket.off("presence:status");
+      socket.off("room:added");
+      socket.off("room:kicked");
+      socket.off("receipt:update:batch");
       disconnectSocket();
     };
   }, [isHydrated, user, token, setRooms, addMessage]);
@@ -200,6 +243,7 @@ export default function ChatPage() {
       const res = await apiFetch(`/rooms/${roomId}/messages`);
       if (res.success) {
         setMessages(res.data);
+        socket?.emit("message:read:room", { room_id: roomId });
       }
     } catch (err) {
       console.error(err);
@@ -261,16 +305,25 @@ export default function ChatPage() {
     }
   };
 
-  const handleCreateRoom = async (name: string) => {
+  const handleCreateRoom = async (name: string, selectedUsers: User[]) => {
     try {
       const res = await apiFetch("/rooms", {
         method: "POST",
         body: JSON.stringify({ name }),
       });
       if (res.success) {
+        const roomId = res.data.id;
+        
+        // Langsung invite user yang dipilih
+        for (const user of selectedUsers) {
+          await apiFetch(`/rooms/${roomId}/invites/${user.id}`, { method: "POST" });
+        }
+
         setRooms([res.data, ...rooms]);
-        handleRoomClick(res.data.id);
+        handleRoomClick(roomId);
         setShowCreateRoomModal(false);
+        setSearchQuery("");
+        setSearchResults([]);
       }
     } catch {
       alert("Gagal bikin room");
@@ -445,6 +498,10 @@ export default function ChatPage() {
         isOpen={showCreateRoomModal}
         onClose={() => setShowCreateRoomModal(false)}
         onSubmit={handleCreateRoom}
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchUsers}
+        searchResults={searchResults}
+        isSearching={isSearching}
       />
 
       <InviteMemberModal

@@ -95,6 +95,11 @@ export default function ChatWindow({
                   width={44}
                   height={44}
                   className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.srcset = "";
+                    e.currentTarget.src = "/images/default-avatar.png";
+                  }}
                 />
               ) : (
                 <span className="font-black text-accent-default text-lg">

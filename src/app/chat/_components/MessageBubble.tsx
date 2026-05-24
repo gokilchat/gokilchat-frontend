@@ -2,11 +2,12 @@ import { Message } from "@/types/chat";
 import clsx from "clsx";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { Users, Check, X } from "lucide-react";
+import { Users, Check, X, CheckCheck } from "lucide-react";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 import { useChatStore } from "@/store/useChatStore";
+import MessageReceiptModal from "./modals/MessageReceiptModal";
 
 interface MessageBubbleProps {
   message: Message;
@@ -18,6 +19,7 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
   const { setActiveRoomId } = useChatStore();
   const [inviteStatus, setInviteStatus] = useState(message.invite_info?.status);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showReceipts, setShowReceipts] = useState(false);
 
   const handleInviteAction = async (action: "accept" | "reject") => {
     if (!message.invite_info) return;
@@ -58,8 +60,40 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
     }
   };
 
+  const activeRoom = useChatStore(state => state.rooms.find(r => r.id === message.room_id));
+
+  const renderChecks = () => {
+    if (!isMe) return null;
+    
+    const totalOtherMembers = Math.max(1, (activeRoom?.members_count || 2) - 1);
+    
+    const receipts = message.receipts || [];
+    const deliveredCount = receipts.filter(r => r.delivered_at).length;
+    const readCount = receipts.filter(r => r.read_at).length;
+    
+    let checks = null;
+    if (readCount >= totalOtherMembers) {
+      checks = <CheckCheck className="w-3.5 h-3.5 text-blue-300 ml-1" strokeWidth={3} />;
+    } else if (deliveredCount >= totalOtherMembers) {
+      checks = <CheckCheck className="w-3.5 h-3.5 text-text-on-accent/60 ml-1" strokeWidth={3} />;
+    } else {
+      checks = <Check className="w-3 h-3 text-text-on-accent/60 ml-1" strokeWidth={3} />;
+    }
+
+    return (
+      <button 
+        onClick={() => setShowReceipts(true)}
+        className="flex items-center focus:outline-none hover:opacity-80 transall cursor-pointer"
+        title="Lihat info pesan"
+      >
+        {checks}
+      </button>
+    );
+  };
+
   return (
-    <motion.div
+    <>
+      <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={clsx(
@@ -75,6 +109,11 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
             width={40}
             height={40}
             className="rounded-full shadow-sm"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.currentTarget.srcset = "";
+              e.currentTarget.src = "/images/default-avatar.png";
+            }}
           />
         </div>
       )}
@@ -110,6 +149,11 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
                       width={40}
                       height={40}
                       className="object-cover"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.srcset = "";
+                        e.currentTarget.src = "/images/default-avatar.png";
+                      }}
                     />
                   ) : (
                     <Users className="w-5 h-5 opacity-70" />
@@ -172,14 +216,19 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
                 minute: "2-digit",
               })}
             </span>
-            {isMe && (
-              <span className="text-text-on-accent/80 font-bold text-[10px]">
-                ✓✓
-              </span>
-            )}
+            {renderChecks()}
           </div>
         </div>
       </div>
     </motion.div>
+
+    {showReceipts && (
+        <MessageReceiptModal
+          isOpen={showReceipts}
+          onClose={() => setShowReceipts(false)}
+          message={message}
+        />
+      )}
+    </>
   );
 }

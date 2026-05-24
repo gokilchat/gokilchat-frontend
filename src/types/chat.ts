@@ -14,6 +14,7 @@ export interface Room {
   owner_id?: string;
   avatar_url?: string;
   dm_user_id?: string;
+  members_count?: number;
   last_message?: {
     content: string;
     created_at: string;
@@ -39,4 +40,14 @@ export interface Message {
     target_room_name: string;
     target_room_avatar?: string;
   };
+  receipts?: {
+    user_id: string;
+    delivered_at: string | null;
+    read_at: string | null;
+    user?: {
+      username: string;
+      full_name?: string;
+      avatar_url?: string;
+    };
+  }[];
 }

@@ -100,6 +100,11 @@ export default function Sidebar({
                       width={55}
                       height={50}
                       className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.srcset = "";
+                        e.currentTarget.src = "/images/default-avatar.png";
+                      }}
                     />
                   ) : (
                     room.name?.charAt(0) || "#"
@@ -155,6 +160,11 @@ export default function Sidebar({
               width={42}
               height={42}
               className="rounded-full border border-border-divider"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.srcset = "";
+                e.currentTarget.src = "/images/default-avatar.png";
+              }}
             />
           </div>
           <div className="flex-1 min-w-0">

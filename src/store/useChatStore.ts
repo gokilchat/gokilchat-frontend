@@ -9,6 +9,7 @@ interface ChatState {
   setActiveRoomId: (id: string | null) => void;
   setMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
+  updateReceipts: (receipts: { message_id: string; user_id: string; delivered_at: string | null; read_at: string | null }[]) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -27,5 +28,25 @@ export const useChatStore = create<ChatState>((set) => ({
       return { messages: [...state.messages, message] };
     }
     return state;
+  }),
+  updateReceipts: (receipts) => set((state) => {
+    const newMessages = state.messages.map(msg => {
+      const msgReceipts = receipts.filter(r => r.message_id === msg.id);
+      if (msgReceipts.length === 0) return msg;
+      
+      const updatedMsgReceipts = [...(msg.receipts || [])];
+      
+      msgReceipts.forEach(newR => {
+        const idx = updatedMsgReceipts.findIndex(r => r.user_id === newR.user_id);
+        if (idx >= 0) {
+          updatedMsgReceipts[idx] = { ...updatedMsgReceipts[idx], ...newR };
+        } else {
+          updatedMsgReceipts.push(newR);
+        }
+      });
+      
+      return { ...msg, receipts: updatedMsgReceipts };
+    });
+    return { messages: newMessages };
   }),
 }));
