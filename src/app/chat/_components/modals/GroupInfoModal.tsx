@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Users, ShieldAlert, Crown, UserMinus, Loader2, Image as ImageIcon, Bell, Search, Star, Lock, UserPlus, ChevronRight, PenSquare } from "lucide-react";
+import { X, Users, ShieldAlert, Crown, UserMinus, Loader2, Image as ImageIcon, Search, UserPlus, PenSquare, Check } from "lucide-react";
 import Image from "next/image";
-import { apiFetch, kickMember } from "@/lib/api";
+import { apiFetch, kickMember, updateRoomDetails } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 
 interface Member {
@@ -26,10 +26,19 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [roomName, setRoomName] = useState("");
+  const [roomDescription, setRoomDescription] = useState("");
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [tempDescription, setTempDescription] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState("");
+  const [isSavingDescription, setIsSavingDescription] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
+  
   const currentUser = useAuthStore((state) => state.user);
   const [isKicking, setIsKicking] = useState<string | null>(null);
 
   const currentUserRole = members.find(m => m.user.id === currentUser?.id)?.role;
+  const isOwnerOrAdmin = currentUserRole === "owner" || currentUserRole === "admin";
 
   const handleKick = async (userId: string) => {
     if (!window.confirm("Yakin mau kick member ini?")) return;
@@ -41,6 +50,33 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
       alert(error instanceof Error ? error.message : "Gagal kick member");
     } finally {
       setIsKicking(null);
+    }
+  };
+
+  const handleSaveDescription = async () => {
+    try {
+      setIsSavingDescription(true);
+      await updateRoomDetails(roomId, { description: tempDescription });
+      setRoomDescription(tempDescription);
+      setIsEditingDescription(false);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Gagal menyimpan deskripsi");
+    } finally {
+      setIsSavingDescription(false);
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (!tempName.trim()) return;
+    try {
+      setIsSavingName(true);
+      await updateRoomDetails(roomId, { name: tempName });
+      setRoomName(tempName);
+      setIsEditingName(false);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Gagal menyimpan nama grup");
+    } finally {
+      setIsSavingName(false);
     }
   };
 
@@ -58,6 +94,7 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
         .then((res) => {
           if (res.success && res.data) {
             setRoomName(res.data.name);
+            setRoomDescription(res.data.description || "");
             if (res.data.members) {
               setMembers(res.data.members);
             }
@@ -72,6 +109,7 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
       const timer = setTimeout(() => {
         setMembers([]);
         setRoomName("");
+        setRoomDescription("");
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -117,10 +155,47 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                         <span className="text-xs font-bold text-white uppercase tracking-widest text-center px-4">Change Icon</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mb-1 cursor-pointer hover:opacity-80">
-                      <h4 className="text-2xl font-bold text-white text-center px-2">{roomName}</h4>
-                      <PenSquare className="w-4 h-4 text-text-secondary" />
-                    </div>
+                    {isEditingName ? (
+                      <div className="flex items-center gap-2 mb-1 px-4 w-full justify-center">
+                        <input
+                          type="text"
+                          value={tempName}
+                          onChange={(e) => setTempName(e.target.value)}
+                          className="bg-secondary text-white text-xl font-bold px-2 py-1 rounded border border-accent-default focus:outline-none text-center max-w-[200px]"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSaveName();
+                            else if (e.key === "Escape") setIsEditingName(false);
+                          }}
+                        />
+                        <button
+                          onClick={handleSaveName}
+                          disabled={isSavingName}
+                          className="p-1 hover:bg-white/10 rounded text-accent-default disabled:opacity-50"
+                        >
+                          {isSavingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-5 h-5" />}
+                        </button>
+                        <button
+                          onClick={() => setIsEditingName(false)}
+                          className="p-1 hover:bg-white/10 rounded text-text-secondary"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className={`flex items-center gap-2 mb-1 ${isOwnerOrAdmin ? "cursor-pointer hover:opacity-80" : ""}`}
+                        onClick={() => {
+                          if (isOwnerOrAdmin) {
+                            setTempName(roomName);
+                            setIsEditingName(true);
+                          }
+                        }}
+                      >
+                        <h4 className="text-2xl font-bold text-white text-center px-2">{roomName}</h4>
+                        {isOwnerOrAdmin && <PenSquare className="w-4 h-4 text-text-secondary" />}
+                      </div>
+                    )}
                     <p className="text-sm font-semibold text-text-muted">Grup · {members.length} member</p>
                     
                     <div className="flex items-center gap-6 mt-6">
@@ -141,10 +216,54 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                   <div className="h-2 bg-black/20 -mx-6 mb-4" />
 
                   <div className="mb-4">
-                    <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 -mx-4 px-4 py-3 rounded-xl transall">
-                      <span className="text-sm font-semibold text-accent-default">Tambahkan deskripsi grup</span>
-                      <PenSquare className="w-4 h-4 text-text-secondary" />
-                    </div>
+                    {isEditingDescription ? (
+                      <div className="flex flex-col gap-2 p-2 bg-secondary/30 rounded-xl">
+                        <textarea
+                          value={tempDescription}
+                          onChange={(e) => setTempDescription(e.target.value)}
+                          placeholder="Tambahkan deskripsi grup..."
+                          className="w-full bg-secondary text-white text-sm px-3 py-2 rounded-lg border border-accent-default focus:outline-none resize-none h-20"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") setIsEditingDescription(false);
+                          }}
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => setIsEditingDescription(false)}
+                            className="px-3 py-1 text-xs font-bold text-text-secondary hover:bg-white/5 rounded-lg transall"
+                          >
+                            Batal
+                          </button>
+                          <button
+                            onClick={handleSaveDescription}
+                            disabled={isSavingDescription}
+                            className="px-3 py-1 text-xs font-bold text-white bg-accent-default hover:bg-accent-hover rounded-lg transall flex items-center gap-1 disabled:opacity-50"
+                          >
+                            {isSavingDescription && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                            Simpan
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`flex flex-col gap-1 ${isOwnerOrAdmin ? "cursor-pointer hover:bg-white/5" : ""} -mx-4 px-4 py-3 rounded-xl transall`}
+                        onClick={() => {
+                          if (isOwnerOrAdmin) {
+                            setTempDescription(roomDescription);
+                            setIsEditingDescription(true);
+                          }
+                        }}
+                      >
+                        <span className="text-xs font-bold text-accent-default uppercase tracking-wider">Deskripsi Grup</span>
+                        <div className="flex items-start justify-between gap-4">
+                          <p className="text-sm font-semibold text-white whitespace-pre-wrap flex-1">
+                            {roomDescription || (isOwnerOrAdmin ? "Tambahkan deskripsi grup..." : "Tidak ada deskripsi grup.")}
+                          </p>
+                          {isOwnerOrAdmin && <PenSquare className="w-4 h-4 text-text-secondary shrink-0 mt-0.5" />}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="h-2 bg-black/20 -mx-6 mb-4" />

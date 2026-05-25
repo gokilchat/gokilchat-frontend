@@ -55,3 +55,10 @@ export const kickMember = async (roomId: string, userId: string) => {
     method: 'DELETE',
   });
 };
+
+export const updateRoomDetails = async (roomId: string, data: { name?: string, description?: string }) => {
+  return apiFetch(`/rooms/${roomId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+};
