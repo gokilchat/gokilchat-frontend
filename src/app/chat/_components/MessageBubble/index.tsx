@@ -8,6 +8,7 @@ import MessageReceiptModal from "../modals/MessageReceiptModal";
 // Partials
 import RoomInviteContent from "./partials/RoomInviteContent";
 import ReceiptsIcon from "./partials/ReceiptsIcon";
+import MessageBubbleMenu from "./partials/MessageBubbleMenu";
 
 interface MessageBubbleProps {
   message: Message;
@@ -52,12 +53,14 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
         >
           <div
             className={clsx(
-              "px-5 py-3 shadow-lg shadow-secondary relative",
+              "px-5 py-3 shadow-lg shadow-secondary relative pr-10",
               isMe
                 ? "bg-accent-hover text-text-on-accent rounded-3xl rounded-tr-sm"
                 : "bg-elevated text-text-primary rounded-3xl rounded-tl-sm",
             )}
           >
+            {/* Bubble Dropdown Menu */}
+            <MessageBubbleMenu isMe={isMe} onInfoClick={() => setShowReceipts(true)} />
             {/* Nama Pengirim ala Telegram 🗿✈️ */}
             {!isMe && (
               <p className="text-[0.8rem] font-medium text-text-secondary mb-1.5 tracking-wide">
@@ -88,7 +91,6 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
               <ReceiptsIcon
                 message={message}
                 isMe={isMe}
-                onShowReceipts={() => setShowReceipts(true)}
               />
             </div>
           </div>

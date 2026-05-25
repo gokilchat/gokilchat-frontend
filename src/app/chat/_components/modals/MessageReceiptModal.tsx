@@ -56,7 +56,7 @@ export default function MessageReceiptModal({
 
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
               <div className="mb-6 p-4 bg-elevated rounded-2xl border border-border-subtle">
-                <p className="text-sm font-medium text-white break-words whitespace-pre-wrap">
+                <p className="text-sm font-medium text-white wrap-break-word whitespace-pre-wrap">
                   {message.content}
                 </p>
                 <div className="mt-2 text-[10px] text-text-muted flex justify-between">

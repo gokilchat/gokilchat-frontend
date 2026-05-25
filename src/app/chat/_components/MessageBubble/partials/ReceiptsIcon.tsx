@@ -5,13 +5,11 @@ import { useChatStore } from "@/store/useChatStore";
 interface ReceiptsIconProps {
   message: Message;
   isMe: boolean;
-  onShowReceipts: () => void;
 }
 
 export default function ReceiptsIcon({
   message,
   isMe,
-  onShowReceipts,
 }: ReceiptsIconProps) {
   const activeRoom = useChatStore((state) =>
     state.rooms.find((r) => r.id === message.room_id),
@@ -54,12 +52,8 @@ export default function ReceiptsIcon({
   }
 
   return (
-    <button
-      onClick={onShowReceipts}
-      className="flex items-center focus:outline-none hover:opacity-80 transall cursor-pointer"
-      title="Lihat info pesan"
-    >
+    <div className="flex items-center" title="Status pesan">
       {checks}
-    </button>
+    </div>
   );
 }
