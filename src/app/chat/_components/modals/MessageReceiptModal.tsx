@@ -56,7 +56,7 @@ export default function MessageReceiptModal({
 
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
               <div className="mb-6 p-4 bg-elevated rounded-2xl border border-border-subtle">
-                <p className="text-sm font-medium text-white wrap-break-word">
+                <p className="text-sm font-medium text-white break-words whitespace-pre-wrap">
                   {message.content}
                 </p>
                 <div className="mt-2 text-[10px] text-text-muted flex justify-between">
@@ -79,18 +79,26 @@ export default function MessageReceiptModal({
                       key={idx}
                       className="flex items-center gap-3 p-3 bg-primary/40 rounded-2xl border border-transparent"
                     >
-                      <Image
-                        src={r.user?.avatar_url || "/images/default-avatar.png"}
-                        alt="avatar"
-                        width={36}
-                        height={36}
-                        className="rounded-full w-9 h-9 object-cover"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          e.currentTarget.srcset = "";
-                          e.currentTarget.src = "/images/default-avatar.png";
-                        }}
-                      />
+                      <div className="relative shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-secondary flexcc font-bold text-accent-default overflow-hidden border border-border-divider">
+                          {r.user?.avatar_url ? (
+                            <Image
+                              src={r.user.avatar_url}
+                              alt="avatar"
+                              width={36}
+                              height={36}
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                e.currentTarget.srcset = "";
+                                e.currentTarget.src = "/images/default-avatar.png";
+                              }}
+                            />
+                          ) : (
+                            (r.user?.full_name || r.user?.username || r.user_id).charAt(0).toUpperCase()
+                          )}
+                        </div>
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-white mb-1 truncate">
                           {r.user?.full_name ||
