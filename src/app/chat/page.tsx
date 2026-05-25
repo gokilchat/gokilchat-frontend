@@ -392,6 +392,7 @@ export default function ChatPage() {
       );
       if (res.success) {
         alert("User berhasil di-invite!");
+        window.dispatchEvent(new CustomEvent("gokilchat:member_joined", { detail: { roomId: activeRoomId } }));
         setShowInviteModal(false);
         setSearchQuery("");
         setSearchResults([]);

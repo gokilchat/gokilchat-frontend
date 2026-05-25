@@ -143,7 +143,7 @@ export default function GroupInfoModal({
 
   useEffect(() => {
     const socket = getSocket();
-    if (!socket || !isOpen || !roomId) return;
+    if (!isOpen || !roomId) return;
 
     const handleMemberLeft = (data: { room_id: string; user_id: string }) => {
       if (data.room_id === roomId) {
@@ -161,12 +161,30 @@ export default function GroupInfoModal({
       }
     };
 
-    socket.on("room:member_left", handleMemberLeft);
-    socket.on("room:member_joined", handleMemberJoined);
+    const handleCustomMemberJoined = (e: Event) => {
+      const customEvent = e as CustomEvent<{ roomId: string }>;
+      if (customEvent.detail.roomId === roomId) {
+        apiFetch(`/rooms/${roomId}`).then((res) => {
+          if (res.success && res.data && res.data.members) {
+            setMembers(res.data.members);
+          }
+        });
+      }
+    };
+
+    if (socket) {
+      socket.on("room:member_left", handleMemberLeft);
+      socket.on("room:member_joined", handleMemberJoined);
+    }
+
+    window.addEventListener("gokilchat:member_joined", handleCustomMemberJoined);
 
     return () => {
-      socket.off("room:member_left", handleMemberLeft);
-      socket.off("room:member_joined", handleMemberJoined);
+      if (socket) {
+        socket.off("room:member_left", handleMemberLeft);
+        socket.off("room:member_joined", handleMemberJoined);
+      }
+      window.removeEventListener("gokilchat:member_joined", handleCustomMemberJoined);
     };
   }, [isOpen, roomId]);
 
