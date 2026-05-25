@@ -55,6 +55,7 @@ export default function GroupInfoModal({
 
   const currentUser = useAuthStore((state) => state.user);
   const [isKicking, setIsKicking] = useState<string | null>(null);
+  const [confirmKickUser, setConfirmKickUser] = useState<{ id: string; name: string } | null>(null);
 
   const currentUserRole = members.find(
     (m) => m.user.id === currentUser?.id,
@@ -63,7 +64,6 @@ export default function GroupInfoModal({
     currentUserRole === "owner" || currentUserRole === "admin";
 
   const handleKick = async (userId: string) => {
-    if (!window.confirm("Yakin mau kick member ini?")) return;
     try {
       setIsKicking(userId);
       await kickMember(roomId, userId);
@@ -413,9 +413,15 @@ export default function GroupInfoModal({
                           </div>
                           {canKick(m.role, m.user.id) && (
                             <button
-                              onClick={() => handleKick(m.user.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirmKickUser({
+                                  id: m.user.id,
+                                  name: m.user.full_name || m.user.username,
+                                });
+                              }}
                               disabled={isKicking === m.user.id}
-                              className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl opacity-0 md:group-hover:opacity-100 transall disabled:opacity-50 disabled:cursor-not-allowed shrink-0 max-md:opacity-100"
+                              className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl opacity-0 md:group-hover:opacity-100 transall disabled:opacity-50 disabled:cursor-not-allowed shrink-0 max-md:opacity-100 z-10 relative cursor-pointer"
                               title="Kick Member"
                             >
                               {isKicking === m.user.id ? (
@@ -431,6 +437,44 @@ export default function GroupInfoModal({
                 </>
               )}
             </div>
+
+            {/* Custom Premium Confirmation Dialog */}
+            {confirmKickUser && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flexcc p-6">
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  className="w-full max-w-sm bg-secondary p-6 rounded-3xl border border-border-divider shadow-2xl text-center"
+                >
+                  <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flexcc mx-auto mb-4">
+                    <UserMinus className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-lg font-black text-white mb-2">Kick Member?</h4>
+                  <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+                    Apakah Anda yakin ingin mengeluarkan <span className="text-white font-black">@{confirmKickUser.name}</span> dari grup ini?
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setConfirmKickUser(null)}
+                      className="flex-1 py-3 bg-elevated hover:bg-elevated/80 text-white font-bold rounded-2xl transall cursor-pointer text-sm"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const targetId = confirmKickUser.id;
+                        setConfirmKickUser(null);
+                        await handleKick(targetId);
+                      }}
+                      className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transall cursor-pointer text-sm"
+                    >
+                      Kick
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
           </motion.div>
         </div>
       )}
