@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Users, ShieldAlert, Crown, UserMinus, Loader2 } from "lucide-react";
+import { X, Users, ShieldAlert, Crown, UserMinus, Loader2, Image as ImageIcon, Bell, Search, Star, Lock, UserPlus, ChevronRight, PenSquare } from "lucide-react";
 import Image from "next/image";
 import { apiFetch, kickMember } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -80,21 +80,22 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flexcc p-4">
+        <div className="fixed inset-0 z-50 flex justify-end">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-sm bg-secondary border border-border-divider rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+            className="relative w-full max-w-md h-full bg-primary border-l border-border-divider shadow-2xl overflow-hidden flex flex-col"
           >
-            <div className="p-6 border-b border-border-divider flex items-center justify-between shrink-0">
+            <div className="h-20 px-6 bg-secondary/50 border-b border-border-divider flex items-center justify-between shrink-0">
               <h3 className="text-lg font-black text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-accent-default" /> Info Grup
               </h3>
@@ -108,16 +109,84 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                 <div className="py-10 flexcc text-xs text-text-muted animate-pulse">Memuat info...</div>
               ) : (
                 <>
-                  <div className="flex flex-col items-center mb-6">
-                    <div className="w-20 h-20 bg-elevated rounded-2xl flexcc mb-3 border border-border-divider shadow-inner overflow-hidden">
-                      <span className="text-3xl font-black text-accent-default uppercase">{roomName.charAt(0) || "G"}</span>
+                  <div className="flex flex-col items-center mb-6 pt-4">
+                    <div className="w-40 h-40 bg-secondary/80 rounded-full flexcc mb-5 shadow-lg overflow-hidden border-2 border-border-divider/50 group relative cursor-pointer">
+                      <span className="text-6xl font-black text-text-secondary uppercase group-hover:opacity-0 transall">{roomName.charAt(0) || "G"}</span>
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flexcc flex-col gap-1 transall">
+                        <ImageIcon className="w-8 h-8 text-white mb-1" />
+                        <span className="text-xs font-bold text-white uppercase tracking-widest text-center px-4">Change Icon</span>
+                      </div>
                     </div>
-                    <h4 className="text-lg font-black text-white text-center px-4">{roomName}</h4>
-                    <p className="text-xs font-bold text-text-muted mt-1">{members.length} Anggota</p>
+                    <div className="flex items-center gap-2 mb-1 cursor-pointer hover:opacity-80">
+                      <h4 className="text-2xl font-bold text-white text-center px-2">{roomName}</h4>
+                      <PenSquare className="w-4 h-4 text-text-secondary" />
+                    </div>
+                    <p className="text-sm font-semibold text-text-muted">Grup · {members.length} member</p>
+                    
+                    <div className="flex items-center gap-6 mt-6">
+                      <button className="flex flex-col items-center gap-2 hover:opacity-80 transall group">
+                        <div className="w-12 h-12 rounded-full bg-elevated border border-border-divider flexcc group-hover:bg-accent-default/20 group-hover:border-accent-default/30 group-hover:text-accent-default transall">
+                          <UserPlus className="w-5 h-5" />
+                        </div>
+                        <span className="text-xs font-bold text-text-secondary group-hover:text-accent-default transall">Add</span>
+                      </button>
+                      <button className="flex flex-col items-center gap-2 hover:opacity-80 transall group">
+                        <div className="w-12 h-12 rounded-full bg-elevated border border-border-divider flexcc group-hover:bg-accent-default/20 group-hover:border-accent-default/30 group-hover:text-accent-default transall">
+                          <Search className="w-5 h-5" />
+                        </div>
+                        <span className="text-xs font-bold text-text-secondary group-hover:text-accent-default transall">Search</span>
+                      </button>
+                    </div>
                   </div>
 
+                  <div className="h-2 bg-black/20 -mx-6 mb-4" />
+
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 -mx-4 px-4 py-3 rounded-xl transall">
+                      <span className="text-sm font-semibold text-accent-default">Tambahkan deskripsi grup</span>
+                      <PenSquare className="w-4 h-4 text-text-secondary" />
+                    </div>
+                  </div>
+
+                  <div className="h-2 bg-black/20 -mx-6 mb-4" />
+
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 -mx-4 px-4 py-3 rounded-xl transall">
+                      <span className="text-sm font-semibold text-white">Media, links, dan docs</span>
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <span className="text-sm">0</span>
+                        <ChevronRight className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="h-2 bg-black/20 -mx-6 mb-4" />
+
+                  <div className="mb-6 space-y-1">
+                    <div className="flex items-center gap-4 cursor-pointer hover:bg-white/5 -mx-4 px-4 py-3 rounded-xl transall">
+                      <Star className="w-5 h-5 text-text-secondary" />
+                      <span className="text-sm font-semibold text-white flex-1">Pesan Berbintang</span>
+                    </div>
+                    <div className="flex items-center gap-4 cursor-pointer hover:bg-white/5 -mx-4 px-4 py-3 rounded-xl transall">
+                      <Bell className="w-5 h-5 text-text-secondary" />
+                      <span className="text-sm font-semibold text-white flex-1">Notifikasi</span>
+                    </div>
+                    <div className="flex items-center gap-4 cursor-pointer hover:bg-white/5 -mx-4 px-4 py-3 rounded-xl transall">
+                      <Lock className="w-5 h-5 text-text-secondary" />
+                      <div>
+                        <span className="text-sm font-semibold text-white block">Enkripsi</span>
+                        <span className="text-xs text-text-muted font-medium">Pesan dienkripsi secara end-to-end.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="h-2 bg-black/20 -mx-6 mb-4" />
+
                   <div className="space-y-1">
-                    <h5 className="text-[10px] font-black text-text-muted uppercase tracking-widest pl-2 mb-2">Daftar Anggota</h5>
+                    <div className="flex items-center justify-between mb-4">
+                      <h5 className="text-xs font-bold text-text-secondary">{members.length} anggota</h5>
+                      <Search className="w-4 h-4 text-text-secondary cursor-pointer hover:text-white transall" />
+                    </div>
                     {[...members].sort((a, b) => (a.role === "owner" ? -1 : b.role === "owner" ? 1 : 0)).map((m) => (
                       <div
                         key={m.user.id}
