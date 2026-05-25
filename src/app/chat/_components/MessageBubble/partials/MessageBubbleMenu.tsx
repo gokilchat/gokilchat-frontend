@@ -108,22 +108,34 @@ export default function MessageBubbleMenu({
                 </button>
               )}
               <button
-                disabled
-                className="w-full text-left px-4 py-2.5 text-xs font-bold text-white/50 bg-transparent cursor-not-allowed"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                  alert("Fitur Balas coming soon 🗿");
+                }}
+                className="w-full text-left px-4 py-2.5 text-xs font-bold text-white hover:bg-secondary transall"
               >
-                Balas <span className="text-[10px] ml-1 font-normal opacity-70">(Coming Soon)</span>
+                Balas
               </button>
               <button
-                disabled
-                className="w-full text-left px-4 py-2.5 text-xs font-bold text-white/50 bg-transparent cursor-not-allowed"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                  alert("Fitur Teruskan coming soon 🗿");
+                }}
+                className="w-full text-left px-4 py-2.5 text-xs font-bold text-white hover:bg-secondary transall"
               >
-                Teruskan <span className="text-[10px] ml-1 font-normal opacity-70">(Coming Soon)</span>
+                Teruskan
               </button>
               <button
-                disabled
-                className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-400/50 bg-transparent cursor-not-allowed"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                  alert("Fitur Hapus coming soon 🗿");
+                }}
+                className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-secondary transall"
               >
-                Hapus <span className="text-[10px] ml-1 font-normal opacity-70">(Coming Soon)</span>
+                Hapus
               </button>
             </div>
           </>,
