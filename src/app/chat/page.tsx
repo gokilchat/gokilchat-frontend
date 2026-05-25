@@ -527,6 +527,10 @@ export default function ChatPage() {
           isOpen={showGroupInfoModal}
           onClose={() => setShowGroupInfoModal(false)}
           roomId={activeRoomId}
+          onInviteClick={() => {
+            setModalContext("invite");
+            setShowInviteModal(true);
+          }}
         />
       )}
     </div>

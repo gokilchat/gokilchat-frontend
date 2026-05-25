@@ -1,6 +1,18 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Users, ShieldAlert, Crown, UserMinus, Loader2, Image as ImageIcon, Search, UserPlus, PenSquare, Check } from "lucide-react";
+import {
+  X,
+  Users,
+  ShieldAlert,
+  Crown,
+  UserMinus,
+  Loader2,
+  Image as ImageIcon,
+  Search,
+  UserPlus,
+  PenSquare,
+  Check,
+} from "lucide-react";
 import Image from "next/image";
 import { apiFetch, kickMember, updateRoomDetails } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -20,9 +32,15 @@ interface GroupInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
   roomId: string;
+  onInviteClick?: () => void;
 }
 
-export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoModalProps) {
+export default function GroupInfoModal({
+  isOpen,
+  onClose,
+  roomId,
+  onInviteClick,
+}: GroupInfoModalProps) {
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [roomName, setRoomName] = useState("");
@@ -33,19 +51,22 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
   const [tempName, setTempName] = useState("");
   const [isSavingDescription, setIsSavingDescription] = useState(false);
   const [isSavingName, setIsSavingName] = useState(false);
-  
+
   const currentUser = useAuthStore((state) => state.user);
   const [isKicking, setIsKicking] = useState<string | null>(null);
 
-  const currentUserRole = members.find(m => m.user.id === currentUser?.id)?.role;
-  const isOwnerOrAdmin = currentUserRole === "owner" || currentUserRole === "admin";
+  const currentUserRole = members.find(
+    (m) => m.user.id === currentUser?.id,
+  )?.role;
+  const isOwnerOrAdmin =
+    currentUserRole === "owner" || currentUserRole === "admin";
 
   const handleKick = async (userId: string) => {
     if (!window.confirm("Yakin mau kick member ini?")) return;
     try {
       setIsKicking(userId);
       await kickMember(roomId, userId);
-      setMembers(prev => prev.filter(m => m.user.id !== userId));
+      setMembers((prev) => prev.filter((m) => m.user.id !== userId));
     } catch (error) {
       alert(error instanceof Error ? error.message : "Gagal kick member");
     } finally {
@@ -60,7 +81,9 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
       setRoomDescription(tempDescription);
       setIsEditingDescription(false);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Gagal menyimpan deskripsi");
+      alert(
+        error instanceof Error ? error.message : "Gagal menyimpan deskripsi",
+      );
     } finally {
       setIsSavingDescription(false);
     }
@@ -74,7 +97,9 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
       setRoomName(tempName);
       setIsEditingName(false);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Gagal menyimpan nama grup");
+      alert(
+        error instanceof Error ? error.message : "Gagal menyimpan nama grup",
+      );
     } finally {
       setIsSavingName(false);
     }
@@ -137,22 +162,31 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
               <h3 className="text-lg font-black text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-accent-default" /> Info Grup
               </h3>
-              <button onClick={onClose} className="p-2 hover:bg-elevated rounded-xl transall">
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-elevated rounded-xl transall"
+              >
                 <X className="w-5 h-5 text-text-secondary" />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto custom-scrollbar">
               {isLoading ? (
-                <div className="py-10 flexcc text-xs text-text-muted animate-pulse">Memuat info...</div>
+                <div className="py-10 flexcc text-xs text-text-muted animate-pulse">
+                  Memuat info...
+                </div>
               ) : (
                 <>
                   <div className="flex flex-col items-center mb-6 pt-4">
                     <div className="w-40 h-40 bg-secondary/80 rounded-full flexcc mb-5 shadow-lg overflow-hidden border-2 border-border-divider/50 group relative cursor-pointer">
-                      <span className="text-6xl font-black text-text-secondary uppercase group-hover:opacity-0 transall">{roomName.charAt(0) || "G"}</span>
+                      <span className="text-6xl font-black text-text-secondary uppercase group-hover:opacity-0 transall">
+                        {roomName.charAt(0) || "G"}
+                      </span>
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flexcc flex-col gap-1 transall">
                         <ImageIcon className="w-8 h-8 text-white mb-1" />
-                        <span className="text-xs font-bold text-white uppercase tracking-widest text-center px-4">Change Icon</span>
+                        <span className="text-xs font-bold text-white uppercase tracking-widest text-center px-4">
+                          Change Icon
+                        </span>
                       </div>
                     </div>
                     {isEditingName ? (
@@ -161,11 +195,12 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                           type="text"
                           value={tempName}
                           onChange={(e) => setTempName(e.target.value)}
-                          className="bg-secondary text-white text-xl font-bold px-2 py-1 rounded border border-accent-default focus:outline-none text-center max-w-[200px]"
+                          className="bg-secondary text-white text-xl font-bold px-2 py-1 rounded border border-accent-default focus:outline-none text-center max-w-50"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === "Enter") handleSaveName();
-                            else if (e.key === "Escape") setIsEditingName(false);
+                            else if (e.key === "Escape")
+                              setIsEditingName(false);
                           }}
                         />
                         <button
@@ -173,7 +208,11 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                           disabled={isSavingName}
                           className="p-1 hover:bg-white/10 rounded text-accent-default disabled:opacity-50"
                         >
-                          {isSavingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-5 h-5" />}
+                          {isSavingName ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Check className="w-5 h-5" />
+                          )}
                         </button>
                         <button
                           onClick={() => setIsEditingName(false)}
@@ -192,24 +231,39 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                           }
                         }}
                       >
-                        <h4 className="text-2xl font-bold text-white text-center px-2">{roomName}</h4>
-                        {isOwnerOrAdmin && <PenSquare className="w-4 h-4 text-text-secondary" />}
+                        <h4 className="text-2xl font-bold text-white text-center px-2">
+                          {roomName}
+                        </h4>
+                        {isOwnerOrAdmin && (
+                          <PenSquare className="w-4 h-4 text-text-secondary" />
+                        )}
                       </div>
                     )}
-                    <p className="text-sm font-semibold text-text-muted">Grup · {members.length} member</p>
-                    
+                    <p className="text-sm font-semibold text-text-muted">
+                      Grup · {members.length} member
+                    </p>
+
                     <div className="flex items-center gap-6 mt-6">
-                      <button className="flex flex-col items-center gap-2 hover:opacity-80 transall group">
-                        <div className="w-12 h-12 rounded-full bg-elevated border border-border-divider flexcc group-hover:bg-accent-default/20 group-hover:border-accent-default/30 group-hover:text-accent-default transall">
-                          <UserPlus className="w-5 h-5" />
-                        </div>
-                        <span className="text-xs font-bold text-text-secondary group-hover:text-accent-default transall">Add</span>
-                      </button>
+                      {isOwnerOrAdmin && (
+                        <button
+                          onClick={onInviteClick}
+                          className="flex flex-col items-center gap-2 hover:opacity-80 transall group"
+                        >
+                          <div className="w-12 h-12 rounded-full bg-elevated border border-border-divider flexcc group-hover:bg-accent-default/20 group-hover:border-accent-default/30 group-hover:text-accent-default transall">
+                            <UserPlus className="w-5 h-5" />
+                          </div>
+                          <span className="text-xs font-bold text-text-secondary group-hover:text-accent-default transall">
+                            Add
+                          </span>
+                        </button>
+                      )}
                       <button className="flex flex-col items-center gap-2 hover:opacity-80 transall group">
                         <div className="w-12 h-12 rounded-full bg-elevated border border-border-divider flexcc group-hover:bg-accent-default/20 group-hover:border-accent-default/30 group-hover:text-accent-default transall">
                           <Search className="w-5 h-5" />
                         </div>
-                        <span className="text-xs font-bold text-text-secondary group-hover:text-accent-default transall">Search</span>
+                        <span className="text-xs font-bold text-text-secondary group-hover:text-accent-default transall">
+                          Search
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -225,7 +279,8 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                           className="w-full bg-secondary text-white text-sm px-3 py-2 rounded-lg border border-accent-default focus:outline-none resize-none h-20"
                           autoFocus
                           onKeyDown={(e) => {
-                            if (e.key === "Escape") setIsEditingDescription(false);
+                            if (e.key === "Escape")
+                              setIsEditingDescription(false);
                           }}
                         />
                         <div className="flex justify-end gap-2">
@@ -240,7 +295,9 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                             disabled={isSavingDescription}
                             className="px-3 py-1 text-xs font-bold text-white bg-accent-default hover:bg-accent-hover rounded-lg transall flex items-center gap-1 disabled:opacity-50"
                           >
-                            {isSavingDescription && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                            {isSavingDescription && (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            )}
                             Simpan
                           </button>
                         </div>
@@ -255,12 +312,19 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                           }
                         }}
                       >
-                        <span className="text-xs font-bold text-accent-default uppercase tracking-wider">Deskripsi Grup</span>
+                        <span className="text-xs font-bold text-accent-default uppercase tracking-wider">
+                          Deskripsi Grup
+                        </span>
                         <div className="flex items-start justify-between gap-4">
                           <p className="text-sm font-semibold text-white whitespace-pre-wrap flex-1">
-                            {roomDescription || (isOwnerOrAdmin ? "Tambahkan deskripsi grup..." : "Tidak ada deskripsi grup.")}
+                            {roomDescription ||
+                              (isOwnerOrAdmin
+                                ? "Tambahkan deskripsi grup..."
+                                : "Tidak ada deskripsi grup.")}
                           </p>
-                          {isOwnerOrAdmin && <PenSquare className="w-4 h-4 text-text-secondary shrink-0 mt-0.5" />}
+                          {isOwnerOrAdmin && (
+                            <PenSquare className="w-4 h-4 text-text-secondary shrink-0 mt-0.5" />
+                          )}
                         </div>
                       </div>
                     )}
@@ -270,52 +334,69 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
 
                   <div className="space-y-1">
                     <div className="flex items-center justify-between mb-4">
-                      <h5 className="text-xs font-bold text-text-secondary">{members.length} anggota</h5>
+                      <h5 className="text-xs font-bold text-text-secondary">
+                        {members.length} anggota
+                      </h5>
                       <Search className="w-4 h-4 text-text-secondary cursor-pointer hover:text-white transall" />
                     </div>
-                    {[...members].sort((a, b) => (a.role === "owner" ? -1 : b.role === "owner" ? 1 : 0)).map((m) => (
-                      <div
-                        key={m.user.id}
-                        className="p-3 rounded-2xl hover:bg-elevated/50 flex items-center gap-3 transall group"
-                      >
-                        <Image
-                          src={m.user.avatar_url || "/images/default-avatar.png"}
-                          alt={m.user.username}
-                          width={40}
-                          height={40}
-                          className="rounded-full border border-border-divider object-cover w-10 h-10 shrink-0 bg-primary"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            e.currentTarget.srcset = "";
-                            e.currentTarget.src = "/images/default-avatar.png";
-                          }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-black text-white truncate flex items-center gap-1.5">
-                            {m.user.full_name || m.user.username}
-                            {m.role === "owner" && <span title="Owner" className="flex"><Crown className="w-3.5 h-3.5 text-yellow-500" /></span>}
-                            {m.role === "admin" && <span title="Admin" className="flex"><ShieldAlert className="w-3.5 h-3.5 text-accent-default" /></span>}
-                          </p>
-                          <p className="text-[10px] text-text-muted font-bold tracking-wider">
-                            @{m.user.username}
-                          </p>
+                    {[...members]
+                      .sort((a, b) =>
+                        a.role === "owner" ? -1 : b.role === "owner" ? 1 : 0,
+                      )
+                      .map((m) => (
+                        <div
+                          key={m.user.id}
+                          className="p-3 rounded-2xl hover:bg-elevated/50 flex items-center gap-3 transall group"
+                        >
+                          <Image
+                            src={
+                              m.user.avatar_url || "/images/default-avatar.png"
+                            }
+                            alt={m.user.username}
+                            width={40}
+                            height={40}
+                            className="rounded-full border border-border-divider object-cover w-10 h-10 shrink-0 bg-primary"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              e.currentTarget.srcset = "";
+                              e.currentTarget.src =
+                                "/images/default-avatar.png";
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-black text-white truncate flex items-center gap-1.5">
+                              {m.user.full_name || m.user.username}
+                              {m.role === "owner" && (
+                                <span title="Owner" className="flex">
+                                  <Crown className="w-3.5 h-3.5 text-yellow-500" />
+                                </span>
+                              )}
+                              {m.role === "admin" && (
+                                <span title="Admin" className="flex">
+                                  <ShieldAlert className="w-3.5 h-3.5 text-accent-default" />
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[10px] text-text-muted font-bold tracking-wider">
+                              @{m.user.username}
+                            </p>
+                          </div>
+                          {canKick(m.role, m.user.id) && (
+                            <button
+                              onClick={() => handleKick(m.user.id)}
+                              disabled={isKicking === m.user.id}
+                              className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl opacity-0 md:group-hover:opacity-100 transall disabled:opacity-50 disabled:cursor-not-allowed shrink-0 max-md:opacity-100"
+                              title="Kick Member"
+                            >
+                              {isKicking === m.user.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <UserMinus className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
                         </div>
-                        {canKick(m.role, m.user.id) && (
-                          <button
-                            onClick={() => handleKick(m.user.id)}
-                            disabled={isKicking === m.user.id}
-                            className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl opacity-0 md:group-hover:opacity-100 transall disabled:opacity-50 disabled:cursor-not-allowed shrink-0 max-md:opacity-100"
-                            title="Kick Member"
-                          >
-                            {isKicking === m.user.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <UserMinus className="w-4 h-4" />
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </>
               )}
