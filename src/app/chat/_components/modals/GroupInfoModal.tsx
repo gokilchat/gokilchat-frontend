@@ -16,6 +16,7 @@ import {
 import Image from "next/image";
 import { apiFetch, kickMember, updateRoomDetails } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
+import { getSocket } from "@/lib/socket";
 
 interface Member {
   role: "owner" | "admin" | "user";
@@ -138,6 +139,35 @@ export default function GroupInfoModal({
       }, 0);
       return () => clearTimeout(timer);
     }
+  }, [isOpen, roomId]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !isOpen || !roomId) return;
+
+    const handleMemberLeft = (data: { room_id: string; user_id: string }) => {
+      if (data.room_id === roomId) {
+        setMembers((prev) => prev.filter((m) => m.user.id !== data.user_id));
+      }
+    };
+
+    const handleMemberJoined = (data: { room_id: string }) => {
+      if (data.room_id === roomId) {
+        apiFetch(`/rooms/${roomId}`).then((res) => {
+          if (res.success && res.data && res.data.members) {
+            setMembers(res.data.members);
+          }
+        });
+      }
+    };
+
+    socket.on("room:member_left", handleMemberLeft);
+    socket.on("room:member_joined", handleMemberJoined);
+
+    return () => {
+      socket.off("room:member_left", handleMemberLeft);
+      socket.off("room:member_joined", handleMemberJoined);
+    };
   }, [isOpen, roomId]);
 
   return (
