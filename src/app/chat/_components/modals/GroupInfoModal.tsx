@@ -138,38 +138,12 @@ export default function GroupInfoModal({ isOpen, onClose, roomId }: GroupInfoMod
                       </button>
                     </div>
                   </div>
-
                   <div className="h-2 bg-black/20 -mx-6 mb-4" />
-
-
 
                   <div className="mb-4">
                     <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 -mx-4 px-4 py-3 rounded-xl transall">
-                      <span className="text-sm font-semibold text-white">Media, links, dan docs</span>
-                      <div className="flex items-center gap-2 text-text-secondary">
-                        <span className="text-sm">0</span>
-                        <ChevronRight className="w-5 h-5" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="h-2 bg-black/20 -mx-6 mb-4" />
-
-                  <div className="mb-6 space-y-1">
-                    <div className="flex items-center gap-4 cursor-pointer hover:bg-white/5 -mx-4 px-4 py-3 rounded-xl transall">
-                      <Star className="w-5 h-5 text-text-secondary" />
-                      <span className="text-sm font-semibold text-white flex-1">Pesan Berbintang</span>
-                    </div>
-                    <div className="flex items-center gap-4 cursor-pointer hover:bg-white/5 -mx-4 px-4 py-3 rounded-xl transall">
-                      <Bell className="w-5 h-5 text-text-secondary" />
-                      <span className="text-sm font-semibold text-white flex-1">Notifikasi</span>
-                    </div>
-                    <div className="flex items-center gap-4 cursor-pointer hover:bg-white/5 -mx-4 px-4 py-3 rounded-xl transall">
-                      <Lock className="w-5 h-5 text-text-secondary" />
-                      <div>
-                        <span className="text-sm font-semibold text-white block">Enkripsi</span>
-                        <span className="text-xs text-text-muted font-medium">Pesan dienkripsi secara end-to-end.</span>
-                      </div>
+                      <span className="text-sm font-semibold text-accent-default">Tambahkan deskripsi grup</span>
+                      <PenSquare className="w-4 h-4 text-text-secondary" />
                     </div>
                   </div>
 
