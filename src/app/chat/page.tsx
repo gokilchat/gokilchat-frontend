@@ -532,7 +532,7 @@ export default function ChatPage() {
         <SettingsModal onClose={() => setShowSettingsModal(false)} />
       )}
 
-      {showGroupInfoModal && activeRoomId && (
+      {activeRoomId && (
         <GroupInfoModal
           isOpen={showGroupInfoModal}
           onClose={() => setShowGroupInfoModal(false)}

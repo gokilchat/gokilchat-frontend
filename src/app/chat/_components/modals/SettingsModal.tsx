@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Camera, User as UserIcon, Shield, Loader2, Check } from "lucide-react";
+import {
+  X,
+  Camera,
+  User as UserIcon,
+  Shield,
+  Loader2,
+  Check,
+} from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import Image from "next/image";
@@ -12,16 +19,21 @@ interface SettingsModalProps {
 export default function SettingsModal({ onClose }: SettingsModalProps) {
   const { user, setAuth, token } = useAuthStore();
   const [activeTab, setActiveTab] = useState<"profile" | "privacy">("profile");
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
-  const [privacy, setPrivacy] = useState<"anyone" | "confirmation_required">("anyone");
-  
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [privacy, setPrivacy] = useState<"anyone" | "confirmation_required">(
+    "anyone",
+  );
+
+  const [message, setMessage] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,12 +47,15 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
           setPrivacy(res.data.settings?.group_invite_privacy || "anyone");
         }
       } catch (err: unknown) {
-        setMessage({ text: err instanceof Error ? err.message : "Gagal memuat profil", type: "error" });
+        setMessage({
+          text: err instanceof Error ? err.message : "Gagal memuat profil",
+          type: "error",
+        });
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchProfile();
   }, [user]);
 
@@ -59,16 +74,28 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
       });
       if (res.success) {
         showMessage("Profil berhasil diperbarui", "success");
-        setAuth({ ...user, username: res.data.username, full_name: res.data.full_name }, token as string);
+        setAuth(
+          {
+            ...user,
+            username: res.data.username,
+            full_name: res.data.full_name,
+          },
+          token as string,
+        );
       }
     } catch (err: unknown) {
-      showMessage(err instanceof Error ? err.message : "Gagal menyimpan profil", "error");
+      showMessage(
+        err instanceof Error ? err.message : "Gagal menyimpan profil",
+        "error",
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleSavePrivacy = async (newPrivacy: "anyone" | "confirmation_required") => {
+  const handleSavePrivacy = async (
+    newPrivacy: "anyone" | "confirmation_required",
+  ) => {
     if (!user) return;
     setPrivacy(newPrivacy);
     try {
@@ -80,7 +107,10 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
         showMessage("Privasi berhasil diperbarui", "success");
       }
     } catch (err: unknown) {
-      showMessage(err instanceof Error ? err.message : "Gagal menyimpan privasi", "error");
+      showMessage(
+        err instanceof Error ? err.message : "Gagal menyimpan privasi",
+        "error",
+      );
     }
   };
 
@@ -99,13 +129,16 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 
     try {
       const token = useAuthStore.getState().token;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_CHAT_SERVER_URL || "http://localhost:4000"}/users/${user.id}/avatar`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_CHAT_SERVER_URL || "http://localhost:4000"}/users/${user.id}/avatar`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
         },
-        body: formData,
-      });
+      );
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal upload");
@@ -115,7 +148,10 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
         setAuth({ ...user, avatar_url: data.data.avatar_url }, token as string);
       }
     } catch (err: unknown) {
-      showMessage(err instanceof Error ? err.message : "Gagal upload foto profil", "error");
+      showMessage(
+        err instanceof Error ? err.message : "Gagal upload foto profil",
+        "error",
+      );
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -129,20 +165,26 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
       <div className="bg-primary border border-border-divider rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border-divider bg-secondary/50">
-          <h2 className="text-xl font-black text-white tracking-tight">Pengaturan</h2>
+          <h2 className="text-xl font-black text-white tracking-tight">
+            Pengaturan
+          </h2>
           <button
             onClick={onClose}
-            className="p-2 text-text-muted hover:text-white bg-elevated hover:bg-border-divider rounded-full transall"
+            className="cursor-pointer p-2 text-text-muted hover:text-white bg-elevated hover:bg-border-divider rounded-full transall"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {message && (
-          <div className={clsx(
-            "px-4 py-2 text-xs font-bold text-center",
-            message.type === "success" ? "bg-status-online text-white" : "bg-red-500 text-white"
-          )}>
+          <div
+            className={clsx(
+              "px-4 py-2 text-xs font-bold text-center",
+              message.type === "success"
+                ? "bg-status-online text-white"
+                : "bg-red-500 text-white",
+            )}
+          >
             {message.text}
           </div>
         )}
@@ -158,10 +200,10 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
               <button
                 onClick={() => setActiveTab("profile")}
                 className={clsx(
-                  "flex-1 py-3 text-sm font-bold flexcc gap-2 transall border-b-2",
-                  activeTab === "profile" 
-                    ? "border-accent-default text-accent-default bg-accent-default/5" 
-                    : "border-transparent text-text-secondary hover:text-white hover:bg-elevated/50"
+                  "cursor-pointer flex-1 py-3 text-sm font-bold flexcc gap-2 transall border-b-2",
+                  activeTab === "profile"
+                    ? "border-accent-default text-accent-default bg-accent-default/5"
+                    : "border-transparent text-text-secondary hover:text-white hover:bg-elevated/50",
                 )}
               >
                 <UserIcon className="w-4 h-4" /> Profil
@@ -169,10 +211,10 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
               <button
                 onClick={() => setActiveTab("privacy")}
                 className={clsx(
-                  "flex-1 py-3 text-sm font-bold flexcc gap-2 transall border-b-2",
-                  activeTab === "privacy" 
-                    ? "border-accent-default text-accent-default bg-accent-default/5" 
-                    : "border-transparent text-text-secondary hover:text-white hover:bg-elevated/50"
+                  "cursor-pointer flex-1 py-3 text-sm font-bold flexcc gap-2 transall border-b-2",
+                  activeTab === "privacy"
+                    ? "border-accent-default text-accent-default bg-accent-default/5"
+                    : "border-transparent text-text-secondary hover:text-white hover:bg-elevated/50",
                 )}
               >
                 <Shield className="w-4 h-4" /> Privasi
@@ -188,7 +230,12 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                     <div className="relative group">
                       <div className="size-24 rounded-full bg-elevated flexcc border-2 border-border-divider overflow-hidden shadow-inner relative">
                         {user.avatar_url ? (
-                          <Image src={user.avatar_url} alt="Avatar" fill className="object-cover" />
+                          <Image
+                            src={user.avatar_url}
+                            alt="Avatar"
+                            fill
+                            className="object-cover"
+                          />
                         ) : (
                           <span className="font-black text-accent-default text-3xl">
                             {user.username.charAt(0).toUpperCase()}
@@ -200,22 +247,24 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                           </div>
                         )}
                       </div>
-                      <button 
+                      <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
                         className="absolute bottom-0 right-0 p-2 bg-accent-default text-white rounded-full border-2 border-primary shadow-lg hover:scale-110 transall cursor-pointer"
                       >
                         <Camera className="w-4 h-4" />
                       </button>
-                      <input 
-                        type="file" 
+                      <input
+                        type="file"
                         ref={fileInputRef}
                         onChange={handleFileChange}
-                        accept="image/jpeg,image/png,image/gif,image/webp" 
-                        className="hidden" 
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        className="hidden"
                       />
                     </div>
-                    <p className="text-xs text-text-muted">JPG, PNG, GIF, max 5MB</p>
+                    <p className="text-xs text-text-muted">
+                      JPG, PNG, GIF, max 5MB
+                    </p>
                   </div>
 
                   {/* Form */}
@@ -248,10 +297,16 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 
                   <button
                     onClick={handleSaveProfile}
-                    disabled={isSaving || (!username.trim() && !fullName.trim())}
-                    className="w-full py-3 bg-accent-default hover:bg-accent-hover text-white rounded-xl font-bold flexcc gap-2 transall disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mt-2"
+                    disabled={
+                      isSaving || (!username.trim() && !fullName.trim())
+                    }
+                    className="cursor-pointer w-full py-3 bg-accent-default hover:bg-accent-hover text-white rounded-xl font-bold flexcc gap-2 transall disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mt-2"
                   >
-                    {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                    {isSaving ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Check className="w-5 h-5" />
+                    )}
                     Simpan Profil
                   </button>
                 </div>
@@ -259,9 +314,12 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                 <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-sm font-bold text-white mb-1">Undangan Grup</h3>
+                      <h3 className="text-sm font-bold text-white mb-1">
+                        Undangan Grup
+                      </h3>
                       <p className="text-xs text-text-muted mb-4 leading-relaxed">
-                        Pilih siapa aja yang bisa langsung masukin lu ke grup atau ngirim link undangan.
+                        Pilih siapa aja yang bisa langsung masukin lu ke grup
+                        atau ngirim link undangan.
                       </p>
                     </div>
 
@@ -274,19 +332,25 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                           Siapa aja bisa narik lu ke grup.
                         </p>
                       </div>
-                      <div className={clsx(
-                        "w-5 h-5 rounded-full border-[1.5px] flexcc transall",
-                        privacy === "anyone" ? "border-accent-default bg-accent-default" : "border-text-muted bg-transparent"
-                      )}>
-                        {privacy === "anyone" && <div className="w-2 h-2 rounded-full bg-white" />}
+                      <div
+                        className={clsx(
+                          "w-5 h-5 rounded-full border-[1.5px] flexcc transall",
+                          privacy === "anyone"
+                            ? "border-accent-default bg-accent-default"
+                            : "border-text-muted bg-transparent",
+                        )}
+                      >
+                        {privacy === "anyone" && (
+                          <div className="w-2 h-2 rounded-full bg-white" />
+                        )}
                       </div>
-                      <input 
-                        type="radio" 
-                        name="privacy" 
-                        value="anyone" 
+                      <input
+                        type="radio"
+                        name="privacy"
+                        value="anyone"
                         checked={privacy === "anyone"}
                         onChange={() => handleSavePrivacy("anyone")}
-                        className="hidden" 
+                        className="hidden"
                       />
                     </label>
 
@@ -299,19 +363,27 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                           Lu bakal dapet DM undangan dulu buat di-acc.
                         </p>
                       </div>
-                      <div className={clsx(
-                        "w-5 h-5 rounded-full border-[1.5px] flexcc transall",
-                        privacy === "confirmation_required" ? "border-accent-default bg-accent-default" : "border-text-muted bg-transparent"
-                      )}>
-                        {privacy === "confirmation_required" && <div className="w-2 h-2 rounded-full bg-white" />}
+                      <div
+                        className={clsx(
+                          "w-5 h-5 rounded-full border-[1.5px] flexcc transall",
+                          privacy === "confirmation_required"
+                            ? "border-accent-default bg-accent-default"
+                            : "border-text-muted bg-transparent",
+                        )}
+                      >
+                        {privacy === "confirmation_required" && (
+                          <div className="w-2 h-2 rounded-full bg-white" />
+                        )}
                       </div>
-                      <input 
-                        type="radio" 
-                        name="privacy" 
-                        value="confirmation_required" 
+                      <input
+                        type="radio"
+                        name="privacy"
+                        value="confirmation_required"
                         checked={privacy === "confirmation_required"}
-                        onChange={() => handleSavePrivacy("confirmation_required")}
-                        className="hidden" 
+                        onChange={() =>
+                          handleSavePrivacy("confirmation_required")
+                        }
+                        className="hidden"
                       />
                     </label>
                   </div>

@@ -40,9 +40,13 @@ export default function ChatHeader({
   return (
     <header className="h-20 flex items-center justify-between px-6 bg-primary/80 backdrop-blur-xl border-b border-border-divider/50 z-20 sticky top-0">
       {activeRoom.type !== "dm" ? (
-        <Tooltip content="Klik untuk info grup" placement="bottom">
+        <Tooltip
+          content="Klik untuk info grup"
+          placement="bottom"
+          triggerClassName="flex flex-1 min-w-0 mr-4 h-full items-center"
+        >
           <div
-            className="flex items-center gap-4 flex-1 min-w-0 mr-4 transall cursor-pointer hover:opacity-80"
+            className="flex items-center gap-4 w-full h-full transall cursor-pointer hover:opacity-80"
             onClick={onGroupInfoClick}
           >
             <div className="relative shrink-0">
@@ -136,14 +140,14 @@ export default function ChatHeader({
       )}
 
       <div className="flex items-center gap-1 shrink-0">
-        <button className="p-2 text-text-secondary hover:text-white transall">
+        <button className="p-2 text-text-secondary hover:text-white transall cursor-pointer">
           <Search className="w-5 h-5" />
         </button>
 
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 text-text-secondary hover:text-white transall"
+            className="p-2 text-text-secondary hover:text-white transall cursor-pointer"
           >
             <MoreVertical className="w-5 h-5" />
           </button>
@@ -157,7 +161,7 @@ export default function ChatHeader({
                       setIsMenuOpen(false);
                       onInviteClick();
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-white/5 rounded-xl transall"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-white/5 rounded-xl transall cursor-pointer"
                   >
                     <UserPlus className="w-4 h-4 text-text-secondary" /> Tambah
                     Anggota
@@ -167,7 +171,7 @@ export default function ChatHeader({
                       setIsMenuOpen(false);
                       onGroupInfoClick();
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-white/5 rounded-xl transall"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-white/5 rounded-xl transall cursor-pointer"
                   >
                     <Info className="w-4 h-4 text-text-secondary" /> Info Grup
                   </button>
@@ -177,7 +181,7 @@ export default function ChatHeader({
                       setIsMenuOpen(false);
                       onLeaveGroupClick?.();
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-400/10 hover:text-red-300 rounded-xl transall"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-400/10 hover:text-red-300 rounded-xl transall cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" /> Keluar Grup
                   </button>

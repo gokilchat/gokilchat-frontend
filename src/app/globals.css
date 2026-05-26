@@ -24,6 +24,9 @@
   body {
     @apply bg-primary text-text-primary antialiased;
   }
+  button {
+    @apply cursor-pointer;
+  }
 }
 
 @layer utilities {

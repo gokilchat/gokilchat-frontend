@@ -92,7 +92,7 @@ export default function InviteMemberModal({
           >
             <div className="p-6 border-b border-border-divider flex items-center justify-between">
               <h3 className="text-lg font-black text-white">{title}</h3>
-              <button onClick={onClose} className="p-2 hover:bg-elevated rounded-xl transall">
+              <button onClick={onClose} className="p-2 hover:bg-elevated rounded-xl transall cursor-pointer">
                 <X className="w-5 h-5 text-text-secondary" />
               </button>
             </div>
@@ -113,7 +113,7 @@ export default function InviteMemberModal({
                       <Tooltip content="Copy Link" placement="top">
                         <button 
                           onClick={handleCopy}
-                          className="p-3 bg-accent-default hover:bg-accent-hover text-white rounded-2xl transall shrink-0 shadow-lg"
+                          className="p-3 bg-accent-default hover:bg-accent-hover text-white rounded-2xl transall shrink-0 shadow-lg cursor-pointer"
                         >
                           {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                         </button>
@@ -122,7 +122,7 @@ export default function InviteMemberModal({
                         <button 
                           onClick={handleRegenerate}
                           disabled={isRegenerating}
-                          className="p-3 bg-secondary border border-border-divider hover:bg-elevated text-text-secondary rounded-2xl transall shrink-0"
+                          className="p-3 bg-secondary border border-border-divider hover:bg-elevated text-text-secondary rounded-2xl transall shrink-0 cursor-pointer"
                         >
                           <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
                         </button>

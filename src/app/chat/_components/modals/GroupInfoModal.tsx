@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
@@ -52,13 +52,16 @@ export default function GroupInfoModal({
   const [tempDescription, setTempDescription] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
-  const [isSavingDescription, setIsSavingDescription] = useState(false);
   const [isSavingName, setIsSavingName] = useState(false);
+  const isRevertingRef = useRef(false);
 
   const currentUser = useAuthStore((state) => state.user);
   const { toast } = useToast();
   const [isKicking, setIsKicking] = useState<string | null>(null);
-  const [confirmKickUser, setConfirmKickUser] = useState<{ id: string; name: string } | null>(null);
+  const [confirmKickUser, setConfirmKickUser] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const currentUserRole = members.find(
     (m) => m.user.id === currentUser?.id,
@@ -72,25 +75,35 @@ export default function GroupInfoModal({
       await kickMember(roomId, userId);
       setMembers((prev) => prev.filter((m) => m.user.id !== userId));
     } catch (error) {
-      toast(error instanceof Error ? error.message : "Gagal kick member", "error");
+      toast(
+        error instanceof Error ? error.message : "Gagal kick member",
+        "error",
+      );
     } finally {
       setIsKicking(null);
     }
   };
 
   const handleSaveDescription = async () => {
+    if (isRevertingRef.current) {
+      isRevertingRef.current = false;
+      return;
+    }
+    if (tempDescription === roomDescription) {
+      setIsEditingDescription(false);
+      return;
+    }
     try {
-      setIsSavingDescription(true);
       await updateRoomDetails(roomId, { description: tempDescription });
       setRoomDescription(tempDescription);
       setIsEditingDescription(false);
     } catch (error) {
       toast(
         error instanceof Error ? error.message : "Gagal menyimpan deskripsi",
-        "error"
+        "error",
       );
-    } finally {
-      setIsSavingDescription(false);
+      setTempDescription(roomDescription);
+      setIsEditingDescription(false);
     }
   };
 
@@ -104,7 +117,7 @@ export default function GroupInfoModal({
     } catch (error) {
       toast(
         error instanceof Error ? error.message : "Gagal menyimpan nama grup",
-        "error"
+        "error",
       );
     } finally {
       setIsSavingName(false);
@@ -182,14 +195,20 @@ export default function GroupInfoModal({
       socket.on("room:member_joined", handleMemberJoined);
     }
 
-    window.addEventListener("gokilchat:member_joined", handleCustomMemberJoined);
+    window.addEventListener(
+      "gokilchat:member_joined",
+      handleCustomMemberJoined,
+    );
 
     return () => {
       if (socket) {
         socket.off("room:member_left", handleMemberLeft);
         socket.off("room:member_joined", handleMemberJoined);
       }
-      window.removeEventListener("gokilchat:member_joined", handleCustomMemberJoined);
+      window.removeEventListener(
+        "gokilchat:member_joined",
+        handleCustomMemberJoined,
+      );
     };
   }, [isOpen, roomId]);
 
@@ -209,7 +228,7 @@ export default function GroupInfoModal({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-            className="relative w-full max-w-md h-full bg-primary border-l border-border-divider shadow-2xl overflow-hidden flex flex-col"
+            className="relative w-full max-w-md h-full bg-primary border-l border-border-divider overflow-hidden flex flex-col"
           >
             <div className="h-20 px-6 bg-secondary/50 border-b border-border-divider flex items-center justify-between shrink-0">
               <h3 className="text-lg font-black text-white flex items-center gap-2">
@@ -217,7 +236,7 @@ export default function GroupInfoModal({
               </h3>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-elevated rounded-xl transall"
+                className="cursor-pointer p-2 hover:bg-elevated rounded-xl transall"
               >
                 <X className="w-5 h-5 text-text-secondary" />
               </button>
@@ -300,21 +319,21 @@ export default function GroupInfoModal({
                       {isOwnerOrAdmin && (
                         <button
                           onClick={onInviteClick}
-                          className="flex flex-col items-center gap-2 hover:opacity-80 transall group"
+                          className="flex flex-col items-center gap-2 hover:opacity-80 transall group cursor-pointer"
                         >
-                          <div className="w-12 h-12 rounded-full bg-elevated border border-border-divider flexcc group-hover:bg-accent-default/20 group-hover:border-accent-default/30 group-hover:text-accent-default transall">
+                          <div className="w-12 h-12 rounded-full bg-elevated border border-border-divider flexcc group-hover:bg-accent-default/20 group-hover:border-accent-default/30 group-hover:text-accent-default transall cursor-pointer">
                             <UserPlus className="w-5 h-5" />
                           </div>
-                          <span className="text-xs font-bold text-text-secondary group-hover:text-accent-default transall">
+                          <span className="text-xs font-bold text-text-secondary group-hover:text-accent-default transall cursor-pointer">
                             Add
                           </span>
                         </button>
                       )}
-                      <button className="flex flex-col items-center gap-2 hover:opacity-80 transall group">
-                        <div className="w-12 h-12 rounded-full bg-elevated border border-border-divider flexcc group-hover:bg-accent-default/20 group-hover:border-accent-default/30 group-hover:text-accent-default transall">
+                      <button className="flex flex-col items-center gap-2 hover:opacity-80 transall group cursor-pointer">
+                        <div className="w-12 h-12 rounded-full bg-elevated border border-border-divider flexcc group-hover:bg-accent-default/20 group-hover:border-accent-default/30 group-hover:text-accent-default transall cursor-pointer">
                           <Search className="w-5 h-5" />
                         </div>
-                        <span className="text-xs font-bold text-text-secondary group-hover:text-accent-default transall">
+                        <span className="text-xs font-bold text-text-secondary group-hover:text-accent-default transall cursor-pointer">
                           Search
                         </span>
                       </button>
@@ -323,51 +342,44 @@ export default function GroupInfoModal({
                   <div className="h-2 bg-black/20 -mx-6 mb-4" />
 
                   <div className="mb-4">
-                    {isEditingDescription ? (
-                      <div className="flex flex-col gap-2 p-2 bg-secondary/30 rounded-xl">
-                        <textarea
-                          value={tempDescription}
-                          onChange={(e) => setTempDescription(e.target.value)}
-                          placeholder="Tambahkan deskripsi grup..."
-                          className="w-full bg-secondary text-white text-sm px-3 py-2 rounded-lg border border-accent-default focus:outline-none resize-none h-20"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === "Escape")
-                              setIsEditingDescription(false);
-                          }}
-                        />
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => setIsEditingDescription(false)}
-                            className="px-3 py-1 text-xs font-bold text-text-secondary hover:bg-white/5 rounded-lg transall"
-                          >
-                            Batal
-                          </button>
-                          <button
-                            onClick={handleSaveDescription}
-                            disabled={isSavingDescription}
-                            className="px-3 py-1 text-xs font-bold text-white bg-accent-default hover:bg-accent-hover rounded-lg transall flex items-center gap-1 disabled:opacity-50"
-                          >
-                            {isSavingDescription && (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            )}
-                            Simpan
-                          </button>
+                    <div
+                      className={`flex flex-col gap-1 -mx-4 px-4 py-3 rounded-xl transall ${
+                        isOwnerOrAdmin && !isEditingDescription
+                          ? "cursor-pointer hover:bg-white/5"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        if (isOwnerOrAdmin && !isEditingDescription) {
+                          setTempDescription(roomDescription);
+                          setIsEditingDescription(true);
+                        }
+                      }}
+                    >
+                      <span className="text-xs font-bold text-accent-default uppercase tracking-wider">
+                        Deskripsi Grup
+                      </span>
+                      {isEditingDescription ? (
+                        <div
+                          className="flex flex-col mt-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <textarea
+                            value={tempDescription}
+                            onChange={(e) => setTempDescription(e.target.value)}
+                            placeholder="Tambahkan deskripsi grup..."
+                            className="w-full bg-transparent text-white text-sm font-semibold focus:outline-none resize-none h-24 border-b border-border-divider/50 focus:border-accent-default pb-2 transall"
+                            autoFocus
+                            onBlur={handleSaveDescription}
+                            onKeyDown={(e) => {
+                              if (e.key === "Escape") {
+                                isRevertingRef.current = true;
+                                setTempDescription(roomDescription);
+                                setIsEditingDescription(false);
+                              }
+                            }}
+                          />
                         </div>
-                      </div>
-                    ) : (
-                      <div
-                        className={`flex flex-col gap-1 ${isOwnerOrAdmin ? "cursor-pointer hover:bg-white/5" : ""} -mx-4 px-4 py-3 rounded-xl transall`}
-                        onClick={() => {
-                          if (isOwnerOrAdmin) {
-                            setTempDescription(roomDescription);
-                            setIsEditingDescription(true);
-                          }
-                        }}
-                      >
-                        <span className="text-xs font-bold text-accent-default uppercase tracking-wider">
-                          Deskripsi Grup
-                        </span>
+                      ) : (
                         <div className="flex items-start justify-between gap-4">
                           <p className="text-sm font-semibold text-white whitespace-pre-wrap flex-1">
                             {roomDescription ||
@@ -379,8 +391,8 @@ export default function GroupInfoModal({
                             <PenSquare className="w-4 h-4 text-text-secondary shrink-0 mt-0.5" />
                           )}
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   <div className="h-2 bg-black/20 -mx-6 mb-4" />
@@ -396,10 +408,15 @@ export default function GroupInfoModal({
                       .sort((a, b) =>
                         a.role === "owner" ? -1 : b.role === "owner" ? 1 : 0,
                       )
-                      .map((m) => (
-                        <div
+                      .map((m) => (                        <div
                           key={m.user.id}
-                          className="p-3 rounded-2xl hover:bg-elevated/50 flex items-center gap-3 transall group"
+                          className={`py-2 px-3 rounded-xl flex items-center gap-3 transall group border ${
+                            m.role === "owner"
+                              ? "bg-yellow-500/5 border-yellow-500/10 hover:bg-yellow-500/10"
+                              : m.role === "admin"
+                                ? "bg-accent-default/5 border-accent-default/10 hover:bg-accent-default/10"
+                                : "bg-transparent border-transparent hover:bg-elevated/50"
+                          }`}
                         >
                           <Image
                             src={
@@ -434,33 +451,53 @@ export default function GroupInfoModal({
                                 </Tooltip>
                               )}
                             </p>
-                            <p className="text-[10px] text-text-muted font-bold tracking-wider">
-                              @{m.user.username}
-                            </p>
                           </div>
-                          {canKick(m.role, m.user.id) && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setConfirmKickUser({
-                                  id: m.user.id,
-                                  name: m.user.full_name || m.user.username,
-                                });
-                              }}
-                              disabled={isKicking === m.user.id}
-                              className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl opacity-0 md:group-hover:opacity-100 transall disabled:opacity-50 disabled:cursor-not-allowed shrink-0 max-md:opacity-100 z-10 relative cursor-pointer"
-                            >
-                              <Tooltip content="Kick Member" placement="left">
-                                <span className="flex">
+                          <div className="flex items-center gap-2 shrink-0">
+                            {m.role === "owner" && (
+                              <span className="text-[9px] font-black bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                Owner
+                              </span>
+                            )}
+                            {m.role === "admin" && (
+                              <span className={`text-[9px] font-black bg-accent-default/10 text-accent-default px-2 py-0.5 rounded-md uppercase tracking-wider transall ${
+                                canKick(m.role, m.user.id) ? "md:group-hover:hidden" : ""
+                              }`}>
+                                Admin
+                              </span>
+                            )}
+                            {m.role === "user" && (
+                              <span className={`text-[9px] font-bold bg-white/5 text-text-muted px-2 py-0.5 rounded-md uppercase tracking-wider transall ${
+                                canKick(m.role, m.user.id) ? "md:group-hover:hidden" : ""
+                              }`}>
+                                Anggota
+                              </span>
+                            )}
+                            {canKick(m.role, m.user.id) && (
+                              <Tooltip
+                                content="Kick Member"
+                                placement="left"
+                                triggerClassName="inline-flex md:hidden md:group-hover:flex shrink-0"
+                              >
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmKickUser({
+                                      id: m.user.id,
+                                      name: m.user.full_name || m.user.username,
+                                    });
+                                  }}
+                                  disabled={isKicking === m.user.id}
+                                  className="w-8 h-8 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transall disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                                >
                                   {isKicking === m.user.id ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                   ) : (
-                                    <UserMinus className="w-4 h-4" />
+                                    <UserMinus className="w-3.5 h-3.5" />
                                   )}
-                                </span>
+                                </button>
                               </Tooltip>
-                            </button>
-                          )}
+                            )}
+                          </div>
                         </div>
                       ))}
                   </div>
@@ -480,9 +517,15 @@ export default function GroupInfoModal({
                   <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flexcc mx-auto mb-4">
                     <UserMinus className="w-6 h-6" />
                   </div>
-                  <h4 className="text-lg font-black text-white mb-2">Kick Member?</h4>
+                  <h4 className="text-lg font-black text-white mb-2">
+                    Kick Member?
+                  </h4>
                   <p className="text-sm text-text-secondary mb-6 leading-relaxed">
-                    Apakah Anda yakin ingin mengeluarkan <span className="text-white font-black">@{confirmKickUser.name}</span> dari grup ini?
+                    Apakah Anda yakin ingin mengeluarkan{" "}
+                    <span className="text-white font-black">
+                      @{confirmKickUser.name}
+                    </span>{" "}
+                    dari grup ini?
                   </p>
                   <div className="flex gap-3">
                     <button

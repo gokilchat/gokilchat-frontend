@@ -4,11 +4,15 @@ import {
   useState,
   useRef,
   useEffect,
+  useLayoutEffect,
   useCallback,
   ReactNode,
   CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
+
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 interface TooltipProps {
   /** Content yang ditampilkan di dalam tooltip */
@@ -21,6 +25,8 @@ interface TooltipProps {
   delay?: number;
   /** Class tambahan untuk override styling */
   className?: string;
+  /** Class tambahan untuk trigger span */
+  triggerClassName?: string;
 }
 
 /**
@@ -36,8 +42,10 @@ export default function Tooltip({
   placement = "top",
   delay = 400,
   className = "",
+  triggerClassName = "inline-flex",
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
+  const [isPositioned, setIsPositioned] = useState(false);
   const [pos, setPos] = useState<CSSProperties>({});
   const [actualPlacement, setActualPlacement] = useState(placement);
   const [mounted, setMounted] = useState(false);
@@ -138,17 +146,24 @@ export default function Tooltip({
   }, [placement]);
 
   const show = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setVisible(true);
-      // Hitung posisi setelah satu frame (supaya tooltipRef sudah punya ukuran)
-      requestAnimationFrame(() => computePosition());
     }, delay);
-  }, [delay, computePosition]);
+  }, [delay]);
 
   const hide = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setVisible(false);
+    setIsPositioned(false);
   }, []);
+
+  // Hitung posisi secara synchronous sebelum browser menggambar (paint)
+  useIsomorphicLayoutEffect(() => {
+    if (!visible) return;
+    computePosition();
+    setIsPositioned(true);
+  }, [visible, content, computePosition]);
 
   // Recalculate on scroll/resize
   useEffect(() => {
@@ -208,7 +223,7 @@ export default function Tooltip({
         onMouseLeave={hide}
         onFocus={show}
         onBlur={hide}
-        className="inline-flex"
+        className={triggerClassName}
       >
         {children}
       </span>
@@ -218,7 +233,10 @@ export default function Tooltip({
         createPortal(
           <div
             ref={tooltipRef}
-            style={pos}
+            style={{
+              ...pos,
+              visibility: isPositioned ? "visible" : "hidden",
+            }}
             // z-9998: di atas semua modal (z-50~z-60), di bawah Toast (z-9999)
             className={[
               "z-9998 pointer-events-none select-none",
@@ -226,8 +244,8 @@ export default function Tooltip({
               "bg-elevated border border-border-divider",
               "text-xs font-semibold text-text-primary",
               "shadow-xl backdrop-blur-sm whitespace-nowrap",
-              "transition-all duration-150 ease-in-out",
-              visible ? "opacity-100 scale-100" : "opacity-0 scale-95",
+              "transition duration-150 ease-in-out",
+              visible && isPositioned ? "opacity-100 scale-100" : "opacity-0 scale-95",
               className,
             ].join(" ")}
             role="tooltip"
