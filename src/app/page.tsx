@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { loginWithGoogle, setAuthToken } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,19 @@ import Image from "next/image";
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const { user, token, setAuth } = useAuthStore();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsHydrated(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && user && token) {
+      router.push("/chat");
+    }
+  }, [isHydrated, user, token, router]);
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
@@ -34,6 +46,10 @@ export default function LoginPage() {
       console.error(err);
     }
   };
+
+  if (isHydrated && user && token) {
+    return null;
+  }
 
   return (
     <div
