@@ -239,7 +239,7 @@ export default function Tooltip({
             }}
             // z-9998: di atas semua modal (z-50~z-60), di bawah Toast (z-9999)
             className={[
-              "z-9998 pointer-events-none select-none",
+              "fixed z-9998 pointer-events-none select-none",
               "px-2.5 py-1.5 rounded-xl",
               "bg-elevated border border-border-divider",
               "text-xs font-semibold text-text-primary",
