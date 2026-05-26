@@ -4,6 +4,8 @@ import { X, Search, Plus, Link as LinkIcon, RefreshCw, Copy, Check } from "lucid
 import { User } from "@/types/chat";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/components/Toast";
+import Tooltip from "@/components/Tooltip";
 
 interface InviteMemberModalProps {
   isOpen: boolean;
@@ -28,6 +30,7 @@ export default function InviteMemberModal({
   title = "Invite Member",
   activeRoomId
 }: InviteMemberModalProps) {
+  const { toast } = useToast();
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -65,7 +68,7 @@ export default function InviteMemberModal({
       }
     } catch (err) {
       console.error(err);
-      alert("Gagal memperbarui link undangan. Pastikan kamu owner grup.");
+      toast("Gagal memperbarui link undangan. Pastikan kamu owner grup.", "error");
     } finally {
       setIsRegenerating(false);
     }
@@ -107,21 +110,23 @@ export default function InviteMemberModal({
                         <LinkIcon className="w-4 h-4 text-text-muted shrink-0 mr-2" />
                         <span className="text-sm text-text-primary truncate font-medium">{inviteLink}</span>
                       </div>
-                      <button 
-                        onClick={handleCopy}
-                        className="p-3 bg-accent-default hover:bg-accent-hover text-white rounded-2xl transall shrink-0 shadow-lg"
-                        title="Copy Link"
-                      >
-                        {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      </button>
-                      <button 
-                        onClick={handleRegenerate}
-                        disabled={isRegenerating}
-                        className="p-3 bg-secondary border border-border-divider hover:bg-elevated text-text-secondary rounded-2xl transall shrink-0"
-                        title="Reset Link"
-                      >
-                        <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
-                      </button>
+                      <Tooltip content="Copy Link" placement="top">
+                        <button 
+                          onClick={handleCopy}
+                          className="p-3 bg-accent-default hover:bg-accent-hover text-white rounded-2xl transall shrink-0 shadow-lg"
+                        >
+                          {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Reset Link" placement="top">
+                        <button 
+                          onClick={handleRegenerate}
+                          disabled={isRegenerating}
+                          className="p-3 bg-secondary border border-border-divider hover:bg-elevated text-text-secondary rounded-2xl transall shrink-0"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+                        </button>
+                      </Tooltip>
                     </div>
                   ) : (
                     <div className="h-11 bg-elevated animate-pulse rounded-2xl" />

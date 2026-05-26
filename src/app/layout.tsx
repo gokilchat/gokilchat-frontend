@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { ToastProvider } from "@/components/Toast";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
@@ -44,7 +45,9 @@ export default function RootLayout({
     >
       <body className="h-full flex flex-col bg-primary text-text-primary">
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </GoogleOAuthProvider>
       </body>
     </html>

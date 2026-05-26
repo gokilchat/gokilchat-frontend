@@ -5,6 +5,7 @@ import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 import { useChatStore } from "@/store/useChatStore";
+import { useToast } from "@/components/Toast";
 
 interface RoomInviteContentProps {
   message: Message;
@@ -16,6 +17,7 @@ export default function RoomInviteContent({
   isMe,
 }: RoomInviteContentProps) {
   const { setActiveRoomId } = useChatStore();
+  const { toast } = useToast();
   const [inviteStatus, setInviteStatus] = useState(message.invite_info?.status);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -52,7 +54,7 @@ export default function RoomInviteContent({
       }
     } catch (err) {
       console.error(err);
-      alert(`Gagal ${action} undangan`);
+      toast(`Gagal ${action} undangan`, "error");
     } finally {
       setIsProcessing(false);
     }

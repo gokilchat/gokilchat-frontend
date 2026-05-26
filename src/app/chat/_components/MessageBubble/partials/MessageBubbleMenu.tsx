@@ -2,6 +2,7 @@ import { ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
+import { useToast } from "@/components/Toast";
 
 interface MessageBubbleMenuProps {
   isMe: boolean;
@@ -22,6 +23,7 @@ export default function MessageBubbleMenu({
   });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [mounted, setMounted] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -66,14 +68,15 @@ export default function MessageBubbleMenu({
         isOpen &&
         createPortal(
           <>
-            {/* Overlay buat nangkep klik di luar menu */}
+            {/* Overlay buat nangkep klik di luar menu — z-9995 */}
             <div
-              className="fixed inset-0 z-9998"
+              className="fixed inset-0 z-9995"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsOpen(false);
               }}
             />
+            {/* Menu — z-9996, di atas overlay, di bawah Tooltip & Toast */}
             <div
               style={{
                 position: "fixed",
@@ -85,7 +88,7 @@ export default function MessageBubbleMenu({
                   : { left: menuCoords.left }),
               }}
               className={clsx(
-                "bg-elevated border border-border-divider rounded-xl shadow-2xl py-1 z-9999 w-36 overflow-hidden",
+                "bg-elevated border border-border-divider rounded-xl shadow-2xl py-1 z-9996 w-36 overflow-hidden",
                 isMe
                   ? menuCoords.opensUp
                     ? "origin-bottom-right"
@@ -111,9 +114,9 @@ export default function MessageBubbleMenu({
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsOpen(false);
-                  alert("Fitur Balas coming soon 🗿");
+                  toast("Fitur Balas segera hadir! 🗿", "info");
                 }}
-                className="w-full text-left px-4 py-2.5 text-xs font-bold text-white hover:bg-secondary transall"
+                className="w-full text-left px-4 py-2.5 text-xs font-bold text-text-secondary hover:bg-secondary transall"
               >
                 Balas
               </button>
@@ -121,9 +124,9 @@ export default function MessageBubbleMenu({
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsOpen(false);
-                  alert("Fitur Teruskan coming soon 🗿");
+                  toast("Fitur Teruskan segera hadir! 🗿", "info");
                 }}
-                className="w-full text-left px-4 py-2.5 text-xs font-bold text-white hover:bg-secondary transall"
+                className="w-full text-left px-4 py-2.5 text-xs font-bold text-text-secondary hover:bg-secondary transall"
               >
                 Teruskan
               </button>
@@ -131,7 +134,7 @@ export default function MessageBubbleMenu({
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsOpen(false);
-                  alert("Fitur Hapus coming soon 🗿");
+                  toast("Fitur Hapus segera hadir! 🗿", "info");
                 }}
                 className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-secondary transall"
               >

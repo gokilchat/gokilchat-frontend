@@ -17,6 +17,8 @@ import Image from "next/image";
 import { apiFetch, kickMember, updateRoomDetails } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getSocket } from "@/lib/socket";
+import { useToast } from "@/components/Toast";
+import Tooltip from "@/components/Tooltip";
 
 interface Member {
   role: "owner" | "admin" | "user";
@@ -54,6 +56,7 @@ export default function GroupInfoModal({
   const [isSavingName, setIsSavingName] = useState(false);
 
   const currentUser = useAuthStore((state) => state.user);
+  const { toast } = useToast();
   const [isKicking, setIsKicking] = useState<string | null>(null);
   const [confirmKickUser, setConfirmKickUser] = useState<{ id: string; name: string } | null>(null);
 
@@ -69,7 +72,7 @@ export default function GroupInfoModal({
       await kickMember(roomId, userId);
       setMembers((prev) => prev.filter((m) => m.user.id !== userId));
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Gagal kick member");
+      toast(error instanceof Error ? error.message : "Gagal kick member", "error");
     } finally {
       setIsKicking(null);
     }
@@ -82,8 +85,9 @@ export default function GroupInfoModal({
       setRoomDescription(tempDescription);
       setIsEditingDescription(false);
     } catch (error) {
-      alert(
+      toast(
         error instanceof Error ? error.message : "Gagal menyimpan deskripsi",
+        "error"
       );
     } finally {
       setIsSavingDescription(false);
@@ -98,8 +102,9 @@ export default function GroupInfoModal({
       setRoomName(tempName);
       setIsEditingName(false);
     } catch (error) {
-      alert(
+      toast(
         error instanceof Error ? error.message : "Gagal menyimpan nama grup",
+        "error"
       );
     } finally {
       setIsSavingName(false);
@@ -415,14 +420,18 @@ export default function GroupInfoModal({
                             <p className="text-sm font-black text-white truncate flex items-center gap-1.5">
                               {m.user.full_name || m.user.username}
                               {m.role === "owner" && (
-                                <span title="Owner" className="flex">
-                                  <Crown className="w-3.5 h-3.5 text-yellow-500" />
-                                </span>
+                                <Tooltip content="Owner" placement="top">
+                                  <span className="flex">
+                                    <Crown className="w-3.5 h-3.5 text-yellow-500" />
+                                  </span>
+                                </Tooltip>
                               )}
                               {m.role === "admin" && (
-                                <span title="Admin" className="flex">
-                                  <ShieldAlert className="w-3.5 h-3.5 text-accent-default" />
-                                </span>
+                                <Tooltip content="Admin" placement="top">
+                                  <span className="flex">
+                                    <ShieldAlert className="w-3.5 h-3.5 text-accent-default" />
+                                  </span>
+                                </Tooltip>
                               )}
                             </p>
                             <p className="text-[10px] text-text-muted font-bold tracking-wider">
@@ -440,13 +449,16 @@ export default function GroupInfoModal({
                               }}
                               disabled={isKicking === m.user.id}
                               className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl opacity-0 md:group-hover:opacity-100 transall disabled:opacity-50 disabled:cursor-not-allowed shrink-0 max-md:opacity-100 z-10 relative cursor-pointer"
-                              title="Kick Member"
                             >
-                              {isKicking === m.user.id ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <UserMinus className="w-4 h-4" />
-                              )}
+                              <Tooltip content="Kick Member" placement="left">
+                                <span className="flex">
+                                  {isKicking === m.user.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <UserMinus className="w-4 h-4" />
+                                  )}
+                                </span>
+                              </Tooltip>
                             </button>
                           )}
                         </div>

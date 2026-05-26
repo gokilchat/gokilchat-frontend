@@ -7,6 +7,8 @@ import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { User, Room } from "@/types/chat";
+import { useToast } from "@/components/Toast";
+import ConfirmModal from "@/components/ConfirmModal";
 
 // Components
 import Sidebar from "./_components/Sidebar";
@@ -18,6 +20,7 @@ import GroupInfoModal from "./_components/modals/GroupInfoModal";
 import SettingsModal from "./_components/modals/SettingsModal";
 
 export default function ChatPage() {
+  const { toast } = useToast();
   const { user, token, logout } = useAuthStore();
   const {
     rooms,
@@ -43,6 +46,7 @@ export default function ChatPage() {
   const [modalContext, setModalContext] = useState<"dm" | "invite">("dm");
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [presenceStatus, setPresenceStatus] = useState<Record<string, boolean>>(
     {},
   );
@@ -156,7 +160,7 @@ export default function ChatPage() {
     });
 
     socket.on("room:kicked", (data: { room_id: string }) => {
-      alert("Waduh, lu abis di-kick dari salah satu grup! Mampus 🗿");
+      toast("Waduh, lu abis di-kick dari salah satu grup! Mampus 🗿", "warning");
       
       // Kalo lagi buka grupnya, tutup
       if (useChatStore.getState().activeRoomId === data.room_id) {
@@ -194,7 +198,7 @@ export default function ChatPage() {
       socket.off("receipt:update:batch");
       disconnectSocket();
     };
-  }, [isHydrated, user, token, setRooms, addMessage]);
+  }, [isHydrated, user, token, setRooms, addMessage, toast]);
 
   // Patroli Status On-Demand (Hemat Resource) 🗿
   useEffect(() => {
@@ -326,7 +330,7 @@ export default function ChatPage() {
         setSearchResults([]);
       }
     } catch {
-      alert("Gagal bikin room");
+      toast("Gagal bikin room", "error");
     }
   };
 
@@ -391,7 +395,7 @@ export default function ChatPage() {
         },
       );
       if (res.success) {
-        alert("User berhasil di-invite!");
+        toast("User berhasil di-invite!", "success");
         window.dispatchEvent(new CustomEvent("gokilchat:member_joined", { detail: { roomId: activeRoomId } }));
         setShowInviteModal(false);
         setSearchQuery("");
@@ -399,14 +403,18 @@ export default function ChatPage() {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Gagal invite user";
-      alert(msg);
+      toast(msg, "error");
     }
   };
 
-  const handleLeaveGroup = async () => {
+  const handleLeaveGroup = () => {
     if (!activeRoomId) return;
-    if (!confirm("Yakin mau cabut dari grup ini? Nggak asik lu 🗿")) return;
+    setShowLeaveConfirm(true);
+  };
 
+  const handleLeaveGroupConfirmed = async () => {
+    setShowLeaveConfirm(false);
+    if (!activeRoomId) return;
     try {
       const res = await apiFetch(`/rooms/${activeRoomId}/leave`, {
         method: "POST",
@@ -414,12 +422,13 @@ export default function ChatPage() {
       if (res.success) {
         setRooms(rooms.filter((r) => r.id !== activeRoomId));
         setActiveRoomId(null);
+        toast("Berhasil keluar dari grup.", "info");
       } else {
-        alert(res.error || "Gagal keluar grup");
+        toast(res.error || "Gagal keluar grup", "error");
       }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-      alert("Terjadi kesalahan saat keluar grup");
+      toast("Terjadi kesalahan saat keluar grup", "error");
     }
   };
 
@@ -534,6 +543,22 @@ export default function ChatPage() {
           }}
         />
       )}
+
+      <ConfirmModal
+        isOpen={showLeaveConfirm}
+        onConfirm={handleLeaveGroupConfirmed}
+        onCancel={() => setShowLeaveConfirm(false)}
+        title="Keluar dari Grup?"
+        description={
+          <span>
+            Yakin mau cabut dari grup ini?{" "}
+            <span className="text-white font-black">Nggak asik lu 🗿</span>
+          </span>
+        }
+        confirmLabel="Keluar"
+        cancelLabel="Batalin"
+        variant="danger"
+      />
     </div>
   );
 }

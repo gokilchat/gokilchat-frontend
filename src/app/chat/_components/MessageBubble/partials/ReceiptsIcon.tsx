@@ -1,6 +1,7 @@
 import { Message } from "@/types/chat";
 import { Check, CheckCheck } from "lucide-react";
 import { useChatStore } from "@/store/useChatStore";
+import Tooltip from "@/components/Tooltip";
 
 interface ReceiptsIconProps {
   message: Message;
@@ -52,8 +53,10 @@ export default function ReceiptsIcon({
   }
 
   return (
-    <div className="flex items-center" title="Status pesan">
-      {checks}
-    </div>
+    <Tooltip content="Status pesan" placement="top">
+      <div className="flex items-center">
+        {checks}
+      </div>
+    </Tooltip>
   );
 }
