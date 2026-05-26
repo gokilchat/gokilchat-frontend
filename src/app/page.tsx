@@ -21,6 +21,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isHydrated && user && token) {
+      document.cookie = `supabase_jwt=${token}; path=/; max-age=604800; SameSite=Lax; Secure`;
       router.push("/chat");
     }
   }, [isHydrated, user, token, router]);
