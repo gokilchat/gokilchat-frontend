@@ -3,6 +3,7 @@ const CHAT_SERVER_URL = process.env.NEXT_PUBLIC_CHAT_SERVER_URL || 'http://local
 export const setAuthToken = (token: string) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('supabase_jwt', token);
+    document.cookie = `supabase_jwt=${token}; path=/; max-age=604800; SameSite=Lax; Secure`;
   }
 };
 
@@ -16,6 +17,7 @@ export const getAuthToken = () => {
 export const clearAuthToken = () => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('supabase_jwt');
+    document.cookie = 'supabase_jwt=; path=/; max-age=0; SameSite=Lax; Secure';
   }
 };
 

@@ -17,6 +17,7 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, token) => set({ user, token }),
       logout: () => {
         localStorage.removeItem('supabase_jwt');
+        document.cookie = 'supabase_jwt=; path=/; max-age=0; SameSite=Lax; Secure';
         set({ user: null, token: null });
       },
     }),
