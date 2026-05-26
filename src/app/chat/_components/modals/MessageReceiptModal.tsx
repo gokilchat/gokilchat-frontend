@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, CheckCheck } from "lucide-react";
 import { Message } from "@/types/chat";
 import Image from "next/image";
+import { createPortal } from "react-dom";
 
 interface MessageReceiptModalProps {
   isOpen: boolean;
@@ -27,10 +28,10 @@ export default function MessageReceiptModal({
     });
   };
 
-  return (
+  const content = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flexcc p-4">
+        <div className="fixed inset-0 z-999 flexcc p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -91,11 +92,14 @@ export default function MessageReceiptModal({
                               referrerPolicy="no-referrer"
                               onError={(e) => {
                                 e.currentTarget.srcset = "";
-                                e.currentTarget.src = "/images/default-avatar.png";
+                                e.currentTarget.src =
+                                  "/images/default-avatar.png";
                               }}
                             />
                           ) : (
-                            (r.user?.full_name || r.user?.username || r.user_id).charAt(0).toUpperCase()
+                            (r.user?.full_name || r.user?.username || r.user_id)
+                              .charAt(0)
+                              .toUpperCase()
                           )}
                         </div>
                       </div>
@@ -132,4 +136,6 @@ export default function MessageReceiptModal({
       )}
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 }

@@ -194,6 +194,16 @@ export default function ChatPage() {
       );
     });
 
+    socket.on("room:updated", (data: { room_id: string; name: string; description: string }) => {
+      setRooms((prevRooms: Room[]) =>
+        prevRooms.map((r) =>
+          r.id === data.room_id
+            ? { ...r, name: data.name, description: data.description }
+            : r
+        )
+      );
+    });
+
     apiFetch("/rooms")
       .then((res) => {
         if (res.success) {

@@ -26,6 +26,7 @@ export default function ChatHeader({
 }: ChatHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const tooltipAnchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -44,50 +45,56 @@ export default function ChatHeader({
           content="Klik untuk info grup"
           placement="bottom"
           triggerClassName="flex flex-1 min-w-0 mr-4 h-full items-center"
+          anchorRef={tooltipAnchorRef}
         >
           <div
             className="flex items-center gap-4 w-full h-full transall cursor-pointer hover:opacity-80"
             onClick={onGroupInfoClick}
           >
-            <div className="relative shrink-0">
-              <div className="size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner">
-                {activeRoom.avatar_url ? (
-                  <Image
-                    src={activeRoom.avatar_url}
-                    alt={activeRoom.name || ""}
-                    width={44}
-                    height={44}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      e.currentTarget.srcset = "";
-                      e.currentTarget.src = "/images/default-avatar.png";
-                    }}
-                  />
-                ) : (
-                  <span className="font-black text-accent-default text-lg">
-                    {activeRoom.name?.charAt(0) || "#"}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-black text-white text-base tracking-tight leading-tight mb-1 truncate">
-                {activeRoom.name || "Private Chat"}
-              </h3>
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className={clsx(
-                    "truncate w-full",
-                    showSubtitleHint
-                      ? "text-xs text-accent-default/90"
-                      : "text-xs text-text-muted",
+            <div
+              ref={tooltipAnchorRef}
+              className="flex items-center gap-4 max-w-full min-w-0"
+            >
+              <div className="relative shrink-0">
+                <div className="size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner">
+                  {activeRoom.avatar_url ? (
+                    <Image
+                      src={activeRoom.avatar_url}
+                      alt={activeRoom.name || ""}
+                      width={44}
+                      height={44}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.srcset = "";
+                        e.currentTarget.src = "/images/default-avatar.png";
+                      }}
+                    />
+                  ) : (
+                    <span className="font-black text-accent-default text-lg">
+                      {activeRoom.name?.charAt(0) || "#"}
+                    </span>
                   )}
-                >
-                  {showSubtitleHint
-                    ? "Klik di sini untuk info grup"
-                    : membersCache[activeRoom.id] || "Group Chat"}
-                </span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-black text-white text-base tracking-tight leading-tight mb-1 truncate">
+                  {activeRoom.name || "Private Chat"}
+                </h3>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className={clsx(
+                      "truncate w-full",
+                      showSubtitleHint
+                        ? "text-xs text-accent-default/90"
+                        : "text-xs text-text-muted",
+                    )}
+                  >
+                    {showSubtitleHint
+                      ? "Klik di sini untuk info grup"
+                      : membersCache[activeRoom.id] || "Group Chat"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

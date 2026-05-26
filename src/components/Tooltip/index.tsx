@@ -27,6 +27,8 @@ interface TooltipProps {
   className?: string;
   /** Class tambahan untuk trigger span */
   triggerClassName?: string;
+  /** Opsional ref untuk elemen penempatan tooltip. Jika tidak ada, pakai elemen trigger. */
+  anchorRef?: React.RefObject<HTMLElement | null>;
 }
 
 /**
@@ -40,9 +42,10 @@ export default function Tooltip({
   content,
   children,
   placement = "top",
-  delay = 400,
+  delay = 50,
   className = "",
   triggerClassName = "inline-flex",
+  anchorRef,
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [isPositioned, setIsPositioned] = useState(false);
@@ -59,7 +62,7 @@ export default function Tooltip({
   }, []);
 
   const computePosition = useCallback(() => {
-    const trigger = triggerRef.current;
+    const trigger = anchorRef?.current || triggerRef.current;
     if (!trigger) return;
 
     const rect = trigger.getBoundingClientRect();
@@ -101,7 +104,7 @@ export default function Tooltip({
       } else {
         // Cari yang muat apapun
         const fallback = (Object.keys(fits) as (keyof typeof fits)[]).find(
-          (k) => fits[k]
+          (k) => fits[k],
         );
         if (fallback) finalPlacement = fallback;
       }
@@ -116,34 +119,34 @@ export default function Tooltip({
         style.bottom = vh - rect.top + GAP;
         style.left = Math.min(
           Math.max(centerX - tw / 2, VIEWPORT_MARGIN),
-          vw - tw - VIEWPORT_MARGIN
+          vw - tw - VIEWPORT_MARGIN,
         );
         break;
       case "bottom":
         style.top = rect.bottom + GAP;
         style.left = Math.min(
           Math.max(centerX - tw / 2, VIEWPORT_MARGIN),
-          vw - tw - VIEWPORT_MARGIN
+          vw - tw - VIEWPORT_MARGIN,
         );
         break;
       case "left":
         style.right = vw - rect.left + GAP;
         style.top = Math.min(
           Math.max(centerY - th / 2, VIEWPORT_MARGIN),
-          vh - th - VIEWPORT_MARGIN
+          vh - th - VIEWPORT_MARGIN,
         );
         break;
       case "right":
         style.left = rect.right + GAP;
         style.top = Math.min(
           Math.max(centerY - th / 2, VIEWPORT_MARGIN),
-          vh - th - VIEWPORT_MARGIN
+          vh - th - VIEWPORT_MARGIN,
         );
         break;
     }
 
     setPos(style);
-  }, [placement]);
+  }, [placement, anchorRef]);
 
   const show = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -245,7 +248,9 @@ export default function Tooltip({
               "text-xs font-semibold text-text-primary",
               "shadow-xl backdrop-blur-sm whitespace-nowrap",
               "transition duration-150 ease-in-out",
-              visible && isPositioned ? "opacity-100 scale-100" : "opacity-0 scale-95",
+              visible && isPositioned
+                ? "opacity-100 scale-100"
+                : "opacity-0 scale-95",
               className,
             ].join(" ")}
             role="tooltip"
@@ -261,7 +266,7 @@ export default function Tooltip({
               }}
             />
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );

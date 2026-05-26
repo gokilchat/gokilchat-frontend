@@ -2,6 +2,7 @@ import { User, Room, Message } from "@/types/chat";
 import ChatSkeleton from "../ChatSkeleton";
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
+import { getSocket } from "@/lib/socket";
 
 // Partials
 import ChatHeader from "./partials/ChatHeader";
@@ -52,7 +53,7 @@ export default function ChatWindow({
       activeRoom.type !== "dm" &&
       !membersCache[activeRoom.id]
     ) {
-      apiFetch(`/rooms/${activeRoom.id}`)
+      apiFetch(`/rooms/${activeRoom.id}`, { cache: "no-store" })
         .then((res) => {
           if (res.success && res.data?.members) {
             const names = res.data.members
@@ -64,6 +65,40 @@ export default function ChatWindow({
         .catch(console.error);
     }
   }, [activeRoom, membersCache]);
+
+  // Listen for socket events to update membersCache
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !activeRoom) return;
+
+    const handleMemberLeft = (data: { room_id: string; user_id: string }) => {
+      if (data.room_id === activeRoom.id) {
+        // Clear the cache so it will be refetched
+        setMembersCache((prev) => {
+          const newCache = { ...prev };
+          delete newCache[activeRoom.id];
+          return newCache;
+        });
+      }
+    };
+
+    const handleMemberJoined = (data: { room_id: string }) => {
+      if (data.room_id === activeRoom.id) {
+        setMembersCache((prev) => {
+          const newCache = { ...prev };
+          delete newCache[activeRoom.id];
+          return newCache;
+        });
+      }
+    };
+
+    socket.on("room:member_left", handleMemberLeft);
+    socket.on("room:member_joined", handleMemberJoined);
+    return () => {
+      socket.off("room:member_left", handleMemberLeft);
+      socket.off("room:member_joined", handleMemberJoined);
+    };
+  }, [activeRoom]);
 
   // Handle subtitle hint animation
   useEffect(() => {

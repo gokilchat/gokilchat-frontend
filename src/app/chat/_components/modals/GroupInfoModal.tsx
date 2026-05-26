@@ -62,6 +62,7 @@ export default function GroupInfoModal({
     id: string;
     name: string;
   } | null>(null);
+  const [isConfirmingSaveDesc, setIsConfirmingSaveDesc] = useState(false);
 
   const currentUserRole = members.find(
     (m) => m.user.id === currentUser?.id,
@@ -84,7 +85,7 @@ export default function GroupInfoModal({
     }
   };
 
-  const handleSaveDescription = async () => {
+  const handleRequestSaveDescription = () => {
     if (isRevertingRef.current) {
       isRevertingRef.current = false;
       return;
@@ -93,10 +94,15 @@ export default function GroupInfoModal({
       setIsEditingDescription(false);
       return;
     }
+    setIsConfirmingSaveDesc(true);
+  };
+
+  const executeSaveDescription = async () => {
     try {
       await updateRoomDetails(roomId, { description: tempDescription });
       setRoomDescription(tempDescription);
       setIsEditingDescription(false);
+      setIsConfirmingSaveDesc(false);
     } catch (error) {
       toast(
         error instanceof Error ? error.message : "Gagal menyimpan deskripsi",
@@ -104,6 +110,7 @@ export default function GroupInfoModal({
       );
       setTempDescription(roomDescription);
       setIsEditingDescription(false);
+      setIsConfirmingSaveDesc(false);
     }
   };
 
@@ -134,7 +141,7 @@ export default function GroupInfoModal({
   useEffect(() => {
     if (isOpen && roomId) {
       const timer = setTimeout(() => setIsLoading(true), 0);
-      apiFetch(`/rooms/${roomId}`)
+      apiFetch(`/rooms/${roomId}`, { cache: "no-store" })
         .then((res) => {
           if (res.success && res.data) {
             setRoomName(res.data.name);
@@ -171,7 +178,7 @@ export default function GroupInfoModal({
 
     const handleMemberJoined = (data: { room_id: string }) => {
       if (data.room_id === roomId) {
-        apiFetch(`/rooms/${roomId}`).then((res) => {
+        apiFetch(`/rooms/${roomId}`, { cache: "no-store" }).then((res) => {
           if (res.success && res.data && res.data.members) {
             setMembers(res.data.members);
           }
@@ -179,10 +186,17 @@ export default function GroupInfoModal({
       }
     };
 
+    const handleRoomUpdated = (data: { room_id: string; name: string; description: string }) => {
+      if (data.room_id === roomId) {
+        setRoomName(data.name);
+        setRoomDescription(data.description);
+      }
+    };
+
     const handleCustomMemberJoined = (e: Event) => {
       const customEvent = e as CustomEvent<{ roomId: string }>;
       if (customEvent.detail.roomId === roomId) {
-        apiFetch(`/rooms/${roomId}`).then((res) => {
+        apiFetch(`/rooms/${roomId}`, { cache: "no-store" }).then((res) => {
           if (res.success && res.data && res.data.members) {
             setMembers(res.data.members);
           }
@@ -193,6 +207,7 @@ export default function GroupInfoModal({
     if (socket) {
       socket.on("room:member_left", handleMemberLeft);
       socket.on("room:member_joined", handleMemberJoined);
+      socket.on("room:updated", handleRoomUpdated);
     }
 
     window.addEventListener(
@@ -204,6 +219,7 @@ export default function GroupInfoModal({
       if (socket) {
         socket.off("room:member_left", handleMemberLeft);
         socket.off("room:member_joined", handleMemberJoined);
+        socket.off("room:updated", handleRoomUpdated);
       }
       window.removeEventListener(
         "gokilchat:member_joined",
@@ -343,7 +359,7 @@ export default function GroupInfoModal({
 
                   <div className="mb-4">
                     <div
-                      className={`flex flex-col gap-1 -mx-4 px-4 py-3 rounded-xl transall ${
+                      className={`flex flex-col gap-1 -mx-4 px-4 py-3 rounded-xl transall relative group ${
                         isOwnerOrAdmin && !isEditingDescription
                           ? "cursor-pointer hover:bg-white/5"
                           : ""
@@ -364,12 +380,13 @@ export default function GroupInfoModal({
                           onClick={(e) => e.stopPropagation()}
                         >
                           <textarea
+                            spellCheck="false"
                             value={tempDescription}
                             onChange={(e) => setTempDescription(e.target.value)}
                             placeholder="Tambahkan deskripsi grup..."
-                            className="w-full bg-transparent text-white text-sm font-semibold focus:outline-none resize-none h-24 border-b border-border-divider/50 focus:border-accent-default pb-2 transall"
+                            className="w-full bg-transparent text-white/70 text-xs font-semibold focus:outline-none resize-none h-24 border-b border-border-divider/50 focus:border-accent-default pb-2 transall custom-scrollbar leading-relaxed"
                             autoFocus
-                            onBlur={handleSaveDescription}
+                            onBlur={handleRequestSaveDescription}
                             onKeyDown={(e) => {
                               if (e.key === "Escape") {
                                 isRevertingRef.current = true;
@@ -381,14 +398,16 @@ export default function GroupInfoModal({
                         </div>
                       ) : (
                         <div className="flex items-start justify-between gap-4">
-                          <p className="text-sm font-semibold text-white whitespace-pre-wrap flex-1">
+                          <p className="text-xs font-semibold text-white/70 whitespace-pre-wrap flex-1 pb-4 leading-relaxed">
                             {roomDescription ||
                               (isOwnerOrAdmin
                                 ? "Tambahkan deskripsi grup..."
                                 : "Tidak ada deskripsi grup.")}
                           </p>
                           {isOwnerOrAdmin && (
-                            <PenSquare className="w-4 h-4 text-text-secondary shrink-0 mt-0.5" />
+                            <div className="absolute bottom-3 right-4 opacity-0 group-hover:opacity-100 transall bg-primary/50 backdrop-blur-md p-1.5 rounded-lg border border-white/5">
+                              <PenSquare className="w-4 h-4 text-text-secondary" />
+                            </div>
                           )}
                         </div>
                       )}
@@ -543,6 +562,45 @@ export default function GroupInfoModal({
                       className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transall cursor-pointer text-sm"
                     >
                       Kick
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+            {/* Confirm Save Description Modal */}
+            {isConfirmingSaveDesc && (
+              <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flexcc p-4">
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  className="w-full max-w-sm bg-secondary p-6 rounded-3xl border border-border-divider shadow-2xl text-center"
+                >
+                  <div className="w-12 h-12 rounded-full bg-accent-default/10 text-accent-default flexcc mx-auto mb-4">
+                    <PenSquare className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-lg font-black text-white mb-2">
+                    Simpan Perubahan?
+                  </h4>
+                  <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+                    Apakah Anda yakin ingin menyimpan deskripsi grup yang baru?
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setTempDescription(roomDescription);
+                        setIsEditingDescription(false);
+                        setIsConfirmingSaveDesc(false);
+                      }}
+                      className="flex-1 py-3 bg-elevated hover:bg-elevated/80 text-white font-bold rounded-2xl transall cursor-pointer text-sm"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={executeSaveDescription}
+                      className="flex-1 py-3 bg-accent-default hover:bg-accent-hover text-white font-bold rounded-2xl transall cursor-pointer text-sm"
+                    >
+                      Simpan
                     </button>
                   </div>
                 </motion.div>
