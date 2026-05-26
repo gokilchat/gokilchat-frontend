@@ -13,7 +13,7 @@ export default function ReceiptsIcon({
   isMe,
 }: ReceiptsIconProps) {
   const activeRoom = useChatStore((state) =>
-    state.rooms.find((r) => r.id === message.room_id),
+    state.rooms.find((r) => r.id === (message.room_id || state.activeRoomId)),
   );
 
   if (!isMe) return null;
