@@ -200,6 +200,7 @@ export default function ChatPage() {
           setRooms(res.data);
           res.data.forEach((room: Room) => {
             socket.emit("room:join", { room_id: room.id });
+            socket.emit("messages:delivered:room", { room_id: room.id });
             // Initial presence check for all DM partners
             if (room.type === "dm" && room.dm_user_id) {
               socket.emit("presence:check", { user_id: room.dm_user_id });
