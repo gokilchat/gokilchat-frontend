@@ -174,6 +174,26 @@ export default function ChatPage() {
       socket.emit("room:leave", { room_id: data.room_id });
     });
 
+    socket.on("room:member_joined", (data: { room_id: string; user_id: string }) => {
+      setRooms((prevRooms: Room[]) =>
+        prevRooms.map((r) =>
+          r.id === data.room_id
+            ? { ...r, members_count: (r.members_count || 1) + 1 }
+            : r
+        )
+      );
+    });
+
+    socket.on("room:member_left", (data: { room_id: string; user_id: string }) => {
+      setRooms((prevRooms: Room[]) =>
+        prevRooms.map((r) =>
+          r.id === data.room_id
+            ? { ...r, members_count: Math.max(1, (r.members_count || 2) - 1) }
+            : r
+        )
+      );
+    });
+
     apiFetch("/rooms")
       .then((res) => {
         if (res.success) {
@@ -195,6 +215,8 @@ export default function ChatPage() {
       socket.off("presence:status");
       socket.off("room:added");
       socket.off("room:kicked");
+      socket.off("room:member_joined");
+      socket.off("room:member_left");
       socket.off("receipt:update:batch");
       disconnectSocket();
     };

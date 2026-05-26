@@ -19,12 +19,15 @@ export default function ReceiptsIcon({
   if (!isMe) return null;
 
   const receipts = message.receipts || [];
-  // Gunakan receipts.length sebagai source of truth (karena db bikin row receipt saat pesan dikirim),
-  // fallback ke member saat ini kalau misalnya baru banget ngirim dan state belum sync.
-  const expectedRecipients =
-    receipts.length > 0
-      ? receipts.length
-      : Math.max(1, (activeRoom?.members_count || 2) - 1);
+  // Menghitung jumlah penerima yang diharapkan:
+  // Untuk room bertipe DM, selalu 1.
+  // Untuk group, jumlah anggota dikurangi 1 (pengirim/diri kita sendiri).
+  // Fallback jika room info tidak tersedia: gunakan receipts.length atau minimal 1.
+  const expectedRecipients = activeRoom
+    ? activeRoom.type === "dm"
+      ? 1
+      : Math.max(1, (activeRoom.members_count || 2) - 1)
+    : Math.max(1, receipts.length);
 
   // Delivered logic: hitung yg delivered atau read (karena kalo read pasti delivered)
   const deliveredCount = receipts.filter((r) => r.delivered_at || r.read_at).length;
