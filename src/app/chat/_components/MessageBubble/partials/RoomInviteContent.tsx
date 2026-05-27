@@ -34,6 +34,22 @@ export default function RoomInviteContent({
       if (res.success) {
         setInviteStatus((action + "ed") as "accepted" | "rejected");
         if (action === "accept") {
+          // Update semua pesan invite untuk grup ini di UI biar gak bisa diklik lagi
+          const currentMessages = useChatStore.getState().messages;
+          const updatedMessages = currentMessages.map(msg => {
+            if (msg.template_type === 'room_invite' && msg.invite_info?.target_room_id === message.invite_info?.target_room_id) {
+              return {
+                ...msg,
+                invite_info: {
+                  ...msg.invite_info!,
+                  status: (action + "ed") as "accepted" | "rejected"
+                }
+              };
+            }
+            return msg;
+          });
+          useChatStore.getState().setMessages(updatedMessages);
+
           // Fetch ulang list room biar grup yang baru di-acc langsung muncul di sidebar
           const roomsRes = await apiFetch("/rooms");
           if (roomsRes.success) {
@@ -50,6 +66,13 @@ export default function RoomInviteContent({
 
           // Arahin ke room yang baru dijoin
           setActiveRoomId(message.invite_info.target_room_id);
+          
+          // Fetch messages untuk room yang baru dijoin biar gak kosong melompong 🗿
+          const msgsRes = await apiFetch(`/rooms/${message.invite_info.target_room_id}/messages`);
+          if (msgsRes.success) {
+            useChatStore.getState().setMessages(msgsRes.data);
+            socket?.emit("message:read:room", { room_id: message.invite_info.target_room_id });
+          }
         }
       }
     } catch (err) {

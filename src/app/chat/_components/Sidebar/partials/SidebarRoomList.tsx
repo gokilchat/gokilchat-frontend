@@ -2,6 +2,16 @@ import { Room } from "@/types/chat";
 import Image from "next/image";
 import clsx from "clsx";
 import SidebarSkeleton from "../../SidebarSkeleton";
+import GroupIcon from "@/components/GroupIcon";
+
+const formatTime = (dateString?: string) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 interface SidebarRoomListProps {
   rooms: Room[];
@@ -9,6 +19,7 @@ interface SidebarRoomListProps {
   onRoomClick: (id: string) => void;
   isLoading?: boolean;
   presenceStatus?: Record<string, boolean>;
+  user: import("@/types/chat").User;
 }
 
 export default function SidebarRoomList({
@@ -17,6 +28,7 @@ export default function SidebarRoomList({
   onRoomClick,
   isLoading = false,
   presenceStatus = {},
+  user,
 }: SidebarRoomListProps) {
   if (isLoading) {
     return <SidebarSkeleton />;
@@ -57,8 +69,10 @@ export default function SidebarRoomList({
                     e.currentTarget.src = "/images/default-avatar.png";
                   }}
                 />
-              ) : (
+              ) : room.type === "dm" ? (
                 room.name?.charAt(0) || "#"
+              ) : (
+                <GroupIcon className="text-accent-default" />
               )}
             </div>
 
@@ -76,25 +90,52 @@ export default function SidebarRoomList({
               </span>
               <span
                 className={clsx(
-                  "text-[9px] font-bold opacity-60",
-                  activeRoomId === room.id
-                    ? "text-white"
-                    : "text-text-muted",
+                  "text-[10px] font-bold opacity-60",
+                  activeRoomId === room.id ? "text-white" : "text-text-muted",
                 )}
               >
-                12:45
+                {formatTime(room.last_message?.created_at)}
               </span>
             </div>
-            <p
-              className={clsx(
-                "text-[11px] truncate leading-tight font-medium",
-                activeRoomId === room.id
-                  ? "text-white/80"
-                  : "text-text-muted",
+            <div className="flex justify-between items-center gap-2">
+              <p
+                className={clsx(
+                  "text-[11px] truncate leading-tight font-medium flex-1",
+                  activeRoomId === room.id ? "text-white/80" : "text-text-muted",
+                )}
+              >
+                {room.last_message ? (
+                  room.last_message.template_type === "room_invite" ? (
+                    <span className="italic">
+                      <span className="font-bold opacity-80">
+                        {room.last_message.sender?.username === user.username
+                          ? "Anda"
+                          : room.last_message.sender?.full_name || room.last_message.sender?.username}
+                        :
+                      </span>{" "}
+                      ✉️ Undangan Grup
+                    </span>
+                  ) : (
+                    <>
+                      <span className="font-bold opacity-80">
+                        {room.last_message.sender?.username === user.username
+                          ? "Anda"
+                          : room.last_message.sender?.full_name || room.last_message.sender?.username}
+                        :
+                      </span>{" "}
+                      {room.last_message.content}
+                    </>
+                  )
+                ) : (
+                  <span className="italic">Belum ada obrolan...</span>
+                )}
+              </p>
+              {!!room.unread_count && room.unread_count > 0 && activeRoomId !== room.id && (
+                <div className="bg-status-unread text-text-on-accent text-[10px] font-black h-4 min-w-4 px-1 rounded-full flexcc shrink-0">
+                  {room.unread_count > 99 ? '99+' : room.unread_count}
+                </div>
               )}
-            >
-              Pesan terakhir gokil di sini...
-            </p>
+            </div>
           </div>
         </button>
       ))}

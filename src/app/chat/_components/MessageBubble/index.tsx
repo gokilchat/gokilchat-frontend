@@ -14,9 +14,36 @@ interface MessageBubbleProps {
   message: Message;
   isMe: boolean;
   isOnline?: boolean;
+  onUserClick?: (userId: string) => void;
+  searchQuery?: string;
+  isHighlighted?: boolean;
 }
 
-export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
+const renderHighlightedText = (text: string, query?: string) => {
+  if (!query || !query.trim()) return text;
+  const parts = text.split(new RegExp(`(${query})`, 'gi'));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <span key={i} className="bg-accent-default/40 text-white px-0.5 rounded-xs underline decoration-accent-default decoration-2 underline-offset-2">
+            {part}
+          </span>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+};
+
+export default function MessageBubble({ 
+  message, 
+  isMe, 
+  onUserClick,
+  searchQuery,
+  isHighlighted
+}: MessageBubbleProps) {
   const [showReceipts, setShowReceipts] = useState(false);
 
   return (
@@ -30,7 +57,10 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
         )}
       >
         {!isMe && (
-          <div className="relative shrink-0 h-fit self-start">
+          <div
+            className="relative shrink-0 h-fit self-start cursor-pointer hover:opacity-80 transall"
+            onClick={() => onUserClick?.(message.sender_id)}
+          >
             <Image
               src={message.sender_avatar || "/images/default-avatar.png"}
               alt="avatar"
@@ -53,17 +83,21 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
         >
           <div
             className={clsx(
-              "px-5 py-3 shadow-lg shadow-secondary relative pr-10",
+              "px-5 py-3 shadow-lg shadow-secondary relative pr-10 transall",
               isMe
                 ? "bg-accent-hover text-text-on-accent rounded-3xl rounded-tr-sm"
                 : "bg-elevated text-text-primary rounded-3xl rounded-tl-sm",
+              isHighlighted && "ring-2 ring-accent-default ring-offset-2 ring-offset-primary animate-pulse"
             )}
           >
             {/* Bubble Dropdown Menu */}
             <MessageBubbleMenu isMe={isMe} onInfoClick={() => setShowReceipts(true)} />
             {/* Nama Pengirim ala Telegram 🗿✈️ */}
             {!isMe && (
-              <p className="text-[0.8rem] font-medium text-text-secondary mb-1.5 tracking-wide">
+              <p
+                className="text-[0.8rem] font-medium text-text-secondary mb-1.5 tracking-wide cursor-pointer hover:text-accent-default transall w-fit"
+                onClick={() => onUserClick?.(message.sender_id)}
+              >
                 {message.sender_full_name || message.sender_username}
               </p>
             )}
@@ -72,7 +106,7 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
               <RoomInviteContent message={message} isMe={isMe} />
             ) : (
               <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap wrap-break-word [word-break:break-word] min-w-0">
-                {message.content}
+                {renderHighlightedText(message.content || "", searchQuery)}
               </p>
             )}
 
@@ -82,7 +116,7 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
                 isMe ? "justify-end" : "justify-start",
               )}
             >
-              <span className="text-[9px] font-bold opacity-60">
+              <span className="text-[11px] font-bold opacity-60">
                 {new Date(message.created_at).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",

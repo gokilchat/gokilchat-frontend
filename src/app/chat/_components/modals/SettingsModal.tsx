@@ -11,6 +11,7 @@ import { apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import Image from "next/image";
 import clsx from "clsx";
+import ImageCropModal from "@/components/ImageCropModal";
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -23,6 +24,8 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
 
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
@@ -123,9 +126,17 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
       return;
     }
 
+    const objectUrl = URL.createObjectURL(file);
+    setCropImageSrc(objectUrl);
+    setShowCropModal(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadCroppedImage = async (croppedBlob: Blob) => {
+    if (!user) return;
     setIsUploading(true);
     const formData = new FormData();
-    formData.append("avatar", file);
+    formData.append("avatar", croppedBlob, "avatar.jpg");
 
     try {
       const token = useAuthStore.getState().token;
@@ -154,15 +165,17 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
       );
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
   if (!user) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flexcc bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-primary border border-border-divider rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative">
+    <div className="fixed inset-0 z-50 flexcc bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={onClose}>
+      <div 
+        className="bg-primary border border-border-divider rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border-divider bg-secondary/50">
           <h2 className="text-xl font-black text-white tracking-tight">
@@ -393,6 +406,24 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
           </div>
         )}
       </div>
+
+      {cropImageSrc && (
+        <ImageCropModal
+          isOpen={showCropModal}
+          imageSrc={cropImageSrc}
+          onClose={() => {
+            setShowCropModal(false);
+            URL.revokeObjectURL(cropImageSrc);
+            setCropImageSrc(null);
+          }}
+          onCropComplete={async (croppedBlob) => {
+            setShowCropModal(false);
+            URL.revokeObjectURL(cropImageSrc);
+            setCropImageSrc(null);
+            await uploadCroppedImage(croppedBlob);
+          }}
+        />
+      )}
     </div>
   );
 }

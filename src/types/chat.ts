@@ -15,10 +15,12 @@ export interface Room {
   avatar_url?: string;
   dm_user_id?: string;
   members_count?: number;
+  unread_count?: number;
   last_message?: {
     content: string;
     created_at: string;
-    sender: { username: string };
+    sender: { username: string; full_name?: string };
+    template_type?: string;
   };
   created_at?: string;
 }

@@ -12,13 +12,19 @@ import {
   UserPlus,
   PenSquare,
   Check,
+  LogOut,
 } from "lucide-react";
 import Image from "next/image";
-import { apiFetch, kickMember, updateRoomDetails } from "@/lib/api";
+import clsx from "clsx";
+import { apiFetch, kickMember, updateRoomDetails, getAuthToken } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useChatStore } from "@/store/useChatStore";
 import { getSocket } from "@/lib/socket";
 import { useToast } from "@/components/Toast";
 import Tooltip from "@/components/Tooltip";
+import ConfirmModal from "@/components/ConfirmModal";
+import GroupIcon from "@/components/GroupIcon";
+import ImageCropModal from "@/components/ImageCropModal";
 
 interface Member {
   role: "owner" | "admin" | "user";
@@ -53,9 +59,13 @@ export default function GroupInfoModal({
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
   const [isSavingName, setIsSavingName] = useState(false);
+  const [roomAvatar, setRoomAvatar] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isRevertingRef = useRef(false);
 
   const currentUser = useAuthStore((state) => state.user);
+  const { setRooms, setActiveRoomId } = useChatStore();
   const { toast } = useToast();
   const [isKicking, setIsKicking] = useState<string | null>(null);
   const [confirmKickUser, setConfirmKickUser] = useState<{
@@ -63,6 +73,9 @@ export default function GroupInfoModal({
     name: string;
   } | null>(null);
   const [isConfirmingSaveDesc, setIsConfirmingSaveDesc] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
 
   const currentUserRole = members.find(
     (m) => m.user.id === currentUser?.id,
@@ -114,6 +127,26 @@ export default function GroupInfoModal({
     }
   };
 
+  const handleLeaveGroupConfirmed = async () => {
+    setShowLeaveConfirm(false);
+    if (!roomId) return;
+    try {
+      const res = await apiFetch(`/rooms/${roomId}/leave`, {
+        method: "POST",
+      });
+      if (res.success) {
+        setRooms((rooms) => rooms.filter((r) => r.id !== roomId));
+        setActiveRoomId(null);
+        toast("Berhasil keluar dari grup.", "info");
+        onClose();
+      } else {
+        toast(res.error || "Gagal keluar grup", "error");
+      }
+    } catch {
+      toast("Terjadi kesalahan saat keluar grup", "error");
+    }
+  };
+
   const handleSaveName = async () => {
     if (!tempName.trim()) return;
     try {
@@ -146,6 +179,7 @@ export default function GroupInfoModal({
           if (res.success && res.data) {
             setRoomName(res.data.name);
             setRoomDescription(res.data.description || "");
+            setRoomAvatar(res.data.avatar_url || null);
             if (res.data.members) {
               setMembers(res.data.members);
             }
@@ -186,10 +220,11 @@ export default function GroupInfoModal({
       }
     };
 
-    const handleRoomUpdated = (data: { room_id: string; name: string; description: string }) => {
+    const handleRoomUpdated = (data: { room_id: string; name: string; description: string; avatar_url?: string }) => {
       if (data.room_id === roomId) {
-        setRoomName(data.name);
-        setRoomDescription(data.description);
+        if (data.name) setRoomName(data.name);
+        if (data.description !== undefined) setRoomDescription(data.description);
+        if (data.avatar_url !== undefined) setRoomAvatar(data.avatar_url);
       }
     };
 
@@ -229,8 +264,9 @@ export default function GroupInfoModal({
   }, [isOpen, roomId]);
 
   return (
-    <AnimatePresence>
-      {isOpen && (
+    <>
+      <AnimatePresence>
+        {isOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <motion.div
             initial={{ opacity: 0 }}
@@ -266,17 +302,49 @@ export default function GroupInfoModal({
               ) : (
                 <>
                   <div className="flex flex-col items-center mb-6 pt-4">
-                    <div className="w-40 h-40 bg-secondary/80 rounded-full flexcc mb-5 shadow-lg overflow-hidden border-2 border-border-divider/50 group relative cursor-pointer">
-                      <span className="text-6xl font-black text-text-secondary uppercase group-hover:opacity-0 transall">
-                        {roomName.charAt(0) || "G"}
-                      </span>
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flexcc flex-col gap-1 transall">
-                        <ImageIcon className="w-8 h-8 text-white mb-1" />
-                        <span className="text-xs font-bold text-white uppercase tracking-widest text-center px-4">
-                          Change Icon
-                        </span>
-                      </div>
+                    <div 
+                      className={clsx(
+                        "w-40 h-40 bg-secondary/80 rounded-full flexcc mb-5 shadow-lg overflow-hidden border-2 border-border-divider/50 group relative",
+                        (currentUserRole === 'owner' || currentUserRole === 'admin') ? "cursor-pointer" : "cursor-default"
+                      )}
+                      onClick={() => {
+                        if (currentUserRole === 'owner' || currentUserRole === 'admin') {
+                          fileInputRef.current?.click();
+                        }
+                      }}
+                    >
+                      {isUploadingAvatar ? (
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                      ) : roomAvatar ? (
+                        <Image src={roomAvatar} alt="Group Avatar" fill className="object-cover" />
+                      ) : (
+                        <GroupIcon className={clsx("w-20 h-20 text-text-secondary transall", (currentUserRole === 'owner' || currentUserRole === 'admin') && "group-hover:opacity-0")} />
+                      )}
+                      {(currentUserRole === 'owner' || currentUserRole === 'admin') && !isUploadingAvatar && (
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flexcc flex-col gap-1 transall">
+                          <ImageIcon className="w-8 h-8 text-white mb-1" />
+                          <span className="text-xs font-bold text-white uppercase tracking-widest text-center px-4">
+                            Change Icon
+                          </span>
+                        </div>
+                      )}
                     </div>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        // Create object URL for cropper preview
+                        const objectUrl = URL.createObjectURL(file);
+                        setCropImageSrc(objectUrl);
+                        setShowCropModal(true);
+                        // Reset input so same file can be re-selected
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                    />
                     {isEditingName ? (
                       <div className="flex items-center gap-2 mb-1 px-4 w-full justify-center">
                         <input
@@ -520,6 +588,15 @@ export default function GroupInfoModal({
                         </div>
                       ))}
                   </div>
+
+                  <div className="h-2 bg-black/20 -mx-6 my-4" />
+                  <button
+                    onClick={() => setShowLeaveConfirm(true)}
+                    className="w-full py-3 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl font-bold flex items-center justify-center gap-2 transall cursor-pointer group"
+                  >
+                    <LogOut className="w-5 h-5 group-hover:scale-110 transall" />
+                    Keluar dari Grup
+                  </button>
                 </>
               )}
             </div>
@@ -606,9 +683,79 @@ export default function GroupInfoModal({
                 </motion.div>
               </div>
             )}
+            
+            {/* Confirm Leave Group Modal */}
+            <ConfirmModal
+              isOpen={showLeaveConfirm}
+              onConfirm={handleLeaveGroupConfirmed}
+              onCancel={() => setShowLeaveConfirm(false)}
+              title="Keluar dari Grup?"
+              description={
+                <span>
+                  Yakin mau cabut dari grup ini?{" "}
+                  <span className="text-white font-black">Nggak asik lu 🗿</span>
+                </span>
+              }
+              confirmLabel="Keluar"
+              cancelLabel="Batalin"
+              variant="danger"
+            />
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+
+      {/* Image Crop Modal */}
+      {cropImageSrc && (
+        <ImageCropModal
+          isOpen={showCropModal}
+          imageSrc={cropImageSrc}
+          onClose={() => {
+            setShowCropModal(false);
+            URL.revokeObjectURL(cropImageSrc);
+            setCropImageSrc(null);
+          }}
+          onCropComplete={async (croppedBlob) => {
+            setShowCropModal(false);
+            URL.revokeObjectURL(cropImageSrc);
+            setCropImageSrc(null);
+
+            if (!roomId) return;
+            setIsUploadingAvatar(true);
+            const formData = new FormData();
+            formData.append("avatar", croppedBlob, "avatar.png");
+
+            try {
+              const res = await fetch(
+                `${process.env.NEXT_PUBLIC_CHAT_SERVER_URL || "http://localhost:4000"}/rooms/${roomId}/avatar`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${getAuthToken()}`,
+                  },
+                  body: formData,
+                },
+              );
+              const json = await res.json();
+              if (json.success && json.data) {
+                setRoomAvatar(json.data.avatar_url);
+                toast("Foto grup berhasil diubah", "success");
+              } else {
+                throw new Error(json.error || "Gagal mengubah foto grup");
+              }
+            } catch (err) {
+              toast(
+                err instanceof Error ? err.message : "Gagal mengubah foto grup",
+                "error",
+              );
+            } finally {
+              setIsUploadingAvatar(false);
+            }
+          }}
+          cropShape="round"
+          aspectRatio={1}
+        />
+      )}
+    </>
   );
 }

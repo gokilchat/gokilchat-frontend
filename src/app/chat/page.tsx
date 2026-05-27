@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { User, Room } from "@/types/chat";
 import { useToast } from "@/components/Toast";
-import ConfirmModal from "@/components/ConfirmModal";
+
 
 // Components
 import Sidebar from "./_components/Sidebar";
@@ -46,7 +46,6 @@ export default function ChatPage() {
   const [modalContext, setModalContext] = useState<"dm" | "invite">("dm");
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [presenceStatus, setPresenceStatus] = useState<Record<string, boolean>>(
     {},
   );
@@ -99,14 +98,28 @@ export default function ChatPage() {
 
       addMessage(formattedMessage);
       
+      const activeId = useChatStore.getState().activeRoomId;
+      const isUnread = message.sender_id !== user.id && (activeId !== message.room_id || document.hidden);
+
       if (message.sender_id !== user.id) {
-        const activeId = useChatStore.getState().activeRoomId;
-        if (activeId === message.room_id && !document.hidden) {
+        if (!isUnread) {
           socket.emit("message:read:room", { room_id: message.room_id });
         } else {
           socket.emit("message:delivered", { message_id: message.id, room_id: message.room_id });
+          
+          if (Notification.permission === "granted") {
+            const roomName = useChatStore.getState().rooms.find(r => r.id === message.room_id)?.name || "GokilChat";
+            const notif = new Notification(roomName, {
+              body: `${message.sender_full_name || message.sender_username}: ${formattedMessage.content}`,
+              icon: "/favicon.ico",
+            });
+            notif.onclick = () => {
+              window.focus();
+            };
+          }
         }
       }
+
       // Update last message in rooms list for realtime sidebar
       setRooms((prevRooms: Room[]) => {
         const roomExists = prevRooms.some((r) => r.id === message.room_id);
@@ -123,10 +136,15 @@ export default function ChatPage() {
           r.id === message.room_id
             ? {
                 ...r,
+                unread_count: isUnread ? (r.unread_count || 0) + 1 : r.unread_count,
                 last_message: {
                   content: formattedMessage.content,
                   created_at: message.created_at,
-                  sender: { username: message.sender_username },
+                  sender: { 
+                    username: message.sender_username,
+                    full_name: message.sender_full_name 
+                  },
+                  template_type: message.template_type || "text",
                 },
               }
             : r,
@@ -194,15 +212,19 @@ export default function ChatPage() {
       );
     });
 
-    socket.on("room:updated", (data: { room_id: string; name: string; description: string }) => {
+    socket.on("room:updated", (data: { room_id: string; name: string; description: string; avatar_url?: string }) => {
       setRooms((prevRooms: Room[]) =>
         prevRooms.map((r) =>
           r.id === data.room_id
-            ? { ...r, name: data.name, description: data.description }
+            ? { ...r, name: data.name, description: data.description, avatar_url: data.avatar_url ?? r.avatar_url }
             : r
         )
       );
     });
+
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
 
     apiFetch("/rooms")
       .then((res) => {
@@ -261,6 +283,10 @@ export default function ChatPage() {
 
     const room = rooms.find((r) => r.id === roomId);
     setActiveRoomId(roomId);
+    
+    // Clear unread count when opening a room
+    setRooms(prev => prev.map(r => r.id === roomId ? { ...r, unread_count: 0 } : r));
+
     setIsLoadingMessages(true);
     const socket = getSocket();
     socket?.emit("room:join", { room_id: roomId });
@@ -440,31 +466,6 @@ export default function ChatPage() {
     }
   };
 
-  const handleLeaveGroup = () => {
-    if (!activeRoomId) return;
-    setShowLeaveConfirm(true);
-  };
-
-  const handleLeaveGroupConfirmed = async () => {
-    setShowLeaveConfirm(false);
-    if (!activeRoomId) return;
-    try {
-      const res = await apiFetch(`/rooms/${activeRoomId}/leave`, {
-        method: "POST",
-      });
-      if (res.success) {
-        setRooms(rooms.filter((r) => r.id !== activeRoomId));
-        setActiveRoomId(null);
-        toast("Berhasil keluar dari grup.", "info");
-      } else {
-        toast(res.error || "Gagal keluar grup", "error");
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      toast("Terjadi kesalahan saat keluar grup", "error");
-    }
-  };
-
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -513,7 +514,6 @@ export default function ChatPage() {
           setShowInviteModal(true);
         }}
         onGroupInfoClick={() => setShowGroupInfoModal(true)}
-        onLeaveGroupClick={handleLeaveGroup}
         messageInput={messageInput}
         onMessageInputChange={setMessageInput}
         onSendMessage={handleSendMessage}
@@ -576,22 +576,6 @@ export default function ChatPage() {
           }}
         />
       )}
-
-      <ConfirmModal
-        isOpen={showLeaveConfirm}
-        onConfirm={handleLeaveGroupConfirmed}
-        onCancel={() => setShowLeaveConfirm(false)}
-        title="Keluar dari Grup?"
-        description={
-          <span>
-            Yakin mau cabut dari grup ini?{" "}
-            <span className="text-white font-black">Nggak asik lu 🗿</span>
-          </span>
-        }
-        confirmLabel="Keluar"
-        cancelLabel="Batalin"
-        variant="danger"
-      />
     </div>
   );
 }

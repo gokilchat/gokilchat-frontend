@@ -1,9 +1,10 @@
-import { Search, Info, MoreVertical, UserPlus, LogOut } from "lucide-react";
+import { Search, Info, MoreVertical, UserPlus, LogOut, X } from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
 import { Room } from "@/types/chat";
 import { useState, useRef, useEffect } from "react";
 import Tooltip from "@/components/Tooltip";
+import GroupIcon from "@/components/GroupIcon";
 
 interface ChatHeaderProps {
   activeRoom: Room;
@@ -13,6 +14,9 @@ interface ChatHeaderProps {
   onLeaveGroupClick?: () => void;
   membersCache: Record<string, string>;
   showSubtitleHint: boolean;
+  isSearchActive: boolean;
+  setIsSearchActive: (val: boolean) => void;
+  onDmUserClick?: (userId: string) => void;
 }
 
 export default function ChatHeader({
@@ -23,6 +27,9 @@ export default function ChatHeader({
   onLeaveGroupClick,
   membersCache,
   showSubtitleHint,
+  isSearchActive,
+  setIsSearchActive,
+  onDmUserClick,
 }: ChatHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -70,10 +77,12 @@ export default function ChatHeader({
                         e.currentTarget.src = "/images/default-avatar.png";
                       }}
                     />
-                  ) : (
+                  ) : activeRoom.type === "dm" ? (
                     <span className="font-black text-accent-default text-lg">
                       {activeRoom.name?.charAt(0) || "#"}
                     </span>
+                  ) : (
+                    <GroupIcon className="text-accent-default" />
                   )}
                 </div>
               </div>
@@ -100,8 +109,21 @@ export default function ChatHeader({
           </div>
         </Tooltip>
       ) : (
-        <div className="flex items-center gap-4 flex-1 min-w-0 mr-4 transall">
-          <div className="relative shrink-0">
+        <Tooltip
+          content="Klik untuk info profil"
+          placement="bottom"
+          triggerClassName="flex flex-1 min-w-0 mr-4 h-full items-center animate-in fade-in slide-in-from-left-4 duration-200"
+          anchorRef={tooltipAnchorRef}
+        >
+          <div
+            className="flex items-center gap-4 w-full h-full transall cursor-pointer hover:opacity-80"
+            onClick={() => activeRoom.dm_user_id && onDmUserClick?.(activeRoom.dm_user_id)}
+          >
+            <div
+              ref={tooltipAnchorRef}
+              className="flex items-center gap-4 max-w-full min-w-0"
+            >
+              <div className="relative shrink-0">
             <div className="size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner">
               {activeRoom.avatar_url ? (
                 <Image
@@ -144,11 +166,21 @@ export default function ChatHeader({
             </div>
           </div>
         </div>
-      )}
+      </div>
+    </Tooltip>
+  )}
 
       <div className="flex items-center gap-1 shrink-0">
-        <button className="p-2 text-text-secondary hover:text-white transall cursor-pointer">
-          <Search className="w-5 h-5" />
+        <button 
+          className={clsx(
+            "p-2 transall cursor-pointer rounded-xl",
+            isSearchActive ? "text-accent-default bg-accent-default/10" : "text-text-secondary hover:text-white"
+          )}
+          onClick={() => {
+            setIsSearchActive(!isSearchActive);
+          }}
+        >
+          {isSearchActive ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
         </button>
 
         <div className="relative" ref={menuRef}>

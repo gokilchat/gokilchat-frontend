@@ -9,6 +9,8 @@ import ChatHeader from "./partials/ChatHeader";
 import ChatMessages from "./partials/ChatMessages";
 import ChatInput from "./partials/ChatInput";
 import EmptyState from "./partials/EmptyState";
+import UserProfileSlider from "../modals/UserProfileSlider";
+import SearchMessageSlider from "../modals/SearchMessageSlider";
 
 interface ChatWindowProps {
   activeRoom: Room | null;
@@ -45,6 +47,31 @@ export default function ChatWindow({
 }: ChatWindowProps) {
   const [membersCache, setMembersCache] = useState<Record<string, string>>({});
   const [showSubtitleHint, setShowSubtitleHint] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [prevRoomId, setPrevRoomId] = useState(activeRoom?.id);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
+
+  const [searchedMessageId, setSearchedMessageId] = useState("");
+
+  const handleUserClick = (userId: string) => {
+    setSelectedUserId(userId);
+    setShowUserProfile(true);
+  };
+
+  const handleSelectMessage = (msgId: string) => {
+    setSearchedMessageId(msgId);
+    // Kita gak nutup slider pencarian biar user bisa milih hasil yang lain
+  };
+
+  // Clear search on room change
+  if (activeRoom?.id !== prevRoomId) {
+    setPrevRoomId(activeRoom?.id);
+    setIsSearchActive(false);
+    setSearchQuery("");
+    setSearchedMessageId("");
+  }
 
   // Fetch group members for the header subtitle
   useEffect(() => {
@@ -146,9 +173,14 @@ export default function ChatWindow({
     return <ChatSkeleton />;
   }
 
+  // Dulu di sini ada filter pesannya, sekarang main chat window ga di filter
+  // Tapi kita akan kirim query ke dalam biar di highlight
+  const displayMessages = messages;
+
   return (
-    <main className="flex-1 flex flex-col relative bg-primary overflow-hidden">
-      <ChatHeader
+    <div className="flex-1 flex overflow-hidden bg-primary relative">
+      <main className="flex-1 flex flex-col min-w-0 relative h-full">
+        <ChatHeader
         activeRoom={activeRoom}
         isOnline={isOnline}
         onInviteClick={onInviteClick}
@@ -156,13 +188,19 @@ export default function ChatWindow({
         onLeaveGroupClick={onLeaveGroupClick}
         membersCache={membersCache}
         showSubtitleHint={showSubtitleHint}
+        isSearchActive={isSearchActive}
+        setIsSearchActive={setIsSearchActive}
+        onDmUserClick={handleUserClick}
       />
 
       <ChatMessages
-        messages={messages}
+        messages={displayMessages}
         user={user}
         presenceStatus={presenceStatus}
         messagesEndRef={messagesEndRef}
+        onUserClick={handleUserClick}
+        searchQuery={isSearchActive ? searchQuery : ""}
+        searchedMessageId={searchedMessageId}
       />
 
       <ChatInput
@@ -171,6 +209,22 @@ export default function ChatWindow({
         onSendMessage={onSendMessage}
         inputRef={inputRef}
       />
-    </main>
+
+        <UserProfileSlider
+          isOpen={showUserProfile}
+          onClose={() => setShowUserProfile(false)}
+          userId={selectedUserId}
+        />
+      </main>
+
+      <SearchMessageSlider
+        isOpen={isSearchActive}
+        onClose={() => setIsSearchActive(false)}
+        messages={messages}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onSelectMessage={handleSelectMessage}
+      />
+    </div>
   );
 }

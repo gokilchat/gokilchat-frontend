@@ -14,7 +14,7 @@ interface InviteMemberModalProps {
   onSearchChange: (query: string) => void;
   searchResults: User[];
   isSearching: boolean;
-  onInvite: (userId: string) => void;
+  onInvite: (userId: string) => Promise<void> | void;
   title?: string;
   activeRoomId?: string;
 }
@@ -34,6 +34,7 @@ export default function InviteMemberModal({
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isInviting, setIsInviting] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && activeRoomId) {
@@ -156,8 +157,18 @@ export default function InviteMemberModal({
                   searchResults.map((u) => (
                     <div 
                       key={u.id}
-                      onClick={() => onInvite(u.id)}
-                      className="p-3 rounded-2xl bg-primary/40 border border-transparent hover:border-accent-default/30 hover:bg-accent-default/5 flex items-center gap-3 cursor-pointer transall group"
+                      onClick={async () => {
+                        if (isInviting) return;
+                        setIsInviting(u.id);
+                        try {
+                          await onInvite(u.id);
+                        } finally {
+                          setIsInviting(null);
+                        }
+                      }}
+                      className={`p-3 rounded-2xl bg-primary/40 border border-transparent hover:border-accent-default/30 hover:bg-accent-default/5 flex items-center gap-3 transall group ${
+                        isInviting === u.id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                      }`}
                     >
                       <Image src={u.avatar_url || "/images/default-avatar.png"} alt={u.username} width={40} height={40} className="rounded-full border border-border-divider" />
                       <div className="flex-1 min-w-0">
@@ -168,7 +179,11 @@ export default function InviteMemberModal({
                           @{u.username}
                         </p>
                       </div>
-                      <Plus className="w-4 h-4 text-accent-default opacity-0 group-hover:opacity-100 transall" />
+                      {isInviting === u.id ? (
+                        <RefreshCw className="w-4 h-4 text-accent-default animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4 text-accent-default opacity-0 group-hover:opacity-100 transall" />
+                      )}
                     </div>
                   ))
                 ) : searchQuery.length >= 2 ? (

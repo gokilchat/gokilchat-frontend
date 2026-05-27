@@ -42,6 +42,7 @@ export default function Sidebar({
         onRoomClick={onRoomClick}
         isLoading={isLoading}
         presenceStatus={presenceStatus}
+        user={user}
       />
       <SidebarFooter
         user={user}

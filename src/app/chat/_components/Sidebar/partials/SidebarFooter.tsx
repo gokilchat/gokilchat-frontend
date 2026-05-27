@@ -1,6 +1,9 @@
-import { Settings, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import Image from "next/image";
 import { User } from "@/types/chat";
+import Tooltip from "@/components/Tooltip";
+import { useRef, useState } from "react";
+import ConfirmModal from "@/components/ConfirmModal";
 
 interface SidebarFooterProps {
   user: User;
@@ -13,46 +16,77 @@ export default function SidebarFooter({
   onLogout,
   onSettingsClick,
 }: SidebarFooterProps) {
+  const profileAnchorRef = useRef<HTMLDivElement>(null);
+  const logoutAnchorRef = useRef<HTMLButtonElement>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   return (
     <div className="p-4 border-t border-border-divider bg-secondary/30">
-      <div className="p-3 bg-elevated/30 rounded-2xl flex items-center gap-3 border border-border-subtle/30 shadow-inner">
-        <div className="relative">
-          <Image
-            src={user.avatar_url || "/images/default-avatar.png"}
-            alt="avatar"
-            width={42}
-            height={42}
-            className="rounded-full border border-border-divider"
-            referrerPolicy="no-referrer"
-            onError={(e) => {
-              e.currentTarget.srcset = "";
-              e.currentTarget.src = "/images/default-avatar.png";
-            }}
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-black text-white truncate">
-            {user.full_name || user.username}
-          </p>
-          <p className="text-[10px] text-text-secondary truncate uppercase tracking-widest font-bold">
-            Online
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <button 
+      <div className="flex items-stretch gap-2">
+        <Tooltip
+          content="Klik untuk Pengaturan"
+          placement="top"
+          triggerClassName="flex flex-1 min-w-0"
+          anchorRef={profileAnchorRef}
+        >
+          <div
+            ref={profileAnchorRef}
+            className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer p-3 bg-elevated/30 hover:bg-elevated/60 border border-border-subtle/30 hover:border-border-divider shadow-inner rounded-2xl transall"
             onClick={onSettingsClick}
-            className="p-2 text-text-secondary hover:text-white transall"
           >
-            <Settings className="w-4.5 h-4.5" />
-          </button>
+            <div className="relative shrink-0">
+              <Image
+                src={user.avatar_url || "/images/default-avatar.png"}
+                alt="avatar"
+                width={40}
+                height={40}
+                className="rounded-full border border-border-divider shadow-sm"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.srcset = "";
+                  e.currentTarget.src = "/images/default-avatar.png";
+                }}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-black text-white truncate">
+                {user.full_name || user.username}
+              </p>
+              <p className="text-[11px] text-text-secondary truncate font-medium">
+                @{user.username}
+              </p>
+            </div>
+          </div>
+        </Tooltip>
+
+        <Tooltip
+          content="Keluar"
+          placement="top"
+          anchorRef={logoutAnchorRef}
+        >
           <button
-            onClick={onLogout}
-            className="p-2 text-text-secondary hover:text-red-400 transall"
+            ref={logoutAnchorRef}
+            onClick={() => setShowLogoutConfirm(true)}
+            className="p-3 bg-transparent hover:bg-red-500/10 border border-transparent text-text-secondary hover:text-red-400 rounded-2xl transall flexcc shrink-0"
           >
-            <LogOut className="w-4.5 h-4.5" />
+            <LogOut className="w-5 h-5" />
           </button>
-        </div>
+        </Tooltip>
       </div>
+
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          onLogout();
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+        title="Konfirmasi Keluar"
+        description="Yakin mau keluar dari GokilChat? Ntar kangen lho 🗿"
+        confirmLabel="Keluar"
+        cancelLabel="Batal"
+        variant="danger"
+      />
     </div>
   );
 }
