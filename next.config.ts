@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
     ],
   },
   allowedDevOrigins: [
-    'hide-opponent-annotation-picks.trycloudflare.com'
+    'chat.gokilchat.online'
   ],
 };
 
