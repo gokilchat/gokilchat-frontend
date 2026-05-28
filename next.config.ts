@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  allowedDevOrigins: [
+    'hide-opponent-annotation-picks.trycloudflare.com'
+  ],
 };
 
 export default nextConfig;
