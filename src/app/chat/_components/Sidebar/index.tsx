@@ -1,15 +1,18 @@
 import { User, Room } from "@/types/chat";
+import clsx from "clsx";
 import SidebarHeader from "./partials/SidebarHeader";
 import SidebarSearch from "./partials/SidebarSearch";
 import SidebarRoomList from "./partials/SidebarRoomList";
 import SidebarFooter from "./partials/SidebarFooter";
+import { useState, useEffect } from "react";
 
 interface SidebarProps {
   width: number;
   rooms: Room[];
   activeRoomId: string | null;
   onRoomClick: (id: string) => void;
-  onCreateRoom: () => void;
+  onSelectDM: () => void;
+  onSelectGroup: () => void;
   user: User;
   onLogout: () => void;
   onSettingsClick: () => void;
@@ -22,19 +25,38 @@ export default function Sidebar({
   rooms,
   activeRoomId,
   onRoomClick,
-  onCreateRoom,
+  onSelectDM,
+  onSelectGroup,
   user,
   onLogout,
   onSettingsClick,
   isLoading = false,
   presenceStatus = {},
 }: SidebarProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   return (
     <aside
-      style={{ width }}
-      className="bg-primary backdrop-blur-xl flex flex-col relative shrink-0 z-20 group/sidebar"
+      className={clsx(
+        "bg-primary backdrop-blur-xl flex flex-col relative shrink-0 z-20 group/sidebar",
+        activeRoomId ? "hidden md:flex" : "flex w-full md:w-auto"
+      )}
+      style={{ width: isMobile && !activeRoomId ? '100%' : width }}
     >
-      <SidebarHeader onCreateRoom={onCreateRoom} />
+      <SidebarHeader
+        onSelectDM={onSelectDM}
+        onSelectGroup={onSelectGroup}
+        user={user}
+        onLogout={onLogout}
+        onSettingsClick={onSettingsClick}
+      />
       <SidebarSearch />
       <SidebarRoomList
         rooms={rooms}

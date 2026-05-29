@@ -1,30 +1,42 @@
 import { Paperclip, Smile, Send } from "lucide-react";
 import clsx from "clsx";
-import { FormEvent, RefObject } from "react";
+import { FormEvent, RefObject, useState } from "react";
 
 interface ChatInputProps {
-  messageInput: string;
-  onMessageInputChange: (val: string) => void;
-  onSendMessage: (e: FormEvent) => void;
+  onSendMessage: (message: string) => void;
+  onTyping: () => void;
   inputRef: RefObject<HTMLTextAreaElement | null>;
 }
 
 export default function ChatInput({
-  messageInput,
-  onMessageInputChange,
   onSendMessage,
+  onTyping,
   inputRef,
 }: ChatInputProps) {
+  const [localInput, setLocalInput] = useState("");
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!localInput.trim()) return;
+    onSendMessage(localInput);
+    setLocalInput("");
+  };
+
+  const handleInputChange = (val: string) => {
+    setLocalInput(val);
+    onTyping();
+  };
+
   return (
-    <div className="p-6 md:px-12 lg:px-24 pb-8 pt-0 bg-primary">
+    <div className="px-6 sm:px-3 pb-4 mb-4 sm:mb-0 pt-0 md:px-6 md:pb-6 lg:px-24 lg:pb-8 bg-primary">
       <form
-        onSubmit={onSendMessage}
-        className="relative bg-secondary border border-border-divider rounded-4xl p-2 pr-4 flex items-end gap-2 focus-within:border-accent-default/50 transall"
+        onSubmit={handleSubmit}
+        className="relative bg-secondary border border-border-divider rounded-3xl md:rounded-4xl p-1.5 pr-2.5 md:p-2 md:pr-4 flex items-end gap-1.5 md:gap-2 focus-within:border-accent-default/50 transall"
       >
-        <div className="flex items-center gap-1 pl-2 mb-1.5">
+        <div className="flex items-center gap-0.5 md:gap-1 pl-1 md:pl-2 mb-1.5">
           <button
             type="button"
-            className="p-2 text-text-muted hover:text-accent-default transall"
+            className="hidden sm:block p-2 text-text-muted hover:text-accent-default transall"
           >
             <Paperclip className="w-5 h-5" />
           </button>
@@ -37,29 +49,29 @@ export default function ChatInput({
         </div>
         <textarea
           ref={inputRef}
-          value={messageInput}
-          onChange={(e) => onMessageInputChange(e.target.value)}
+          value={localInput}
+          onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              onSendMessage(e);
+              handleSubmit(e);
             }
           }}
-          placeholder="Tulis pesan gokil lu di sini..."
+          placeholder="Tulis pesan gokil lu..."
           rows={1}
           className="flex-1 bg-secondary border-none outline-none focus:outline-none focus:ring-0 text-sm text-text-primary placeholder:text-text-muted/50 py-3 resize-none max-h-40 custom-scrollbar"
         />
         <button
           type="submit"
-          disabled={!messageInput.trim()}
+          disabled={!localInput.trim()}
           className={clsx(
-            "w-11 h-11 rounded-full flexcc transall mb-0.5 shadow-lg",
-            messageInput.trim()
+            "w-10 h-10 md:w-11 md:h-11 rounded-full flexcc transall mb-0.5 shadow-lg shrink-0",
+            localInput.trim()
               ? "bg-accent-default text-text-on-accent scale-100 rotate-0 hover:bg-accent-hover"
               : "bg-elevated text-text-muted scale-90 -rotate-12 opacity-50",
           )}
         >
-          <Send className="w-5 h-5 ml-0.5" />
+          <Send className="w-4.5 h-4.5 md:w-5 md:h-5 ml-0.5" />
         </button>
       </form>
     </div>

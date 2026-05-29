@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
-import { apiFetch, kickMember, updateRoomDetails, getAuthToken } from "@/lib/api";
+import { apiFetch, kickMember, updateRoomDetails, getAuthToken, CHAT_SERVER_URL } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useChatStore } from "@/store/useChatStore";
 import { getSocket } from "@/lib/socket";
@@ -282,7 +282,7 @@ export default function GroupInfoModal({
             transition={{ type: "spring", bounce: 0, duration: 0.4 }}
             className="relative w-full max-w-md h-full bg-primary border-l border-border-divider overflow-hidden flex flex-col"
           >
-            <div className="h-20 px-6 bg-secondary/50 border-b border-border-divider flex items-center justify-between shrink-0">
+            <div className="h-16 md:h-20 px-4 md:px-6 bg-secondary/50 border-b border-border-divider flex items-center justify-between shrink-0">
               <h3 className="text-lg font-black text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-accent-default" /> Info Grup
               </h3>
@@ -294,7 +294,7 @@ export default function GroupInfoModal({
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto custom-scrollbar">
+            <div className="p-4 md:p-6 overflow-y-auto custom-scrollbar">
               {isLoading ? (
                 <div className="py-10 flexcc text-xs text-text-muted animate-pulse">
                   Memuat info...
@@ -727,7 +727,7 @@ export default function GroupInfoModal({
 
             try {
               const res = await fetch(
-                `${process.env.NEXT_PUBLIC_CHAT_SERVER_URL || "http://localhost:4000"}/rooms/${roomId}/avatar`,
+                `${CHAT_SERVER_URL}/rooms/${roomId}/avatar`,
                 {
                   method: "POST",
                   headers: {

@@ -1,10 +1,19 @@
-import { Search, Info, MoreVertical, UserPlus, LogOut, X } from "lucide-react";
+import {
+  Search,
+  Info,
+  MoreVertical,
+  UserPlus,
+  LogOut,
+  X,
+  ArrowLeft,
+} from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
 import { Room } from "@/types/chat";
 import { useState, useRef, useEffect } from "react";
 import Tooltip from "@/components/Tooltip";
 import GroupIcon from "@/components/GroupIcon";
+import { useChatStore } from "@/store/useChatStore";
 
 interface ChatHeaderProps {
   activeRoom: Room;
@@ -17,6 +26,7 @@ interface ChatHeaderProps {
   isSearchActive: boolean;
   setIsSearchActive: (val: boolean) => void;
   onDmUserClick?: (userId: string) => void;
+  typingUser?: string;
 }
 
 export default function ChatHeader({
@@ -30,6 +40,7 @@ export default function ChatHeader({
   isSearchActive,
   setIsSearchActive,
   onDmUserClick,
+  typingUser,
 }: ChatHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -45,142 +56,173 @@ export default function ChatHeader({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const setActiveRoomId = useChatStore((state) => state.setActiveRoomId);
+
   return (
-    <header className="h-20 flex items-center justify-between px-6 bg-primary/80 backdrop-blur-xl border-b border-border-divider/50 z-20 sticky top-0">
-      {activeRoom.type !== "dm" ? (
-        <Tooltip
-          content="Klik untuk info grup"
-          placement="bottom"
-          triggerClassName="flex flex-1 min-w-0 mr-4 h-full items-center"
-          anchorRef={tooltipAnchorRef}
+    <header className="h-16 md:h-20 flex items-center justify-between px-3 md:px-6 bg-primary/80 backdrop-blur-xl border-b border-border-divider/50 z-20 sticky top-0">
+      <div className="flex flex-1 min-w-0 items-center mr-4 h-full gap-2">
+        <button
+          onClick={() => setActiveRoomId(null)}
+          className="md:hidden p-3 text-text-secondary hover:text-white hover:bg-elevated rounded-xl transall shrink-0"
         >
-          <div
-            className="flex items-center gap-4 w-full h-full transall cursor-pointer hover:opacity-80"
-            onClick={onGroupInfoClick}
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+
+        {activeRoom.type !== "dm" ? (
+          <Tooltip
+            content="Klik untuk info grup"
+            placement="bottom"
+            triggerClassName="flex flex-1 min-w-0 h-full items-center"
+            anchorRef={tooltipAnchorRef}
           >
             <div
-              ref={tooltipAnchorRef}
-              className="flex items-center gap-4 max-w-full min-w-0"
+              className="flex items-center gap-4 w-full h-full transall cursor-pointer hover:opacity-80"
+              onClick={onGroupInfoClick}
             >
-              <div className="relative shrink-0">
-                <div className="size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner">
-                  {activeRoom.avatar_url ? (
-                    <Image
-                      src={activeRoom.avatar_url}
-                      alt={activeRoom.name || ""}
-                      width={44}
-                      height={44}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        e.currentTarget.srcset = "";
-                        e.currentTarget.src = "/images/default-avatar.png";
-                      }}
-                    />
-                  ) : activeRoom.type === "dm" ? (
-                    <span className="font-black text-accent-default text-lg">
-                      {activeRoom.name?.charAt(0) || "#"}
-                    </span>
-                  ) : (
-                    <GroupIcon className="text-accent-default" />
+              <div
+                ref={tooltipAnchorRef}
+                className="flex items-center gap-4 max-w-full min-w-0"
+              >
+                <div className="relative shrink-0">
+                  <div className="size-9 md:size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner">
+                    {activeRoom.avatar_url ? (
+                      <Image
+                        src={activeRoom.avatar_url}
+                        alt={activeRoom.name || ""}
+                        width={44}
+                        height={44}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          e.currentTarget.srcset = "";
+                          e.currentTarget.src = "/images/default-avatar.png";
+                        }}
+                      />
+                    ) : activeRoom.type === "dm" ? (
+                      <span className="font-black text-accent-default text-lg">
+                        {activeRoom.name?.charAt(0) || "#"}
+                      </span>
+                    ) : (
+                      <GroupIcon className="text-accent-default" />
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-black text-white text-base tracking-tight leading-tight mb-1 truncate">
+                    {activeRoom.name || "Private Chat"}
+                  </h3>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {typingUser ? (
+                      <span className="truncate w-full text-xs text-accent-default animate-pulse font-medium">
+                        {typingUser} sedang mengetik...
+                      </span>
+                    ) : (
+                      <span
+                        className={clsx(
+                          "truncate w-full",
+                          showSubtitleHint
+                            ? "text-xs text-accent-default/90"
+                            : "text-xs text-text-muted",
+                        )}
+                      >
+                        {showSubtitleHint
+                          ? "Klik di sini untuk info grup"
+                          : membersCache[activeRoom.id] || "Group Chat"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Tooltip>
+        ) : (
+          <Tooltip
+            content="Klik untuk info profil"
+            placement="bottom"
+            triggerClassName="flex flex-1 min-w-0 h-full items-center animate-in fade-in slide-in-from-left-4 duration-200"
+            anchorRef={tooltipAnchorRef}
+          >
+            <div
+              className="flex items-center gap-4 w-full h-full transall cursor-pointer hover:opacity-80"
+              onClick={() =>
+                activeRoom.dm_user_id && onDmUserClick?.(activeRoom.dm_user_id)
+              }
+            >
+              <div
+                ref={tooltipAnchorRef}
+                className="flex items-center gap-2.5 md:gap-4 max-w-full min-w-0"
+              >
+                <div className="relative shrink-0">
+                  <div className="size-9 md:size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner">
+                    {activeRoom.avatar_url ? (
+                      <Image
+                        src={activeRoom.avatar_url}
+                        alt={activeRoom.name || ""}
+                        width={44}
+                        height={44}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          e.currentTarget.srcset = "";
+                          e.currentTarget.src = "/images/default-avatar.png";
+                        }}
+                      />
+                    ) : (
+                      <span className="font-black text-accent-default text-lg">
+                        {activeRoom.name?.charAt(0) || "#"}
+                      </span>
+                    )}
+                  </div>
+                  {isOnline && (
+                    <div className="absolute -bottom-0.5 -right-0.5 size-3.5 bg-status-online rounded-full border-[2.5px] border-primary shadow-sm" />
                   )}
                 </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-black text-white text-base tracking-tight leading-tight mb-1 truncate">
-                  {activeRoom.name || "Private Chat"}
-                </h3>
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span
-                    className={clsx(
-                      "truncate w-full",
-                      showSubtitleHint
-                        ? "text-xs text-accent-default/90"
-                        : "text-xs text-text-muted",
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-black text-white text-base tracking-tight leading-tight mb-1 truncate">
+                    {activeRoom.name || "Private Chat"}
+                  </h3>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {typingUser ? (
+                      <span className="truncate w-full text-xs text-accent-default animate-pulse font-medium">
+                        sedang mengetik...
+                      </span>
+                    ) : (
+                      <span
+                        className={clsx(
+                          "truncate w-full",
+                          isOnline
+                            ? "text-xs text-status-online font-bold uppercase tracking-widest"
+                            : "text-xs text-text-muted font-bold uppercase tracking-widest",
+                        )}
+                      >
+                        {isOnline ? "Online" : "Offline"}
+                      </span>
                     )}
-                  >
-                    {showSubtitleHint
-                      ? "Klik di sini untuk info grup"
-                      : membersCache[activeRoom.id] || "Group Chat"}
-                  </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </Tooltip>
-      ) : (
-        <Tooltip
-          content="Klik untuk info profil"
-          placement="bottom"
-          triggerClassName="flex flex-1 min-w-0 mr-4 h-full items-center animate-in fade-in slide-in-from-left-4 duration-200"
-          anchorRef={tooltipAnchorRef}
-        >
-          <div
-            className="flex items-center gap-4 w-full h-full transall cursor-pointer hover:opacity-80"
-            onClick={() => activeRoom.dm_user_id && onDmUserClick?.(activeRoom.dm_user_id)}
-          >
-            <div
-              ref={tooltipAnchorRef}
-              className="flex items-center gap-4 max-w-full min-w-0"
-            >
-              <div className="relative shrink-0">
-            <div className="size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner">
-              {activeRoom.avatar_url ? (
-                <Image
-                  src={activeRoom.avatar_url}
-                  alt={activeRoom.name || ""}
-                  width={44}
-                  height={44}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    e.currentTarget.srcset = "";
-                    e.currentTarget.src = "/images/default-avatar.png";
-                  }}
-                />
-              ) : (
-                <span className="font-black text-accent-default text-lg">
-                  {activeRoom.name?.charAt(0) || "#"}
-                </span>
-              )}
-            </div>
-            {isOnline && (
-              <div className="absolute -bottom-0.5 -right-0.5 size-3.5 bg-status-online rounded-full border-[2.5px] border-primary shadow-sm" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-black text-white text-base tracking-tight leading-tight mb-1 truncate">
-              {activeRoom.name || "Private Chat"}
-            </h3>
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span
-                className={clsx(
-                  "truncate w-full",
-                  isOnline
-                    ? "text-xs text-status-online font-bold uppercase tracking-widest"
-                    : "text-xs text-text-muted font-bold uppercase tracking-widest",
-                )}
-              >
-                {isOnline ? "Online" : "Offline"}
-              </span>
-            </div>
-          </div>
-        </div>
+          </Tooltip>
+        )}
       </div>
-    </Tooltip>
-  )}
 
       <div className="flex items-center gap-1 shrink-0">
-        <button 
+        <button
           className={clsx(
             "p-2 transall cursor-pointer rounded-xl",
-            isSearchActive ? "text-accent-default bg-accent-default/10" : "text-text-secondary hover:text-white"
+            isSearchActive
+              ? "text-accent-default bg-accent-default/10"
+              : "text-text-secondary hover:text-white",
           )}
           onClick={() => {
             setIsSearchActive(!isSearchActive);
           }}
         >
-          {isSearchActive ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+          {isSearchActive ? (
+            <X className="w-5 h-5" />
+          ) : (
+            <Search className="w-5 h-5" />
+          )}
         </button>
 
         <div className="relative" ref={menuRef}>

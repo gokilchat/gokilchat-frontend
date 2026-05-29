@@ -1,0 +1,89 @@
+
+> gokilchat-frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.18.141:3000
+- Environments: .env.local
+✓ Ready in 261ms
+
+ GET /chat 200 in 620ms (next.js: 67ms, proxy.ts: 132ms, application-code: 421ms)
+ GET /chat 200 in 485ms (next.js: 10ms, proxy.ts: 343ms, application-code: 132ms)
+ GET / 200 in 166ms (next.js: 52ms, proxy.ts: 28ms, application-code: 86ms)
+[browser] Image with src "/images/logo-light.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "/images/logo-light.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "https://chat.gokilchat.online/images/logo-light.png" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative.
+[browser] Image with src "/images/logo-light.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET / 200 in 44ms (next.js: 2ms, proxy.ts: 4ms, application-code: 38ms)
+[browser] Image with src "/images/logo-light.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET /?redirect=%2Fjoin%2Fzbuwv6 200 in 40ms (next.js: 2ms, proxy.ts: 3ms, application-code: 35ms)
+[browser] Image with src "/images/logo-light.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET /join/zbuwv6 200 in 328ms (next.js: 299ms, proxy.ts: 3ms, application-code: 26ms)
+ GET /chat 200 in 26ms (next.js: 3ms, proxy.ts: 7ms, application-code: 16ms)
+[browser] Image with src "https://chat.gokilchat.online/images/logo-light.png" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative.
+✓ Compiled in 121ms
+✓ Compiled in 80ms
+✓ Compiled in 71ms
+✓ Compiled in 74ms
+✓ Compiled in 75ms
+✓ Compiled in 44ms
+✓ Compiled in 47ms
+✓ Compiled in 90ms
+✓ Compiled in 37ms
+✓ Compiled in 72ms
+✓ Compiled in 116ms
+✓ Compiled in 85ms
+✓ Compiled in 74ms
+✓ Compiled in 83ms
+✓ Compiled in 44ms
+ GET /chat 200 in 192ms (next.js: 19ms, proxy.ts: 14ms, application-code: 159ms)
+ GET /chat 200 in 194ms (next.js: 12ms, proxy.ts: 56ms, application-code: 126ms)
+ GET /chat 200 in 139ms (next.js: 3ms, proxy.ts: 73ms, application-code: 62ms)
+ GET /chat 200 in 40ms (next.js: 6ms, proxy.ts: 4ms, application-code: 30ms)
+ GET /chat 200 in 98ms (next.js: 3ms, proxy.ts: 4ms, application-code: 91ms)
+ GET /chat 200 in 71ms (next.js: 3ms, proxy.ts: 3ms, application-code: 64ms)
+ GET /chat 200 in 38ms (next.js: 2ms, proxy.ts: 5ms, application-code: 31ms)
+ GET /chat 200 in 84ms (next.js: 2ms, proxy.ts: 3ms, application-code: 79ms)
+ GET /chat 200 in 47ms (next.js: 4ms, proxy.ts: 6ms, application-code: 37ms)
+[browser] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). 
+[browser] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). 
+[browser] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). 
+✓ Compiled in 61ms
+ GET /chat 200 in 71ms (next.js: 5ms, proxy.ts: 4ms, application-code: 62ms)
+[browser] Image with src "http://localhost:3000/images/logo-light.png" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative.
+ GET /images/chat-bg.png 404 in 149ms (next.js: 24ms, application-code: 124ms)
+[browser] Image with src "/images/logo-light.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET /join/dummy-token-123 200 in 170ms (next.js: 40ms, proxy.ts: 4ms, application-code: 126ms)
+[browser] Error: Link undangan tidak valid atau kedaluwarsa
+    at apiFetch (src/lib/api.ts:42:11)
+  40 |
+  41 |   if (!response.ok) {
+> 42 |     throw new Error(data.error || 'Terjadi kesalahan pada server');
+     |           ^
+  43 |   }
+  44 |
+  45 |   return data; (src/app/join/[token]/page.tsx:54:17)
+ GET /chat 200 in 40ms (next.js: 6ms, proxy.ts: 6ms, application-code: 28ms)
+ GET /?redirect=%2Fjoin%2Fqejtde 200 in 44ms (next.js: 3ms, proxy.ts: 3ms, application-code: 37ms)
+ GET /images/chat-bg.png 404 in 44ms (next.js: 5ms, application-code: 39ms)
+[browser] Image with src "http://localhost:3000/images/logo-light.png" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative.
+ GET /chat 200 in 51ms (next.js: 2ms, proxy.ts: 3ms, application-code: 46ms)
+[browser] Image with src "/images/logo-light.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET /chat 200 in 47ms (next.js: 3ms, proxy.ts: 4ms, application-code: 40ms)
+[browser] Image with src "https://chat.gokilchat.online/images/logo-light.png" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative.
+[browser] Image with src "/images/logo-light.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET /chat 200 in 41ms (next.js: 2ms, proxy.ts: 3ms, application-code: 35ms)
+[browser] Image with src "http://localhost:3000/images/logo-light.png" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative.
+[browser] Image with src "/images/logo-light.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET /chat 200 in 51ms (next.js: 2ms, proxy.ts: 3ms, application-code: 45ms)
+[?25h

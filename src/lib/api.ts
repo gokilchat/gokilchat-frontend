@@ -1,4 +1,17 @@
-const CHAT_SERVER_URL = process.env.NEXT_PUBLIC_CHAT_SERVER_URL || 'http://localhost:4000';
+const getChatServerUrl = () => {
+  if (process.env.NEXT_PUBLIC_CHAT_SERVER_URL) {
+    return process.env.NEXT_PUBLIC_CHAT_SERVER_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const { hostname } = window.location;
+    if (hostname.endsWith('gokilchat.online')) {
+      return 'https://api.gokilchat.online';
+    }
+  }
+  return 'http://localhost:4000';
+};
+
+export const CHAT_SERVER_URL = getChatServerUrl();
 
 export const setAuthToken = (token: string) => {
   if (typeof window !== 'undefined') {

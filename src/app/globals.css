@@ -1,21 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #1e1008;
-  --color-secondary: #1b0d00;
-  --color-elevated: #341f0d;
-  --color-text-primary: #c8a882;
-  --color-text-secondary: #8c6b4a;
-  --color-text-muted: #5c4030;
-  --color-text-on-accent: #f0e6d3;
-  --color-accent-default: #6b3410;
-  --color-accent-hover: #7a3d13;
-  --color-accent-subtle: #3d1e08;
-  --color-border-subtle: #341f0d;
-  --color-border-divider: #3d2a18;
+  /* Espresso & Caramel Theme - High Contrast */
+  --color-primary: #0f0a06; /* Very dark espresso background */
+  --color-secondary: #0a0604; /* Even darker for sidebars */
+  --color-elevated: #241812; /* Distinct dark brown for received bubbles/modals */
+
+  --color-text-primary: #f0e6d8; /* Creamy latte text (High contrast) */
+  --color-text-secondary: #c2a88e; /* Lighter tan */
+  --color-text-muted: #8c735e; /* Muted brownish grey */
+  --color-text-on-accent: #ffffff; /* Pure white on accent */
+
+  --color-accent-default: #824617; /* Darker, more muted caramel/mocha */
+  --color-accent-hover: #96531c; /* Slightly lighter for sender bubble */
+  --color-accent-subtle: #45260c; /* Very dark subtle caramel */
+
+  --color-border-subtle: #3b271a;
+  --color-border-divider: #291a11;
+
   --color-status-online: #22c55e;
-  --color-status-unread: #6b3410;
-  --color-status-sent: #5c4030;
+  --color-status-unread: #de7b21;
+  --color-status-sent: #8c735e;
 
   --font-sans: var(--font-plus-jakarta-sans);
 }
@@ -23,9 +28,21 @@
 @layer base {
   body {
     @apply bg-primary text-text-primary antialiased;
+    /* Support notched/safe-area devices */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
   }
   button {
     @apply cursor-pointer!;
+  }
+  /* Prevent text size adjust on orientation change */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 }
 
@@ -77,4 +94,16 @@
     background: var(--color-accent-default);
     cursor: grabbing;
   }
+
+  /* Thinner scrollbar on mobile 📱 */
+  @media (max-width: 768px) {
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      border: 0;
+    }
+  }
 }
+

@@ -13,11 +13,12 @@ import { useToast } from "@/components/Toast";
 // Components
 import Sidebar from "./_components/Sidebar";
 import ChatWindow from "./_components/ChatWindow";
-import NewChatModal from "./_components/modals/NewChatModal";
+
 import CreateRoomModal from "./_components/modals/CreateRoomModal";
 import InviteMemberModal from "./_components/modals/InviteMemberModal";
 import GroupInfoModal from "./_components/modals/GroupInfoModal";
 import SettingsModal from "./_components/modals/SettingsModal";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function ChatPage() {
   const { toast } = useToast();
@@ -33,16 +34,17 @@ export default function ChatPage() {
   } = useChatStore();
 
   const [isHydrated, setIsHydrated] = useState(false);
-  const [messageInput, setMessageInput] = useState("");
+  const [typingData, setTypingData] = useState<Record<string, string>>({});
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
-  const [showNewChatModal, setShowNewChatModal] = useState(false);
+
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [modalContext, setModalContext] = useState<"dm" | "invite">("dm");
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -78,6 +80,32 @@ export default function ChatPage() {
     };
   }, []);
 
+  // Sinkronisasi hardware back button (HP) untuk menutup chat
+  useEffect(() => {
+    if (!isHydrated) return;
+    const handlePopState = (e: PopStateEvent) => {
+      if (!e.state?.roomOpen) {
+        useChatStore.getState().setActiveRoomId(null);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isHydrated]);
+
+  // Inject state ke browser history saat room terbuka di mobile
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (activeRoomId && window.innerWidth < 768) {
+      if (!window.history.state?.roomOpen) {
+        window.history.pushState({ roomOpen: true }, "");
+      }
+    } else if (!activeRoomId && window.innerWidth < 768) {
+      if (window.history.state?.roomOpen) {
+        window.history.back();
+      }
+    }
+  }, [activeRoomId, isHydrated]);
+
   useEffect(() => {
     if (isHydrated && !user) router.push("/");
   }, [user, router, isHydrated]);
@@ -87,6 +115,17 @@ export default function ChatPage() {
 
     const socket = initSocket(token);
     socket.connect();
+
+    socket.on("presence:typing", (data: { room_id: string; username: string }) => {
+      setTypingData((prev) => ({ ...prev, [data.room_id]: data.username }));
+      setTimeout(() => {
+        setTypingData((prev) => {
+          const next = { ...prev };
+          delete next[data.room_id];
+          return next;
+        });
+      }, 3000);
+    });
 
     socket.on("message:new", (message) => {
       // Backend spec v2 wraps content inside `data`
@@ -109,13 +148,23 @@ export default function ChatPage() {
           
           if (Notification.permission === "granted") {
             const roomName = useChatStore.getState().rooms.find(r => r.id === message.room_id)?.name || "GokilChat";
-            const notif = new Notification(roomName, {
+            const notifTitle = roomName;
+            const notifOptions = {
               body: `${message.sender_full_name || message.sender_username}: ${formattedMessage.content}`,
               icon: "/favicon.ico",
-            });
-            notif.onclick = () => {
-              window.focus();
             };
+            
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(notifTitle, notifOptions);
+              }).catch(() => {
+                const notif = new Notification(notifTitle, notifOptions);
+                notif.onclick = () => window.focus();
+              });
+            } else {
+              const notif = new Notification(notifTitle, notifOptions);
+              notif.onclick = () => window.focus();
+            }
           }
         }
       }
@@ -315,9 +364,8 @@ export default function ChatPage() {
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageInput.trim() || !activeRoomId) return;
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim() || !activeRoomId) return;
 
     let currentRoomId = activeRoomId;
     const activeRoom = rooms.find((r) => r.id === activeRoomId);
@@ -360,9 +408,8 @@ export default function ChatPage() {
       getSocket()?.emit("message:send", {
         room_id: currentRoomId,
         template_id: "00000000-0000-0000-0000-000000000001",
-        data: { content: messageInput },
+        data: { content: message },
       });
-      setMessageInput("");
     } catch (err) {
       console.error(err);
     }
@@ -390,6 +437,25 @@ export default function ChatPage() {
       }
     } catch {
       toast("Gagal bikin room", "error");
+    }
+  };
+
+  const handleLeaveGroupConfirmed = async () => {
+    setShowLeaveConfirm(false);
+    if (!activeRoomId) return;
+    try {
+      const res = await apiFetch(`/rooms/${activeRoomId}/leave`, {
+        method: "POST",
+      });
+      if (res.success) {
+        setRooms((rooms) => rooms.filter((r) => r.id !== activeRoomId));
+        setActiveRoomId(null);
+        toast("Berhasil keluar dari grup.", "info");
+      } else {
+        toast(res.error || "Gagal keluar grup", "error");
+      }
+    } catch {
+      toast("Terjadi kesalahan saat keluar grup", "error");
     }
   };
 
@@ -485,7 +551,11 @@ export default function ChatPage() {
         rooms={rooms}
         activeRoomId={activeRoomId}
         onRoomClick={handleRoomClick}
-        onCreateRoom={() => setShowNewChatModal(true)}
+        onSelectDM={() => {
+          setModalContext("dm");
+          setShowInviteModal(true);
+        }}
+        onSelectGroup={() => setShowCreateRoomModal(true)}
         user={user}
         onLogout={logout}
         onSettingsClick={() => setShowSettingsModal(true)}
@@ -498,7 +568,7 @@ export default function ChatPage() {
           isResizing.current = true;
           document.body.style.cursor = "col-resize";
         }}
-        className="w-px h-full bg-border-divider relative z-30 group cursor-col-resize"
+        className="hidden md:block w-px h-full bg-border-divider relative z-30 group cursor-col-resize"
       >
         {/* Area Drag "Hantu" 👻 - Lebar tapi nggak nampak */}
         <div className="atranscenter h-full w-3.5 z-40 transall hover:bg-accent-default/20" />
@@ -514,28 +584,16 @@ export default function ChatPage() {
           setShowInviteModal(true);
         }}
         onGroupInfoClick={() => setShowGroupInfoModal(true)}
-        messageInput={messageInput}
-        onMessageInputChange={setMessageInput}
+        onLeaveGroupClick={() => setShowLeaveConfirm(true)}
         onSendMessage={handleSendMessage}
         messagesEndRef={messagesEndRef}
         inputRef={inputRef}
         presenceStatus={presenceStatus}
         isLoading={isLoadingMessages}
+        typingUser={activeRoomId ? typingData[activeRoomId] : undefined}
       />
 
-      <NewChatModal
-        isOpen={showNewChatModal}
-        onClose={() => setShowNewChatModal(false)}
-        onSelectDM={() => {
-          setModalContext("dm");
-          setShowNewChatModal(false);
-          setShowInviteModal(true);
-        }}
-        onSelectGroup={() => {
-          setShowNewChatModal(false);
-          setShowCreateRoomModal(true);
-        }}
-      />
+
 
       <CreateRoomModal
         isOpen={showCreateRoomModal}
@@ -576,6 +634,17 @@ export default function ChatPage() {
           }}
         />
       )}
+      
+      <ConfirmModal
+        isOpen={showLeaveConfirm}
+        onCancel={() => setShowLeaveConfirm(false)}
+        onConfirm={handleLeaveGroupConfirmed}
+        title="Keluar dari Grup?"
+        description="Lu yakin mau keluar dari grup ini? Lu nggak bakal bisa liat chat dan harus di-invite lagi buat masuk."
+        confirmLabel="Keluar"
+        cancelLabel="Batal"
+        variant="danger"
+      />
     </div>
   );
 }

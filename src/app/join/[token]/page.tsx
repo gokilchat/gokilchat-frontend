@@ -22,7 +22,7 @@ export default function JoinGroupPage({
 
   const [isHydrated, setIsHydrated] = useState(false);
 
-  const [room, setRoom] = useState<import("@/types/chat").Room & { member_count?: number } | null>(null);
+  const [room, setRoom] = useState<import("@/types/chat").Room & { member_count?: number, is_member?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
@@ -37,9 +37,7 @@ export default function JoinGroupPage({
 
     if (!user) {
       // Belum login, arahin ke home (login) terus abis login redirect ke sini
-      // Untuk MVP, kita set local storage buat nangkep callback
-      sessionStorage.setItem("redirect_after_login", `/join/${token}`);
-      router.push("/");
+      router.push(`/?redirect=${encodeURIComponent(`/join/${token}`)}`);
       return;
     }
 
@@ -155,13 +153,30 @@ export default function JoinGroupPage({
           <span>{room.member_count} Anggota</span>
         </p>
 
-        <button
-          onClick={handleJoin}
-          disabled={isJoining}
-          className="w-full py-4 bg-accent-default hover:bg-accent-hover active:scale-95 text-white font-black rounded-2xl shadow-lg shadow-accent-default/20 transall disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {isJoining ? "Bergabung..." : "Gabung ke Grup"}
-        </button>
+        {room.is_member ? (
+          <div className="w-full space-y-4">
+            <div className="bg-accent-default/10 text-accent-default text-sm py-2 px-4 rounded-xl font-bold">
+              Lu udah gabung di grup ini 🗿
+            </div>
+            <button
+              onClick={() => {
+                setActiveRoomId(room.id);
+                router.push("/chat");
+              }}
+              className="w-full py-4 bg-elevated hover:bg-elevated/80 active:scale-95 text-white font-black rounded-2xl transall"
+            >
+              Buka Chat
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleJoin}
+            disabled={isJoining}
+            className="w-full py-4 bg-accent-default hover:bg-accent-hover active:scale-95 text-white font-black rounded-2xl shadow-lg shadow-accent-default/20 transall disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {isJoining ? "Bergabung..." : "Gabung ke Grup"}
+          </button>
+        )}
 
         <button
           onClick={() => router.push("/chat")}

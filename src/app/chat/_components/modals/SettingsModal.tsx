@@ -6,12 +6,18 @@ import {
   Shield,
   Loader2,
   Check,
+  Bell,
 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, CHAT_SERVER_URL } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import Image from "next/image";
 import clsx from "clsx";
 import ImageCropModal from "@/components/ImageCropModal";
+import {
+  getStoredFontSize,
+  applyFontSize,
+  FontSizeOption,
+} from "@/lib/font-size";
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -20,6 +26,7 @@ interface SettingsModalProps {
 export default function SettingsModal({ onClose }: SettingsModalProps) {
   const { user, setAuth, token } = useAuthStore();
   const [activeTab, setActiveTab] = useState<"profile" | "privacy">("profile");
+  const [fontSize, setFontSize] = useState<FontSizeOption>("medium");
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,6 +45,20 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
     type: "success" | "error";
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const timer = setTimeout(() => {
+        setFontSize(getStoredFontSize());
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleFontSizeChange = (size: FontSizeOption) => {
+    setFontSize(size);
+    applyFontSize(size);
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -141,7 +162,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
     try {
       const token = useAuthStore.getState().token;
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_CHAT_SERVER_URL || "http://localhost:4000"}/users/${user.id}/avatar`,
+        `${CHAT_SERVER_URL}/users/${user.id}/avatar`,
         {
           method: "POST",
           headers: {
@@ -171,9 +192,12 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
   if (!user) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flexcc bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={onClose}>
-      <div 
-        className="bg-primary border border-border-divider rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative"
+    <div
+      className="fixed inset-0 z-50 flexcc bg-black/60 backdrop-blur-sm md:p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="bg-primary border border-border-divider md:rounded-3xl w-full h-full md:h-auto md:max-w-md overflow-hidden shadow-2xl flex flex-col relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -235,7 +259,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
             </div>
 
             {/* Content */}
-            <div className="p-6">
+            <div className="p-4 md:p-6">
               {activeTab === "profile" ? (
                 <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                   {/* Avatar Section */}
@@ -305,6 +329,38 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                         placeholder="username_gokil"
                         className="w-full bg-secondary border border-border-divider rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-accent-default transall"
                       />
+                    </div>
+
+                    {/* Font Size Settings */}
+                    <div className="space-y-2 pt-4 border-t border-border-divider/50">
+                      <label className="text-xs font-bold text-text-secondary uppercase tracking-wider pl-1 flex items-center gap-1.5">
+                        Ukuran Teks (Local)
+                      </label>
+                      <div className="flex gap-2 bg-secondary p-1 rounded-2xl border border-border-divider">
+                        {(["small", "medium", "large"] as const).map((sz) => (
+                          <button
+                            key={sz}
+                            type="button"
+                            onClick={() => handleFontSizeChange(sz)}
+                            className={clsx(
+                              "cursor-pointer flex-1 py-2 text-xs font-bold rounded-xl transall capitalize",
+                              fontSize === sz
+                                ? "bg-accent-default text-white shadow-md"
+                                : "text-text-secondary hover:text-white hover:bg-elevated/40",
+                            )}
+                          >
+                            {sz === "small"
+                              ? "Kecil"
+                              : sz === "medium"
+                                ? "Sedang"
+                                : "Besar"}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-text-muted pl-1 leading-relaxed">
+                        Mengubah ukuran teks seluruh aplikasi secara langsung
+                        (hanya di perangkat ini).
+                      </p>
                     </div>
                   </div>
 
@@ -400,6 +456,14 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                       />
                     </label>
                   </div>
+
+                  {typeof window !== "undefined" &&
+                    "Notification" in window &&
+                    Notification.permission !== "granted" && (
+                      <NotificationPermissionSection
+                        showMessage={showMessage}
+                      />
+                    )}
                 </div>
               )}
             </div>
@@ -424,6 +488,46 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function NotificationPermissionSection({
+  showMessage,
+}: {
+  showMessage: (text: string, type: "success" | "error") => void;
+}) {
+  const [isGranted, setIsGranted] = useState(false);
+
+  if (isGranted) return null;
+
+  return (
+    <div className="mt-8 space-y-4 pt-6 border-t border-border-divider">
+      <div>
+        <h3 className="text-sm font-bold text-white mb-1">
+          Notifikasi Mobile & Desktop
+        </h3>
+        <p className="text-xs text-text-muted mb-4 leading-relaxed">
+          Izinkan notifikasi buat dapetin update chat terbaru pas aplikasi
+          di-minimize.
+        </p>
+      </div>
+      <button
+        onClick={() => {
+          Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              showMessage("Notifikasi diizinkan!", "success");
+              setIsGranted(true);
+            } else {
+              showMessage("Notifikasi ditolak.", "error");
+            }
+          });
+        }}
+        className="w-full flex items-center justify-center gap-2 py-3 bg-accent-default/10 text-accent-default hover:bg-accent-default/20 font-bold rounded-xl transall cursor-pointer"
+      >
+        <Bell className="w-4 h-4" />
+        Nyalain Notifikasi
+      </button>
     </div>
   );
 }

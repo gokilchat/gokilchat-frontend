@@ -42,6 +42,8 @@ export default function InviteMemberModal({
         if (res.success && res.data.invite_token) {
           setInviteToken(res.data.invite_token);
         }
+      }).catch(() => {
+        // Ignore error
       });
     } else {
       const timer = setTimeout(() => setInviteToken(null), 0);
@@ -49,7 +51,8 @@ export default function InviteMemberModal({
     }
   }, [isOpen, activeRoomId]);
 
-  const inviteLink = inviteToken ? `${window.location.origin}/join/${inviteToken}` : "";
+  const baseUrl = "https://chat.gokilchat.online";
+  const inviteLink = inviteToken ? `${baseUrl}/join/${inviteToken}` : "";
 
   const handleCopy = () => {
     if (!inviteLink) return;
@@ -77,7 +80,7 @@ export default function InviteMemberModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-60 flexcc p-4">
+        <div className="fixed inset-0 z-60 flexcc md:p-4">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -89,16 +92,16 @@ export default function InviteMemberModal({
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-md bg-secondary border border-border-divider rounded-3xl shadow-2xl overflow-hidden"
+            className="relative w-full md:max-w-md h-full md:h-auto bg-secondary border border-border-divider md:rounded-3xl shadow-2xl overflow-hidden flex flex-col"
           >
-            <div className="p-6 border-b border-border-divider flex items-center justify-between">
+            <div className="p-4 md:p-6 border-b border-border-divider flex items-center justify-between shrink-0">
               <h3 className="text-lg font-black text-white">{title}</h3>
               <button onClick={onClose} className="p-2 hover:bg-elevated rounded-xl transall cursor-pointer">
                 <X className="w-5 h-5 text-text-secondary" />
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 md:p-6 flex-1 overflow-y-auto">
               {/* Bagian Link Undangan (Cuma Muncul di Grup) */}
               {activeRoomId && (
                 <div className="mb-6 space-y-2">

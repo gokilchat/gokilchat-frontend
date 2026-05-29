@@ -1,30 +1,42 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { loginWithGoogle, setAuthToken } from "@/lib/api";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
 import Image from "next/image";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+  
   const { user, token, setAuth } = useAuthStore();
   const [isHydrated, setIsHydrated] = useState(false);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsHydrated(true), 0);
     return () => clearTimeout(timer);
   }, []);
 
+  // Hanya handle kasus: user SUDAH login saat hydration (misal refresh di halaman login)
   useEffect(() => {
-    if (isHydrated && user && token) {
+    if (isHydrated && user && token && !hasRedirected.current) {
+      hasRedirected.current = true;
       document.cookie = `supabase_jwt=${token}; path=/; max-age=604800; SameSite=Lax; Secure`;
-      router.push("/chat");
+      const redirect = redirectParam || sessionStorage.getItem("redirect_after_login");
+      if (redirect) {
+        sessionStorage.removeItem("redirect_after_login");
+        router.push(redirect);
+      } else {
+        router.push("/chat");
+      }
     }
-  }, [isHydrated, user, token, router]);
+  }, [isHydrated, user, token, router, redirectParam]);
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
@@ -35,8 +47,24 @@ export default function LoginPage() {
 
       if (response.success && response.data?.token) {
         setAuthToken(response.data.token);
+        
+        // Baca redirect SEBELUM setAuth agar useEffect tidak race condition
+        const redirect = redirectParam || sessionStorage.getItem("redirect_after_login");
+        if (sessionStorage.getItem("redirect_after_login")) {
+          sessionStorage.removeItem("redirect_after_login");
+        }
+        
+        // Tandai bahwa redirect sudah di-handle di sini
+        hasRedirected.current = true;
+        
+        // Set auth state (ini trigger useEffect, tapi hasRedirected sudah true)
         setAuth(response.data.user, response.data.token);
-        router.push("/chat");
+        
+        // Set cookie
+        document.cookie = `supabase_jwt=${response.data.token}; path=/; max-age=604800; SameSite=Lax; Secure`;
+        
+        // Redirect ke tujuan
+        router.push(redirect || "/chat");
       } else {
         throw new Error(response.error || "Login gagal dari server");
       }
@@ -64,7 +92,7 @@ export default function LoginPage() {
 
       <div
         className={clsx(
-          "w-full max-w-md p-10 rounded-3xl relative z-10",
+          "w-full max-w-md p-6 md:p-10 rounded-3xl relative z-10",
           "bg-secondary/40 backdrop-blur-xl border border-white/5",
           "shadow-2xl shadow-black/50",
         )}
@@ -85,7 +113,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <h1 className="text-4xl font-black tracking-tighter text-white mb-2">
+            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-white mb-2">
               Gokil<span className="text-accent-default">Chat</span>
             </h1>
             <p className="text-text-secondary text-sm font-medium leading-relaxed max-w-60 mx-auto">
@@ -121,3 +149,18 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen w-full flexcc p-4 bg-[#0A0E17]">
+          {/* Loading minimal */}
+        </div>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+

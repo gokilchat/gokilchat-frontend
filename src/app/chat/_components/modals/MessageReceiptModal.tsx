@@ -31,7 +31,7 @@ export default function MessageReceiptModal({
   const content = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-999 flexcc p-4">
+        <div className="fixed inset-0 z-999 flexcc md:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -43,9 +43,9 @@ export default function MessageReceiptModal({
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-sm bg-secondary border border-border-divider rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+            className="relative w-full md:max-w-sm h-full md:h-auto bg-secondary border border-border-divider md:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:max-h-[80vh]"
           >
-            <div className="p-6 border-b border-border-divider flex items-center justify-between bg-elevated/20 shrink-0">
+            <div className="p-4 md:p-6 border-b border-border-divider flex items-center justify-between bg-elevated/20 shrink-0">
               <h3 className="text-lg font-black text-white">Info Pesan</h3>
               <button
                 onClick={onClose}
@@ -55,7 +55,7 @@ export default function MessageReceiptModal({
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+            <div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1">
               <div className="mb-6 p-4 bg-elevated rounded-2xl border border-border-subtle">
                 <p className="text-sm font-medium text-white wrap-break-word whitespace-pre-wrap">
                   {message.content}

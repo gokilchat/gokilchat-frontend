@@ -149,6 +149,11 @@ export default function Tooltip({
   }, [placement, anchorRef]);
 
   const show = useCallback(() => {
+    if (typeof window !== "undefined") {
+      const isMobile = window.innerWidth < 768;
+      const isTouch = window.matchMedia("(pointer: coarse)").matches;
+      if (isMobile || isTouch) return;
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setVisible(true);

@@ -73,7 +73,7 @@ export default function UserProfileSlider({
             className="relative w-full max-w-md h-full bg-primary border-l border-border-divider overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="h-20 px-6 bg-secondary/50 border-b border-border-divider flex items-center justify-between shrink-0">
+            <div className="h-16 md:h-20 px-4 md:px-6 bg-secondary/50 border-b border-border-divider flex items-center justify-between shrink-0">
               <h3 className="text-lg font-black text-white flex items-center gap-2">
                 <UserIcon className="w-5 h-5 text-accent-default" /> Info User
               </h3>

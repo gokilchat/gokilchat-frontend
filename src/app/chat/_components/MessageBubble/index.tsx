@@ -17,6 +17,7 @@ interface MessageBubbleProps {
   onUserClick?: (userId: string) => void;
   searchQuery?: string;
   isHighlighted?: boolean;
+  isConsecutive?: boolean;
 }
 
 const renderHighlightedText = (text: string, query?: string) => {
@@ -42,7 +43,8 @@ export default function MessageBubble({
   isMe, 
   onUserClick,
   searchQuery,
-  isHighlighted
+  isHighlighted,
+  isConsecutive = false
 }: MessageBubbleProps) {
   const [showReceipts, setShowReceipts] = useState(false);
 
@@ -52,27 +54,34 @@ export default function MessageBubble({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className={clsx(
-          "flex gap-3 group",
+          "flex gap-2 md:gap-3 group",
           isMe ? "flex-row-reverse" : "flex-row",
         )}
       >
         {!isMe && (
           <div
-            className="relative shrink-0 h-fit self-start cursor-pointer hover:opacity-80 transall"
-            onClick={() => onUserClick?.(message.sender_id)}
+            className={clsx(
+              "relative shrink-0 h-fit self-start transall",
+              !isConsecutive && "cursor-pointer hover:opacity-80"
+            )}
+            onClick={!isConsecutive ? () => onUserClick?.(message.sender_id) : undefined}
           >
-            <Image
-              src={message.sender_avatar || "/images/default-avatar.png"}
-              alt="avatar"
-              width={40}
-              height={40}
-              className="rounded-full shadow-sm"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                e.currentTarget.srcset = "";
-                e.currentTarget.src = "/images/default-avatar.png";
-              }}
-            />
+            {!isConsecutive ? (
+              <Image
+                src={message.sender_avatar || "/images/default-avatar.png"}
+                alt="avatar"
+                width={36}
+                height={36}
+                className="rounded-full shadow-sm w-8 h-8 md:w-10 md:h-10"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.srcset = "";
+                  e.currentTarget.src = "/images/default-avatar.png";
+                }}
+              />
+            ) : (
+              <div className="w-8 h-8 md:w-10 md:h-10 shrink-0" />
+            )}
           </div>
         )}
         <div
@@ -83,19 +92,23 @@ export default function MessageBubble({
         >
           <div
             className={clsx(
-              "px-5 py-3 shadow-lg shadow-secondary relative pr-10 transall",
+              "px-3.5 py-2.5 md:px-5 md:py-3 shadow-lg shadow-secondary relative pr-8 md:pr-10 transall",
               isMe
-                ? "bg-accent-hover text-text-on-accent rounded-3xl rounded-tr-sm"
-                : "bg-elevated text-text-primary rounded-3xl rounded-tl-sm",
+                ? (isConsecutive 
+                    ? "bg-accent-hover text-text-on-accent rounded-3xl"
+                    : "bg-accent-hover text-text-on-accent rounded-3xl rounded-tr-sm")
+                : (isConsecutive
+                    ? "bg-elevated text-text-primary rounded-3xl"
+                    : "bg-elevated text-text-primary rounded-3xl rounded-tl-sm"),
               isHighlighted && "ring-2 ring-accent-default ring-offset-2 ring-offset-primary animate-pulse"
             )}
           >
             {/* Bubble Dropdown Menu */}
             <MessageBubbleMenu isMe={isMe} onInfoClick={() => setShowReceipts(true)} />
             {/* Nama Pengirim ala Telegram 🗿✈️ */}
-            {!isMe && (
+            {!isMe && !isConsecutive && (
               <p
-                className="text-[0.8rem] font-medium text-text-secondary mb-1.5 tracking-wide cursor-pointer hover:text-accent-default transall w-fit"
+                className="text-[11px] md:text-xs font-semibold text-text-secondary mb-1 tracking-wide cursor-pointer hover:text-accent-default transall w-fit"
                 onClick={() => onUserClick?.(message.sender_id)}
               >
                 {message.sender_full_name || message.sender_username}
@@ -105,18 +118,18 @@ export default function MessageBubble({
             {message.template_type === "room_invite" && message.invite_info ? (
               <RoomInviteContent message={message} isMe={isMe} />
             ) : (
-              <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap wrap-break-word [word-break:break-word] min-w-0">
+              <p className="text-[13px] md:text-sm font-medium leading-relaxed whitespace-pre-wrap wrap-break-word [word-break:break-word] min-w-0">
                 {renderHighlightedText(message.content || "", searchQuery)}
               </p>
             )}
 
             <div
               className={clsx(
-                "flex items-center gap-1.5 mt-2",
+                "flex items-center gap-1 mt-1.5 md:mt-2",
                 isMe ? "justify-end" : "justify-start",
               )}
             >
-              <span className="text-[11px] font-bold opacity-60">
+              <span className="text-[9px] md:text-[10px] font-bold opacity-60">
                 {new Date(message.created_at).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",

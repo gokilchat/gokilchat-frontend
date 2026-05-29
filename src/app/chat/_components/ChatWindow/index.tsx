@@ -20,9 +20,7 @@ interface ChatWindowProps {
   onInviteClick: () => void;
   onGroupInfoClick: () => void;
   onLeaveGroupClick?: () => void;
-  messageInput: string;
-  onMessageInputChange: (val: string) => void;
-  onSendMessage: (e: React.FormEvent) => void;
+  onSendMessage: (message: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   presenceStatus?: Record<string, boolean>;
@@ -37,14 +35,13 @@ export default function ChatWindow({
   onInviteClick,
   onGroupInfoClick,
   onLeaveGroupClick,
-  messageInput,
-  onMessageInputChange,
   onSendMessage,
   messagesEndRef,
   inputRef,
   presenceStatus = {},
   isLoading = false,
-}: ChatWindowProps) {
+  typingUser,
+}: ChatWindowProps & { typingUser?: string }) {
   const [membersCache, setMembersCache] = useState<Record<string, string>>({});
   const [showSubtitleHint, setShowSubtitleHint] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -62,8 +59,16 @@ export default function ChatWindow({
 
   const handleSelectMessage = (msgId: string) => {
     setSearchedMessageId(msgId);
-    // Kita gak nutup slider pencarian biar user bisa milih hasil yang lain
+    setIsSearchActive(false);
   };
+
+  const [prevSearchQuery, setPrevSearchQuery] = useState("");
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery);
+    if (!searchQuery) {
+      setSearchedMessageId("");
+    }
+  }
 
   // Clear search on room change
   if (activeRoom?.id !== prevRoomId) {
@@ -89,7 +94,9 @@ export default function ChatWindow({
             setMembersCache((prev) => ({ ...prev, [activeRoom.id]: names }));
           }
         })
-        .catch(console.error);
+        .catch(() => {
+          // Ignore error silently, it throws 403 when user leaves the room
+        });
     }
   }, [activeRoom, membersCache]);
 
@@ -166,11 +173,19 @@ export default function ChatWindow({
   }, [inputRef]);
 
   if (!activeRoom) {
-    return <EmptyState />;
+    return (
+      <div className="hidden md:flex flex-1 overflow-hidden bg-primary relative">
+        <EmptyState />
+      </div>
+    );
   }
 
   if (isLoading) {
-    return <ChatSkeleton />;
+    return (
+      <div className="flex-1 flex overflow-hidden bg-primary relative">
+        <ChatSkeleton />
+      </div>
+    );
   }
 
   // Dulu di sini ada filter pesannya, sekarang main chat window ga di filter
@@ -191,6 +206,7 @@ export default function ChatWindow({
         isSearchActive={isSearchActive}
         setIsSearchActive={setIsSearchActive}
         onDmUserClick={handleUserClick}
+        typingUser={typingUser}
       />
 
       <ChatMessages
@@ -199,14 +215,21 @@ export default function ChatWindow({
         presenceStatus={presenceStatus}
         messagesEndRef={messagesEndRef}
         onUserClick={handleUserClick}
-        searchQuery={isSearchActive ? searchQuery : ""}
+        searchQuery={searchQuery}
         searchedMessageId={searchedMessageId}
+        onClearHighlight={() => {
+          setSearchedMessageId("");
+          setSearchQuery("");
+        }}
       />
 
       <ChatInput
-        messageInput={messageInput}
-        onMessageInputChange={onMessageInputChange}
         onSendMessage={onSendMessage}
+        onTyping={() => {
+          if (activeRoom) {
+            getSocket()?.emit("presence:typing", { room_id: activeRoom.id });
+          }
+        }}
         inputRef={inputRef}
       />
 
@@ -219,7 +242,11 @@ export default function ChatWindow({
 
       <SearchMessageSlider
         isOpen={isSearchActive}
-        onClose={() => setIsSearchActive(false)}
+        onClose={() => {
+          setIsSearchActive(false);
+          setSearchQuery("");
+          setSearchedMessageId("");
+        }}
         messages={messages}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}

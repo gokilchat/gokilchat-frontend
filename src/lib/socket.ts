@@ -1,10 +1,11 @@
 import { io, Socket } from 'socket.io-client';
+import { CHAT_SERVER_URL } from './api';
 
 let socket: Socket | null = null;
 
 export const initSocket = (token: string) => {
   if (!socket) {
-    socket = io(process.env.NEXT_PUBLIC_CHAT_SERVER_URL || 'http://localhost:4000', {
+    socket = io(CHAT_SERVER_URL, {
       auth: { token },
       autoConnect: false,
     });
