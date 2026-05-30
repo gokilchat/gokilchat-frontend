@@ -5,6 +5,7 @@ export interface User {
   email: string;
   avatar_url?: string;
   system_role?: string;
+  status?: string;
 }
 
 export interface Room {
@@ -14,6 +15,7 @@ export interface Room {
   owner_id?: string;
   avatar_url?: string;
   dm_user_id?: string;
+  dm_user_status?: string;
   members_count?: number;
   unread_count?: number;
   last_message?: {
@@ -35,6 +37,10 @@ export interface Message {
   content: string;
   created_at: string;
   template_type?: string;
+  parent_id?: string | null;
+  reply_preview?: string | null;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
   invite_info?: {
     invitee_id: string;
     status: 'pending' | 'accepted' | 'rejected';

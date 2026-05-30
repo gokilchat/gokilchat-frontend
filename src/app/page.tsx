@@ -23,6 +23,18 @@ function LoginPageContent() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err) {
+      const handleErr = async () => {
+        setError(decodeURIComponent(err));
+        // Remove query param from url to avoid showing on refresh
+        router.replace("/");
+      };
+      handleErr();
+    }
+  }, [searchParams, router]);
+
   // Hanya handle kasus: user SUDAH login saat hydration (misal refresh di halaman login)
   useEffect(() => {
     if (isHydrated && user && token && !hasRedirected.current) {

@@ -34,6 +34,7 @@ interface Member {
     username: string;
     full_name?: string;
     avatar_url?: string;
+    status?: string;
   };
 }
 
@@ -523,6 +524,12 @@ export default function GroupInfoModal({
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-black text-white truncate flex items-center gap-1.5">
                               {m.user.full_name || m.user.username}
+                              {m.user.status === "banned" && (
+                                <span className="bg-red-500/20 text-red-500 text-[9px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-bold shrink-0">Banned</span>
+                              )}
+                              {m.user.status === "suspended" && (
+                                <span className="bg-orange-500/20 text-orange-500 text-[9px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-bold shrink-0">Suspended</span>
+                              )}
                               {m.role === "owner" && (
                                 <Tooltip content="Owner" placement="top">
                                   <span className="flex">

@@ -64,7 +64,7 @@ export default function ChatHeader({
         <button
           onClick={() => setActiveRoomId(null)}
           className="md:hidden p-3 text-text-secondary hover:text-white hover:bg-elevated rounded-xl transall shrink-0 focus:outline-none active:outline-none border-none"
-          style={{ border: 'none', outline: 'none', boxShadow: 'none' }}
+          style={{ border: "none", outline: "none", boxShadow: "none" }}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -140,7 +140,7 @@ export default function ChatHeader({
           <Tooltip
             content="Klik untuk info profil"
             placement="bottom"
-            triggerClassName="flex flex-1 min-w-0 h-full items-center animate-in fade-in slide-in-from-left-4 duration-200"
+            triggerClassName="flex flex-1 min-w-0 h-full items-center"
             anchorRef={tooltipAnchorRef}
           >
             <div
@@ -179,8 +179,14 @@ export default function ChatHeader({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-black text-white text-base tracking-tight leading-tight mb-1 truncate">
+                  <h3 className="font-black text-white text-base tracking-tight leading-tight mb-1 truncate flex items-center gap-2">
                     {activeRoom.name || "Private Chat"}
+                    {activeRoom.dm_user_status === "banned" && (
+                      <span className="bg-red-500/20 text-red-500 text-[9px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-bold shrink-0">Banned</span>
+                    )}
+                    {activeRoom.dm_user_status === "suspended" && (
+                      <span className="bg-orange-500/20 text-orange-500 text-[9px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-bold shrink-0">Suspended</span>
+                    )}
                   </h3>
                   <div className="flex items-center gap-1.5 min-w-0">
                     {typingUser ? (
@@ -190,13 +196,11 @@ export default function ChatHeader({
                     ) : (
                       <span
                         className={clsx(
-                          "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0",
-                          isOnline
-                            ? "bg-status-online/15 text-status-online"
-                            : "bg-text-muted/10 text-text-muted",
+                          "text-[10px] font-bold uppercase tracking-wider py-0.5 rounded-full shrink-0",
+                          isOnline ? "text-status-online" : "text-text-muted",
                         )}
                       >
-                        {isOnline ? "Online ⚡" : "Offline ⚡"}
+                        {isOnline ? "Online" : "Offline"}
                       </span>
                     )}
                   </div>
@@ -215,7 +219,7 @@ export default function ChatHeader({
               ? "text-accent-default bg-accent-default/10"
               : "text-text-secondary hover:text-white",
           )}
-          style={{ border: 'none', outline: 'none', boxShadow: 'none' }}
+          style={{ border: "none", outline: "none", boxShadow: "none" }}
           onClick={() => {
             setIsSearchActive(!isSearchActive);
           }}
@@ -231,13 +235,13 @@ export default function ChatHeader({
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="p-2 text-text-secondary hover:text-white transall cursor-pointer focus:outline-none active:outline-none border-none"
-            style={{ border: 'none', outline: 'none', boxShadow: 'none' }}
+            style={{ border: "none", outline: "none", boxShadow: "none" }}
           >
             <MoreVertical className="w-5 h-5" />
           </button>
 
           {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-elevated border border-border-divider rounded-2xl shadow-xl overflow-hidden z-50 flex flex-col p-1 origin-top-right animate-in fade-in zoom-in duration-150">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-elevated border border-border-divider rounded-2xl shadow-xl overflow-hidden z-50 flex flex-col p-1 origin-top-right">
               {activeRoom.type !== "dm" ? (
                 <>
                   <button

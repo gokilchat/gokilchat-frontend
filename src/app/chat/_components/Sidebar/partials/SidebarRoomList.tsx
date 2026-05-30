@@ -80,13 +80,19 @@ export default function SidebarRoomList({
             {room.type === "dm" &&
               room.dm_user_id &&
               presenceStatus[room.dm_user_id] && (
-                <div className="absolute bottom-[0.05rem] right-[0.05rem] size-[0.8rem] border-[2.5px] border-secondary bg-status-online rounded-full z-30" />
+                <div className="absolute bottom-[0.05rem] right-[0.05rem] size-[0.8rem] border-[2.5px] border-secondary bg-status-online rounded-full z-25" />
               )}
           </div>
           <div className="flex-1 text-left min-w-0">
             <div className="flex justify-between items-center mb-0.5">
-              <span className="font-black text-[0.9rem] truncate tracking-tight">
+              <span className="font-black text-[0.9rem] truncate tracking-tight flex items-center gap-1">
                 {room.name}
+                {room.type === "dm" && room.dm_user_status === "banned" && (
+                  <span className="bg-red-500/20 text-red-500 text-[9px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-bold shrink-0">Banned</span>
+                )}
+                {room.type === "dm" && room.dm_user_status === "suspended" && (
+                  <span className="bg-orange-500/20 text-orange-500 text-[9px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-bold shrink-0">Suspended</span>
+                )}
               </span>
               <span
                 className={clsx(
@@ -101,7 +107,9 @@ export default function SidebarRoomList({
               <p
                 className={clsx(
                   "text-[11px] truncate leading-tight font-medium flex-1",
-                  activeRoomId === room.id ? "text-white/80" : "text-text-muted",
+                  activeRoomId === room.id
+                    ? "text-white/80"
+                    : "text-text-muted",
                 )}
               >
                 {room.last_message ? (
@@ -110,7 +118,8 @@ export default function SidebarRoomList({
                       <span className="font-bold opacity-80">
                         {room.last_message.sender?.username === user.username
                           ? "Anda"
-                          : room.last_message.sender?.full_name || room.last_message.sender?.username}
+                          : room.last_message.sender?.full_name ||
+                            room.last_message.sender?.username}
                         :
                       </span>{" "}
                       ✉️ Undangan Grup
@@ -120,7 +129,8 @@ export default function SidebarRoomList({
                       <span className="font-bold opacity-80">
                         {room.last_message.sender?.username === user.username
                           ? "Anda"
-                          : room.last_message.sender?.full_name || room.last_message.sender?.username}
+                          : room.last_message.sender?.full_name ||
+                            room.last_message.sender?.username}
                         :
                       </span>{" "}
                       {room.last_message.content}
@@ -130,11 +140,13 @@ export default function SidebarRoomList({
                   <span className="italic">Belum ada obrolan...</span>
                 )}
               </p>
-              {!!room.unread_count && room.unread_count > 0 && activeRoomId !== room.id && (
-                <div className="bg-status-unread text-text-on-accent text-[10px] font-black h-4 min-w-4 px-1 rounded-full flexcc shrink-0">
-                  {room.unread_count > 99 ? '99+' : room.unread_count}
-                </div>
-              )}
+              {!!room.unread_count &&
+                room.unread_count > 0 &&
+                activeRoomId !== room.id && (
+                  <div className="bg-status-unread text-text-on-accent text-[10px] font-black h-4 min-w-4 px-1 rounded-full flexcc shrink-0">
+                    {room.unread_count > 99 ? "99+" : room.unread_count}
+                  </div>
+                )}
             </div>
           </div>
         </button>

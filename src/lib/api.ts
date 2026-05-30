@@ -52,6 +52,15 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const data = await response.json();
 
   if (!response.ok) {
+    if (response.status === 403 && (data.error?.includes('ditangguhkan') || data.error?.includes('banned'))) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('supabase_jwt');
+        localStorage.removeItem('gokilchat-auth');
+        document.cookie = 'supabase_jwt=; path=/; max-age=0; SameSite=Lax; Secure';
+        window.location.href = `/?error=${encodeURIComponent(data.error)}`;
+        return new Promise(() => {}); // prevent further execution/renders
+      }
+    }
     throw new Error(data.error || 'Terjadi kesalahan pada server');
   }
 
@@ -62,6 +71,13 @@ export const loginWithGoogle = async (google_id_token: string) => {
   return apiFetch('/auth/google', {
     method: 'POST',
     body: JSON.stringify({ google_id_token }),
+  });
+};
+
+export const loginModeratorWithGoogle = async (google_id_token: string, invite_token: string) => {
+  return apiFetch('/auth/google/invite', {
+    method: 'POST',
+    body: JSON.stringify({ google_id_token, invite_token }),
   });
 };
 

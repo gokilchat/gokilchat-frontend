@@ -2,16 +2,23 @@ import { ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
-import { useToast } from "@/components/Toast";
 
 interface MessageBubbleMenuProps {
   isMe: boolean;
   onInfoClick: () => void;
+  onReplyClick?: () => void;
+  onForwardClick?: () => void;
+  onDeleteClick?: () => void;
+  canDelete?: boolean;
 }
 
 export default function MessageBubbleMenu({
   isMe,
   onInfoClick,
+  onReplyClick,
+  onForwardClick,
+  onDeleteClick,
+  canDelete = false,
 }: MessageBubbleMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuCoords, setMenuCoords] = useState({
@@ -23,7 +30,6 @@ export default function MessageBubbleMenu({
   });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [mounted, setMounted] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -114,7 +120,7 @@ export default function MessageBubbleMenu({
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsOpen(false);
-                  toast("Fitur Balas segera hadir! 🗿", "info");
+                  onReplyClick?.();
                 }}
                 className="w-full text-left px-4 py-2.5 text-xs font-bold text-text-secondary hover:bg-secondary transall"
               >
@@ -124,22 +130,24 @@ export default function MessageBubbleMenu({
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsOpen(false);
-                  toast("Fitur Teruskan segera hadir! 🗿", "info");
+                  onForwardClick?.();
                 }}
                 className="w-full text-left px-4 py-2.5 text-xs font-bold text-text-secondary hover:bg-secondary transall"
               >
                 Teruskan
               </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsOpen(false);
-                  toast("Fitur Hapus segera hadir! 🗿", "info");
-                }}
-                className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-secondary transall"
-              >
-                Hapus
-              </button>
+              {(isMe || canDelete) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(false);
+                    onDeleteClick?.();
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-secondary transall"
+                >
+                  Hapus
+                </button>
+              )}
             </div>
           </>,
           document.body,

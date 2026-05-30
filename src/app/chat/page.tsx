@@ -3,12 +3,12 @@
 import { useAuthStore } from "@/store/useAuthStore";
 import { useChatStore } from "@/store/useChatStore";
 import { initSocket, disconnectSocket, getSocket } from "@/lib/socket";
+import { useNotificationStore } from "@/store/useNotificationStore";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { User, Room } from "@/types/chat";
 import { useToast } from "@/components/Toast";
-
 
 // Components
 import Sidebar from "./_components/Sidebar";
@@ -33,7 +33,16 @@ export default function ChatPage() {
     addMessage,
   } = useChatStore();
 
+  const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
+  const addNotification = useNotificationStore((state) => state.addNotification);
+
   const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    if (isHydrated && user && token) {
+      fetchNotifications();
+    }
+  }, [isHydrated, user, token, fetchNotifications]);
   const [typingData, setTypingData] = useState<Record<string, string>>({});
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -109,7 +118,11 @@ export default function ChatPage() {
   // Buramkan elemen aktif pas ganti/masuk room di mobile biar keyboard HP gak otomatis nongol 📱
   useEffect(() => {
     if (!isHydrated) return;
-    if (activeRoomId && typeof window !== "undefined" && window.innerWidth < 768) {
+    if (
+      activeRoomId &&
+      typeof window !== "undefined" &&
+      window.innerWidth < 768
+    ) {
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
@@ -117,7 +130,13 @@ export default function ChatPage() {
   }, [activeRoomId, isHydrated]);
 
   useEffect(() => {
-    if (isHydrated && !user) router.push("/");
+    if (isHydrated) {
+      if (!user) {
+        router.push("/");
+      } else if (user.system_role === "super_admin" || user.system_role === "moderator") {
+        router.push("/admin");
+      }
+    }
   }, [user, router, isHydrated]);
 
   useEffect(() => {
@@ -126,51 +145,75 @@ export default function ChatPage() {
     const socket = initSocket(token);
     socket.connect();
 
-    socket.on("presence:typing", (data: { room_id: string; username: string }) => {
-      setTypingData((prev) => ({ ...prev, [data.room_id]: data.username }));
-      setTimeout(() => {
-        setTypingData((prev) => {
-          const next = { ...prev };
-          delete next[data.room_id];
-          return next;
-        });
-      }, 3000);
+    socket.on("auth:kick", (data: { error: string }) => {
+      logout();
+      window.location.href = `/?error=${encodeURIComponent(data.error)}`;
     });
+
+    socket.on("notification:new", (notif) => {
+      addNotification(notif);
+      toast("Notifikasi Official Baru dari Staff 🛡️", "info");
+    });
+
+    socket.on(
+      "presence:typing",
+      (data: { room_id: string; username: string }) => {
+        setTypingData((prev) => ({ ...prev, [data.room_id]: data.username }));
+        setTimeout(() => {
+          setTypingData((prev) => {
+            const next = { ...prev };
+            delete next[data.room_id];
+            return next;
+          });
+        }, 3000);
+      },
+    );
 
     socket.on("message:new", (message) => {
       // Backend spec v2 wraps content inside `data`
       const formattedMessage = {
         ...message,
         content: message.data?.content || "",
-        receipts: message.receipts || []
+        receipts: message.receipts || [],
       };
 
       addMessage(formattedMessage);
-      
+
       const activeId = useChatStore.getState().activeRoomId;
-      const isUnread = message.sender_id !== user.id && (activeId !== message.room_id || document.hidden);
+      const isUnread =
+        message.sender_id !== user.id &&
+        (activeId !== message.room_id || document.hidden);
 
       if (message.sender_id !== user.id) {
         if (!isUnread) {
           socket.emit("message:read:room", { room_id: message.room_id });
         } else {
-          socket.emit("message:delivered", { message_id: message.id, room_id: message.room_id });
-          
+          socket.emit("message:delivered", {
+            message_id: message.id,
+            room_id: message.room_id,
+          });
+
           if (Notification.permission === "granted") {
-            const roomName = useChatStore.getState().rooms.find(r => r.id === message.room_id)?.name || "GokilChat";
+            const roomName =
+              useChatStore
+                .getState()
+                .rooms.find((r) => r.id === message.room_id)?.name ||
+              "GokilChat";
             const notifTitle = roomName;
             const notifOptions = {
               body: `${message.sender_full_name || message.sender_username}: ${formattedMessage.content}`,
               icon: "/favicon.ico",
             };
-            
-            if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification(notifTitle, notifOptions);
-              }).catch(() => {
-                const notif = new Notification(notifTitle, notifOptions);
-                notif.onclick = () => window.focus();
-              });
+
+            if ("serviceWorker" in navigator) {
+              navigator.serviceWorker.ready
+                .then((reg) => {
+                  reg.showNotification(notifTitle, notifOptions);
+                })
+                .catch(() => {
+                  const notif = new Notification(notifTitle, notifOptions);
+                  notif.onclick = () => window.focus();
+                });
             } else {
               const notif = new Notification(notifTitle, notifOptions);
               notif.onclick = () => window.focus();
@@ -195,13 +238,15 @@ export default function ChatPage() {
           r.id === message.room_id
             ? {
                 ...r,
-                unread_count: isUnread ? (r.unread_count || 0) + 1 : r.unread_count,
+                unread_count: isUnread
+                  ? (r.unread_count || 0) + 1
+                  : r.unread_count,
                 last_message: {
                   content: formattedMessage.content,
                   created_at: message.created_at,
-                  sender: { 
+                  sender: {
                     username: message.sender_username,
-                    full_name: message.sender_full_name 
+                    full_name: message.sender_full_name,
                   },
                   template_type: message.template_type || "text",
                 },
@@ -221,9 +266,20 @@ export default function ChatPage() {
       },
     );
 
-    socket.on("receipt:update:batch", (data: { room_id: string, receipts: { message_id: string; user_id: string; delivered_at: string | null; read_at: string | null }[] }) => {
-      useChatStore.getState().updateReceipts(data.receipts);
-    });
+    socket.on(
+      "receipt:update:batch",
+      (data: {
+        room_id: string;
+        receipts: {
+          message_id: string;
+          user_id: string;
+          delivered_at: string | null;
+          read_at: string | null;
+        }[];
+      }) => {
+        useChatStore.getState().updateReceipts(data.receipts);
+      },
+    );
 
     socket.on("room:added", (data: { room_id: string }) => {
       // Refresh list room dari API supaya grup baru muncul di sidebar
@@ -237,49 +293,73 @@ export default function ChatPage() {
     });
 
     socket.on("room:kicked", (data: { room_id: string }) => {
-      toast("Waduh, lu abis di-kick dari salah satu grup! Mampus 🗿", "warning");
-      
+      toast(
+        "Waduh, lu abis di-kick dari salah satu grup! Mampus 🗿",
+        "warning",
+      );
+
       // Kalo lagi buka grupnya, tutup
       if (useChatStore.getState().activeRoomId === data.room_id) {
         useChatStore.getState().setActiveRoomId(null);
       }
-      
+
       // Hapus dari sidebar
-      setRooms((prevRooms: Room[]) => prevRooms.filter((r) => r.id !== data.room_id));
-      
+      setRooms((prevRooms: Room[]) =>
+        prevRooms.filter((r) => r.id !== data.room_id),
+      );
+
       // Leave socket room biar gak nerima chat lagi
       socket.emit("room:leave", { room_id: data.room_id });
     });
 
-    socket.on("room:member_joined", (data: { room_id: string; user_id: string }) => {
-      setRooms((prevRooms: Room[]) =>
-        prevRooms.map((r) =>
-          r.id === data.room_id
-            ? { ...r, members_count: (r.members_count || 1) + 1 }
-            : r
-        )
-      );
-    });
+    socket.on(
+      "room:member_joined",
+      (data: { room_id: string; user_id: string }) => {
+        setRooms((prevRooms: Room[]) =>
+          prevRooms.map((r) =>
+            r.id === data.room_id
+              ? { ...r, members_count: (r.members_count || 1) + 1 }
+              : r,
+          ),
+        );
+      },
+    );
 
-    socket.on("room:member_left", (data: { room_id: string; user_id: string }) => {
-      setRooms((prevRooms: Room[]) =>
-        prevRooms.map((r) =>
-          r.id === data.room_id
-            ? { ...r, members_count: Math.max(1, (r.members_count || 2) - 1) }
-            : r
-        )
-      );
-    });
+    socket.on(
+      "room:member_left",
+      (data: { room_id: string; user_id: string }) => {
+        setRooms((prevRooms: Room[]) =>
+          prevRooms.map((r) =>
+            r.id === data.room_id
+              ? { ...r, members_count: Math.max(1, (r.members_count || 2) - 1) }
+              : r,
+          ),
+        );
+      },
+    );
 
-    socket.on("room:updated", (data: { room_id: string; name: string; description: string; avatar_url?: string }) => {
-      setRooms((prevRooms: Room[]) =>
-        prevRooms.map((r) =>
-          r.id === data.room_id
-            ? { ...r, name: data.name, description: data.description, avatar_url: data.avatar_url ?? r.avatar_url }
-            : r
-        )
-      );
-    });
+    socket.on(
+      "room:updated",
+      (data: {
+        room_id: string;
+        name: string;
+        description: string;
+        avatar_url?: string;
+      }) => {
+        setRooms((prevRooms: Room[]) =>
+          prevRooms.map((r) =>
+            r.id === data.room_id
+              ? {
+                  ...r,
+                  name: data.name,
+                  description: data.description,
+                  avatar_url: data.avatar_url ?? r.avatar_url,
+                }
+              : r,
+          ),
+        );
+      },
+    );
 
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
@@ -303,6 +383,7 @@ export default function ChatPage() {
       .finally(() => setIsLoadingRooms(false));
 
     return () => {
+      socket.off("auth:kick");
       socket.off("message:new");
       socket.off("presence:status");
       socket.off("room:added");
@@ -312,7 +393,7 @@ export default function ChatPage() {
       socket.off("receipt:update:batch");
       disconnectSocket();
     };
-  }, [isHydrated, user, token, setRooms, addMessage, toast]);
+  }, [isHydrated, user, token, setRooms, addMessage, addNotification, toast, logout]);
 
   // Patroli Status On-Demand (Hemat Resource) 🗿
   useEffect(() => {
@@ -336,7 +417,7 @@ export default function ChatPage() {
       }
     };
 
-    // Jalankan patroli pertama kali, lalu tiap 3 detik biar sat-set 🗿⚡
+    // Jalankan patroli pertama kali, lalu tiap 3 detik biar sat-set 🗿
     pollPresence();
     const interval = setInterval(pollPresence, 3000);
 
@@ -356,9 +437,11 @@ export default function ChatPage() {
 
     const room = rooms.find((r) => r.id === roomId);
     setActiveRoomId(roomId);
-    
+
     // Clear unread count when opening a room
-    setRooms(prev => prev.map(r => r.id === roomId ? { ...r, unread_count: 0 } : r));
+    setRooms((prev) =>
+      prev.map((r) => (r.id === roomId ? { ...r, unread_count: 0 } : r)),
+    );
 
     setIsLoadingMessages(true);
     const socket = getSocket();
@@ -447,10 +530,12 @@ export default function ChatPage() {
       });
       if (res.success) {
         const roomId = res.data.id;
-        
+
         // Langsung invite user yang dipilih
         for (const user of selectedUsers) {
-          await apiFetch(`/rooms/${roomId}/invites/${user.id}`, { method: "POST" });
+          await apiFetch(`/rooms/${roomId}/invites/${user.id}`, {
+            method: "POST",
+          });
         }
 
         setRooms([res.data, ...rooms]);
@@ -545,7 +630,11 @@ export default function ChatPage() {
       );
       if (res.success) {
         toast("User berhasil di-invite!", "success");
-        window.dispatchEvent(new CustomEvent("gokilchat:member_joined", { detail: { roomId: activeRoomId } }));
+        window.dispatchEvent(
+          new CustomEvent("gokilchat:member_joined", {
+            detail: { roomId: activeRoomId },
+          }),
+        );
         setShowInviteModal(false);
         setSearchQuery("");
         setSearchResults([]);
@@ -563,6 +652,10 @@ export default function ChatPage() {
   }, [messages]);
 
   if (!isHydrated || !user) return null;
+
+  if (user.system_role === "super_admin" || user.system_role === "moderator") {
+    return null; // Will be redirected by useEffect
+  }
 
   const activeRoom = rooms.find((r) => r.id === activeRoomId) || null;
   const targetUserId = activeRoom?.dm_user_id;
@@ -617,8 +710,6 @@ export default function ChatPage() {
         typingUser={activeRoomId ? typingData[activeRoomId] : undefined}
       />
 
-
-
       <CreateRoomModal
         isOpen={showCreateRoomModal}
         onClose={() => setShowCreateRoomModal(false)}
@@ -658,7 +749,7 @@ export default function ChatPage() {
           }}
         />
       )}
-      
+
       <ConfirmModal
         isOpen={showLeaveConfirm}
         onCancel={() => setShowLeaveConfirm(false)}

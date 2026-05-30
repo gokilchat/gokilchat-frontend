@@ -193,7 +193,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flexcc bg-black/60 backdrop-blur-sm md:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flexcc bg-black/60 backdrop-blur-sm md:p-4"
       onClick={onClose}
     >
       <div
@@ -261,7 +261,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
             {/* Content */}
             <div className="p-4 md:p-6">
               {activeTab === "profile" ? (
-                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="space-y-6">
                   {/* Avatar Section */}
                   <div className="flexcc flex-col gap-3">
                     <div className="relative group">
@@ -380,7 +380,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
+                <div className="space-y-6">
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-sm font-bold text-white mb-1">

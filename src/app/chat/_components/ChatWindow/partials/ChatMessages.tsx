@@ -12,6 +12,10 @@ interface ChatMessagesProps {
   searchQuery?: string;
   searchedMessageId?: string;
   onClearHighlight?: () => void;
+  onReplyClick?: (message: Message) => void;
+  onForwardClick?: (message: Message) => void;
+  onDeleteClick?: (message: Message) => void;
+  canDelete?: boolean;
 }
 
 export default function ChatMessages({
@@ -23,6 +27,10 @@ export default function ChatMessages({
   searchQuery = "",
   searchedMessageId = "",
   onClearHighlight,
+  onReplyClick,
+  onForwardClick,
+  onDeleteClick,
+  canDelete = false,
 }: ChatMessagesProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -71,6 +79,11 @@ export default function ChatMessages({
             {messages.map((msg, idx) => {
               const isConsecutive =
                 idx > 0 && messages[idx - 1].sender_id === msg.sender_id;
+
+              const parentMsg = msg.parent_id
+                ? messages.find((m) => m.id === msg.parent_id)
+                : undefined;
+
               return (
                 <div
                   key={msg.id || idx}
@@ -85,6 +98,11 @@ export default function ChatMessages({
                     searchQuery={searchQuery}
                     isHighlighted={msg.id === searchedMessageId}
                     isConsecutive={isConsecutive}
+                    onReplyClick={onReplyClick}
+                    onForwardClick={onForwardClick}
+                    onDeleteClick={onDeleteClick}
+                    canDelete={canDelete}
+                    parentMessage={parentMsg}
                   />
                 </div>
               );
@@ -95,7 +113,7 @@ export default function ChatMessages({
       </div>
 
       {/* Efek Fade "Tenggelam" 🗿✨ */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-32 bg-linear-to-t from-primary from-30% to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-3 bg-primary pointer-events-none z-10" />
     </div>
   );
 }

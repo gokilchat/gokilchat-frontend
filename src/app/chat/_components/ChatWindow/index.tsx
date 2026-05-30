@@ -11,6 +11,7 @@ import ChatInput from "./partials/ChatInput";
 import EmptyState from "./partials/EmptyState";
 import UserProfileSlider from "../modals/UserProfileSlider";
 import SearchMessageSlider from "../modals/SearchMessageSlider";
+import ForwardMessageModal from "../modals/ForwardMessageModal";
 
 interface ChatWindowProps {
   activeRoom: Room | null;
@@ -20,7 +21,8 @@ interface ChatWindowProps {
   onInviteClick: () => void;
   onGroupInfoClick: () => void;
   onLeaveGroupClick?: () => void;
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, parentId?: string | null) => void;
+  onDeleteMessage?: (message: Message) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   presenceStatus?: Record<string, boolean>;
@@ -36,6 +38,7 @@ export default function ChatWindow({
   onGroupInfoClick,
   onLeaveGroupClick,
   onSendMessage,
+  onDeleteMessage,
   messagesEndRef,
   inputRef,
   presenceStatus = {},
@@ -51,6 +54,10 @@ export default function ChatWindow({
   const [selectedUserId, setSelectedUserId] = useState("");
 
   const [searchedMessageId, setSearchedMessageId] = useState("");
+
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<"owner" | "admin" | "user">("user");
+  const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
 
   const handleUserClick = (userId: string) => {
     setSelectedUserId(userId);
@@ -76,15 +83,13 @@ export default function ChatWindow({
     setIsSearchActive(false);
     setSearchQuery("");
     setSearchedMessageId("");
+    setReplyingTo(null);
+    setCurrentUserRole(activeRoom?.type === "dm" ? "owner" : "user");
   }
 
-  // Fetch group members for the header subtitle
+  // Fetch group members for the header subtitle and current user role
   useEffect(() => {
-    if (
-      activeRoom &&
-      activeRoom.type !== "dm" &&
-      !membersCache[activeRoom.id]
-    ) {
+    if (activeRoom && activeRoom.type !== "dm" && !membersCache[activeRoom.id]) {
       apiFetch(`/rooms/${activeRoom.id}`, { cache: "no-store" })
         .then((res) => {
           if (res.success && res.data?.members) {
@@ -92,13 +97,20 @@ export default function ChatWindow({
               .map((m: { user: User }) => m.user.full_name || m.user.username)
               .join(", ");
             setMembersCache((prev) => ({ ...prev, [activeRoom.id]: names }));
+
+            const me = res.data.members.find(
+              (m: { user: User; role: "owner" | "admin" | "user" }) => m.user.id === user.id
+            );
+            if (me) {
+              setCurrentUserRole(me.role);
+            }
           }
         })
         .catch(() => {
           // Ignore error silently, it throws 403 when user leaves the room
         });
     }
-  }, [activeRoom, membersCache]);
+  }, [activeRoom, membersCache, user.id]);
 
   // Listen for socket events to update membersCache
   useEffect(() => {
@@ -221,17 +233,26 @@ export default function ChatWindow({
           setSearchedMessageId("");
           setSearchQuery("");
         }}
+        onReplyClick={(msg) => setReplyingTo(msg)}
+        onForwardClick={(msg) => setForwardingMessage(msg)}
+        onDeleteClick={onDeleteMessage}
+        canDelete={currentUserRole === "owner" || currentUserRole === "admin"}
       />
 
       <ChatInput
         key={activeRoom?.id}
-        onSendMessage={onSendMessage}
+        onSendMessage={(val) => {
+          onSendMessage(val, replyingTo?.id);
+          setReplyingTo(null);
+        }}
         onTyping={() => {
           if (activeRoom) {
             getSocket()?.emit("presence:typing", { room_id: activeRoom.id });
           }
         }}
         inputRef={inputRef}
+        replyingTo={replyingTo}
+        onCancelReply={() => setReplyingTo(null)}
       />
 
         <UserProfileSlider
@@ -253,6 +274,14 @@ export default function ChatWindow({
         setSearchQuery={setSearchQuery}
         onSelectMessage={handleSelectMessage}
       />
+
+      {forwardingMessage && (
+        <ForwardMessageModal
+          isOpen={!!forwardingMessage}
+          onClose={() => setForwardingMessage(null)}
+          message={forwardingMessage}
+        />
+      )}
     </div>
   );
 }

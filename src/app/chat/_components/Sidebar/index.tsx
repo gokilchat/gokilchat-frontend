@@ -45,7 +45,7 @@ export default function Sidebar({
   return (
     <aside
       className={clsx(
-        "bg-primary backdrop-blur-xl flex flex-col relative shrink-0 z-20 group/sidebar",
+        "bg-primary backdrop-blur-xl flex flex-col relative shrink-0 z-40 group/sidebar",
         activeRoomId ? "hidden md:flex" : "flex w-full md:w-auto"
       )}
       style={{ width: isMobile && !activeRoomId ? '100%' : width }}

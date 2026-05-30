@@ -18,6 +18,11 @@ interface MessageBubbleProps {
   searchQuery?: string;
   isHighlighted?: boolean;
   isConsecutive?: boolean;
+  onReplyClick?: (message: Message) => void;
+  onForwardClick?: (message: Message) => void;
+  onDeleteClick?: (message: Message) => void;
+  canDelete?: boolean;
+  parentMessage?: Message;
 }
 
 const renderHighlightedText = (text: string, query?: string) => {
@@ -44,9 +49,33 @@ export default function MessageBubble({
   onUserClick,
   searchQuery,
   isHighlighted,
-  isConsecutive = false
+  isConsecutive = false,
+  onReplyClick,
+  onForwardClick,
+  onDeleteClick,
+  canDelete = false,
+  parentMessage
 }: MessageBubbleProps) {
   const [showReceipts, setShowReceipts] = useState(false);
+
+  const isDeleted = !!message.deleted_at;
+  const deletedBySelf = message.deleted_by === message.sender_id;
+  const deletedText = deletedBySelf 
+    ? "Pesan ini telah dihapus"
+    : "Pesan ini dihapus oleh admin";
+
+  const handleScrollToParent = () => {
+    if (message.parent_id) {
+      const el = document.getElementById(`msg-${message.parent_id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-accent-default", "ring-offset-2", "ring-offset-primary");
+        setTimeout(() => {
+          el.classList.remove("ring-2", "ring-accent-default", "ring-offset-2", "ring-offset-primary");
+        }, 1500);
+      }
+    }
+  };
 
   return (
     <>
@@ -104,7 +133,16 @@ export default function MessageBubble({
             )}
           >
             {/* Bubble Dropdown Menu */}
-            <MessageBubbleMenu isMe={isMe} onInfoClick={() => setShowReceipts(true)} />
+            {!isDeleted && (
+              <MessageBubbleMenu
+                isMe={isMe}
+                onInfoClick={() => setShowReceipts(true)}
+                onReplyClick={() => onReplyClick?.(message)}
+                onForwardClick={() => onForwardClick?.(message)}
+                onDeleteClick={() => onDeleteClick?.(message)}
+                canDelete={canDelete}
+              />
+            )}
             {/* Nama Pengirim ala Telegram 🗿✈️ */}
             {!isMe && !isConsecutive && (
               <p
@@ -115,7 +153,31 @@ export default function MessageBubble({
               </p>
             )}
 
-            {message.template_type === "room_invite" && message.invite_info ? (
+            {/* Reply Preview inside bubble */}
+            {message.parent_id && (
+              <div
+                onClick={handleScrollToParent}
+                className={clsx(
+                  "cursor-pointer border-l-2 pl-2 py-0.5 mb-2 rounded-r-md text-[11px] select-none text-left bg-black/10 hover:bg-black/15 transall max-w-full overflow-hidden",
+                  isMe ? "border-text-on-accent/60" : "border-accent-default"
+                )}
+              >
+                <span className={clsx("font-bold block truncate", isMe ? "text-text-on-accent" : "text-accent-default")}>
+                  {parentMessage 
+                    ? (parentMessage.sender_full_name || parentMessage.sender_username)
+                    : "Pesan Asal"}
+                </span>
+                <span className={clsx("block truncate opacity-80 mt-0.5", isMe ? "text-text-on-accent/80" : "text-text-secondary")}>
+                  {parentMessage ? parentMessage.content : message.reply_preview || "Pesan tidak ditemukan"}
+                </span>
+              </div>
+            )}
+
+            {isDeleted ? (
+              <p className="text-[13px] md:text-sm font-medium italic opacity-60 leading-relaxed whitespace-pre-wrap wrap-break-word [word-break:break-word] min-w-0">
+                {deletedText}
+              </p>
+            ) : message.template_type === "room_invite" && message.invite_info ? (
               <RoomInviteContent message={message} isMe={isMe} />
             ) : (
               <p className="text-[13px] md:text-sm font-medium leading-relaxed whitespace-pre-wrap wrap-break-word [word-break:break-word] min-w-0">
