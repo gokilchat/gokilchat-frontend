@@ -106,6 +106,16 @@ export default function ChatPage() {
     }
   }, [activeRoomId, isHydrated]);
 
+  // Buramkan elemen aktif pas ganti/masuk room di mobile biar keyboard HP gak otomatis nongol 📱
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (activeRoomId && typeof window !== "undefined" && window.innerWidth < 768) {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    }
+  }, [activeRoomId, isHydrated]);
+
   useEffect(() => {
     if (isHydrated && !user) router.push("/");
   }, [user, router, isHydrated]);
@@ -318,6 +328,12 @@ export default function ChatPage() {
           socket.emit("presence:check", { user_id: room.dm_user_id });
         }
       });
+
+      // Cek juga room aktif saat ini secara spesifik jika bertipe dm
+      const activeRoom = rooms.find((r) => r.id === activeRoomId);
+      if (activeRoom?.type === "dm" && activeRoom.dm_user_id) {
+        socket.emit("presence:check", { user_id: activeRoom.dm_user_id });
+      }
     };
 
     // Jalankan patroli pertama kali, lalu tiap 3 detik biar sat-set 🗿⚡
@@ -325,7 +341,7 @@ export default function ChatPage() {
     const interval = setInterval(pollPresence, 3000);
 
     return () => clearInterval(interval);
-  }, [isHydrated, user, token, rooms]);
+  }, [isHydrated, user, token, rooms, activeRoomId]);
 
   const handleRoomClick = async (roomId: string) => {
     if (roomId === activeRoomId) return; // Udah di sini, gausah fetch lagi 🗿
