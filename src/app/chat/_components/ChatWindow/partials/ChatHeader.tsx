@@ -63,7 +63,8 @@ export default function ChatHeader({
       <div className="flex flex-1 min-w-0 items-center mr-4 h-full gap-2">
         <button
           onClick={() => setActiveRoomId(null)}
-          className="md:hidden p-3 text-text-secondary hover:text-white hover:bg-elevated rounded-xl transall shrink-0"
+          className="md:hidden p-3 text-text-secondary hover:text-white hover:bg-elevated rounded-xl transall shrink-0 focus:outline-none active:outline-none border-none"
+          style={{ border: 'none', outline: 'none', boxShadow: 'none' }}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -189,13 +190,13 @@ export default function ChatHeader({
                     ) : (
                       <span
                         className={clsx(
-                          "truncate w-full",
+                          "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0",
                           isOnline
-                            ? "text-xs text-status-online font-bold uppercase tracking-widest"
-                            : "text-xs text-text-muted font-bold uppercase tracking-widest",
+                            ? "bg-status-online/15 text-status-online"
+                            : "bg-text-muted/10 text-text-muted",
                         )}
                       >
-                        {isOnline ? "Online" : "Offline"}
+                        {isOnline ? "Online ⚡" : "Offline ⚡"}
                       </span>
                     )}
                   </div>
@@ -209,11 +210,12 @@ export default function ChatHeader({
       <div className="flex items-center gap-1 shrink-0">
         <button
           className={clsx(
-            "p-2 transall cursor-pointer rounded-xl",
+            "p-2 transall cursor-pointer rounded-xl focus:outline-none active:outline-none border-none",
             isSearchActive
               ? "text-accent-default bg-accent-default/10"
               : "text-text-secondary hover:text-white",
           )}
+          style={{ border: 'none', outline: 'none', boxShadow: 'none' }}
           onClick={() => {
             setIsSearchActive(!isSearchActive);
           }}
@@ -228,7 +230,8 @@ export default function ChatHeader({
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 text-text-secondary hover:text-white transall cursor-pointer"
+            className="p-2 text-text-secondary hover:text-white transall cursor-pointer focus:outline-none active:outline-none border-none"
+            style={{ border: 'none', outline: 'none', boxShadow: 'none' }}
           >
             <MoreVertical className="w-5 h-5" />
           </button>

@@ -1,6 +1,6 @@
 import { Paperclip, Smile, Send } from "lucide-react";
 import clsx from "clsx";
-import { FormEvent, RefObject, useState, useEffect } from "react";
+import { FormEvent, RefObject, useState, useEffect, useRef } from "react";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -14,18 +14,31 @@ export default function ChatInput({
   inputRef,
 }: ChatInputProps) {
   const [localInput, setLocalInput] = useState("");
+  const shouldIgnoreFocus = useRef(true);
 
   // Cegah keyboard HP/mobile otomatis muncul saat masuk room dengan me-blur textarea 📱
   useEffect(() => {
+    shouldIgnoreFocus.current = true;
+    
+    // Reset abaikan focus setelah 500ms (cukup buat ngelewatin transisi/hiding sidebar)
+    const timer = setTimeout(() => {
+      shouldIgnoreFocus.current = false;
+    }, 500);
+
     if (typeof window !== "undefined" && window.innerWidth < 768) {
-      const timer = setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.blur();
-        }
-      }, 50);
-      return () => clearTimeout(timer);
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
     }
+
+    return () => clearTimeout(timer);
   }, [inputRef]);
+
+  const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    if (shouldIgnoreFocus.current && typeof window !== "undefined" && window.innerWidth < 768) {
+      e.currentTarget.blur();
+    }
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -69,6 +82,7 @@ export default function ChatInput({
               handleSubmit(e);
             }
           }}
+          onFocus={handleFocus}
           placeholder="Tulis pesan gokil lu..."
           rows={1}
           className="flex-1 bg-secondary border-none outline-none focus:outline-none focus:ring-0 text-sm text-text-primary placeholder:text-text-muted/50 py-3 resize-none max-h-40 custom-scrollbar"

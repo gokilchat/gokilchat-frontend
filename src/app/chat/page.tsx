@@ -344,6 +344,14 @@ export default function ChatPage() {
   }, [isHydrated, user, token, rooms, activeRoomId]);
 
   const handleRoomClick = async (roomId: string) => {
+    // Buramkan fokus aktif secara sinkron sebelum state update menyembunyikan sidebar di mobile 📱
+    // Ini krusial agar browser tidak memindahkan fokus otomatis ke textarea saat tombol sidebar di-hidden!
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    }
+
     if (roomId === activeRoomId) return; // Udah di sini, gausah fetch lagi 🗿
 
     const room = rooms.find((r) => r.id === roomId);
