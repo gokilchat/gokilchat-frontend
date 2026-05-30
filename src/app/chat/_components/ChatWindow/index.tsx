@@ -224,6 +224,7 @@ export default function ChatWindow({
       />
 
       <ChatInput
+        key={activeRoom?.id}
         onSendMessage={onSendMessage}
         onTyping={() => {
           if (activeRoom) {

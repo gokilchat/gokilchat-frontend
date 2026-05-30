@@ -1,6 +1,6 @@
 import { Paperclip, Smile, Send } from "lucide-react";
 import clsx from "clsx";
-import { FormEvent, RefObject, useState } from "react";
+import { FormEvent, RefObject, useState, useEffect } from "react";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -14,6 +14,18 @@ export default function ChatInput({
   inputRef,
 }: ChatInputProps) {
   const [localInput, setLocalInput] = useState("");
+
+  // Cegah keyboard HP/mobile otomatis muncul saat masuk room dengan me-blur textarea 📱
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      const timer = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.blur();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [inputRef]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
