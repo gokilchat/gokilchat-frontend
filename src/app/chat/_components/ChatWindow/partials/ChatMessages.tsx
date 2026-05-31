@@ -15,6 +15,7 @@ interface ChatMessagesProps {
   onReplyClick?: (message: Message) => void;
   onForwardClick?: (message: Message) => void;
   onDeleteClick?: (message: Message) => void;
+  onReportClick?: (message: Message) => void;
   canDelete?: boolean;
 }
 
@@ -30,6 +31,7 @@ export default function ChatMessages({
   onReplyClick,
   onForwardClick,
   onDeleteClick,
+  onReportClick,
   canDelete = false,
 }: ChatMessagesProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,7 @@ export default function ChatMessages({
                     onReplyClick={onReplyClick}
                     onForwardClick={onForwardClick}
                     onDeleteClick={onDeleteClick}
+                    onReportClick={onReportClick}
                     canDelete={canDelete}
                     parentMessage={parentMsg}
                   />

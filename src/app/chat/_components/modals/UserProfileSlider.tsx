@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, User as UserIcon, MessageSquare, Calendar, AtSign } from "lucide-react";
+import { X, User as UserIcon, MessageSquare, Calendar, AtSign, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api";
 
@@ -10,6 +10,7 @@ interface UserProfileData {
   full_name?: string;
   avatar_url?: string;
   system_role: string;
+  status?: "active" | "suspended" | "banned";
   created_at?: string;
 }
 
@@ -18,6 +19,7 @@ interface UserProfileSliderProps {
   onClose: () => void;
   userId: string;
   onSendMessage?: (userId: string) => void;
+  onReportClick?: (user: UserProfileData) => void;
 }
 
 export default function UserProfileSlider({
@@ -25,6 +27,7 @@ export default function UserProfileSlider({
   onClose,
   userId,
   onSendMessage,
+  onReportClick,
 }: UserProfileSliderProps) {
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -121,11 +124,21 @@ export default function UserProfileSlider({
                     <p className="text-sm text-text-secondary font-medium mt-1">
                       @{profileData.username}
                     </p>
+                    {profileData.status && profileData.status !== "active" && (
+                      <div className={`mt-3 px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${
+                        profileData.status === "banned"
+                          ? "bg-red-500/10 text-red-500 border border-red-500/20"
+                          : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                      }`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                        {profileData.status === "banned" ? "Banned" : "Suspended"}
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons */}
-                  {onSendMessage && (
-                    <div className="flex justify-center mb-8">
+                  <div className="flex flex-col items-center gap-4 mb-8">
+                    {onSendMessage && (
                       <button
                         onClick={() => onSendMessage(profileData.id)}
                         className="flex flex-col items-center gap-2 px-6 py-3 rounded-2xl hover:bg-elevated transall group"
@@ -137,8 +150,27 @@ export default function UserProfileSlider({
                           Message
                         </span>
                       </button>
-                    </div>
-                  )}
+                    )}
+
+                    {onReportClick && (
+                      profileData.status === "active" || !profileData.status ? (
+                        <button
+                          onClick={() => onReportClick(profileData)}
+                          className="flex items-center gap-2 px-4 py-2 border border-red-500/20 hover:border-red-500 bg-red-500/5 hover:bg-red-500/20 text-red-500 rounded-xl text-xs font-bold transall cursor-pointer animate-in fade-in duration-200"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>Laporkan User Ini</span>
+                        </button>
+                      ) : (
+                        <div
+                          className="flex items-center gap-2 px-4 py-2 border border-border-divider/50 bg-secondary/30 text-text-muted rounded-xl text-xs font-bold select-none cursor-not-allowed"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>User Sudah Ditangguhkan</span>
+                        </div>
+                      )
+                    )}
+                  </div>
 
                   {/* Divider */}
                   <div className="h-px bg-border-divider mb-6" />

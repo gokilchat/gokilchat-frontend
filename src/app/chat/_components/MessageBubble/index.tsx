@@ -21,6 +21,7 @@ interface MessageBubbleProps {
   onReplyClick?: (message: Message) => void;
   onForwardClick?: (message: Message) => void;
   onDeleteClick?: (message: Message) => void;
+  onReportClick?: (message: Message) => void;
   canDelete?: boolean;
   parentMessage?: Message;
 }
@@ -53,6 +54,7 @@ export default function MessageBubble({
   onReplyClick,
   onForwardClick,
   onDeleteClick,
+  onReportClick,
   canDelete = false,
   parentMessage
 }: MessageBubbleProps) {
@@ -140,6 +142,7 @@ export default function MessageBubble({
                 onReplyClick={() => onReplyClick?.(message)}
                 onForwardClick={() => onForwardClick?.(message)}
                 onDeleteClick={() => onDeleteClick?.(message)}
+                onReportClick={() => onReportClick?.(message)}
                 canDelete={canDelete}
               />
             )}

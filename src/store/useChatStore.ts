@@ -9,6 +9,7 @@ interface ChatState {
   setActiveRoomId: (id: string | null) => void;
   setMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
+  deleteMessage: (messageId: string, deletedAt?: string | null, deletedBy?: string | null) => void;
   updateReceipts: (receipts: { message_id: string; user_id: string; delivered_at: string | null; read_at: string | null }[]) => void;
 }
 
@@ -28,6 +29,45 @@ export const useChatStore = create<ChatState>((set) => ({
       return { messages: [...state.messages, message] };
     }
     return state;
+  }),
+  deleteMessage: (messageId, deletedAt, deletedBy) => set((state) => {
+    const now = deletedAt || new Date().toISOString();
+    const updatedMessages = state.messages.map(msg => 
+      msg.id === messageId 
+        ? { 
+            ...msg, 
+            deleted_at: now, 
+            deleted_by: deletedBy || null 
+          } 
+        : msg
+    );
+
+    // Update child message reply previews
+    const deletedText = 'Pesan ini dihapus oleh admin';
+    const finalMessages = updatedMessages.map(msg =>
+      msg.parent_id === messageId
+        ? { ...msg, reply_preview: deletedText }
+        : msg
+    );
+
+    // Update last_message in sidebar room preview
+    const updatedRooms = state.rooms.map(room => {
+      const deletedMsg = state.messages.find(m => m.id === messageId);
+      if (deletedMsg && room.id === deletedMsg.room_id && room.last_message) {
+        const isSelf = deletedBy === deletedMsg.sender_id;
+        const noteText = isSelf ? "Pesan ini telah dihapus" : "Pesan ini dihapus oleh admin";
+        return {
+          ...room,
+          last_message: {
+            ...room.last_message,
+            content: noteText
+          }
+        };
+      }
+      return room;
+    });
+
+    return { messages: finalMessages, rooms: updatedRooms };
   }),
   updateReceipts: (receipts) => set((state) => {
     const newMessages = state.messages.map(msg => {

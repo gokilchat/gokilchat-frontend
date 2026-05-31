@@ -9,6 +9,7 @@ interface MessageBubbleMenuProps {
   onReplyClick?: () => void;
   onForwardClick?: () => void;
   onDeleteClick?: () => void;
+  onReportClick?: () => void;
   canDelete?: boolean;
 }
 
@@ -18,6 +19,7 @@ export default function MessageBubbleMenu({
   onReplyClick,
   onForwardClick,
   onDeleteClick,
+  onReportClick,
   canDelete = false,
 }: MessageBubbleMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -136,6 +138,18 @@ export default function MessageBubbleMenu({
               >
                 Teruskan
               </button>
+              {!isMe && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(false);
+                    onReportClick?.();
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-xs font-bold text-yellow-400 hover:bg-secondary transall"
+                >
+                  Laporkan
+                </button>
+              )}
               {(isMe || canDelete) && (
                 <button
                   onClick={(e) => {

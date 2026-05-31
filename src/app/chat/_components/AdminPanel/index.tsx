@@ -155,9 +155,9 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
     deleteNotification,
     clearAllNotifications,
   } = useNotificationStore();
-  const [activeTab, setActiveTab] = useState<"users" | "moderators" | "logs">(
-    "users",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "users" | "moderators" | "logs" | "reports"
+  >("users");
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -230,6 +230,127 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
     total_pages: 1,
   });
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  // Reports State
+  interface Report {
+    id: string;
+    reporter_id: string;
+    reported_user_id: string | null;
+    reported_message_id: string | null;
+    reason: string;
+    status: "pending" | "resolved";
+    created_at: string;
+    reporter: {
+      id: string;
+      username: string;
+      full_name: string | null;
+      avatar_url: string | null;
+      email: string;
+    } | null;
+    reported_user: {
+      id: string;
+      username: string;
+      full_name: string | null;
+      avatar_url: string | null;
+      email: string;
+      status: "active" | "suspended" | "banned";
+    } | null;
+    reported_message: {
+      id: string;
+      room_id: string;
+      sender_id: string;
+      content: string;
+      deleted_at: string | null;
+      created_at: string;
+      sender: {
+        id: string;
+        username: string;
+        full_name: string | null;
+        avatar_url: string | null;
+      } | null;
+    } | null;
+  }
+  const [reportsList, setReportsList] = useState<Report[]>([]);
+  const [reportsPagination, setReportsPagination] = useState({
+    page: 1,
+    limit: 15,
+    total: 0,
+    total_pages: 1,
+  });
+  const [reportStatusFilter, setReportStatusFilter] = useState("pending");
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
+
+  // Soft Delete Message State
+  const [showDeleteMsgConfirm, setShowDeleteMsgConfirm] = useState(false);
+  const [deleteMsgTarget, setDeleteMsgTarget] = useState<Report | null>(null);
+  const [deleteMsgReason, setDeleteMsgReason] = useState("");
+
+  const fetchReports = async (page = 1) => {
+    setIsLoadingReports(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: reportsPagination.limit.toString(),
+      });
+      if (reportStatusFilter) {
+        queryParams.append("status", reportStatusFilter);
+      }
+
+      const res = await apiFetch(`/admin/reports?${queryParams.toString()}`);
+      if (res.success) {
+        setReportsList(res.data.reports);
+        setReportsPagination(res.data.pagination);
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Gagal mengambil data laporan";
+      toast(msg, "error");
+    } finally {
+      setIsLoadingReports(false);
+    }
+  };
+
+  const handleResolveReport = async (id: string) => {
+    try {
+      const res = await apiFetch(`/admin/reports/${id}/resolve`, {
+        method: "PATCH",
+      });
+      if (res.success) {
+        toast("Laporan berhasil diselesaikan! 🗿", "success");
+        fetchReports(reportsPagination.page);
+      } else {
+        toast(res.error || "Gagal menyelesaikan laporan", "error");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+      toast(msg, "error");
+    }
+  };
+
+  const handleDeleteReportedMessage = async () => {
+    if (!deleteMsgTarget || !deleteMsgTarget.reported_message_id) return;
+    try {
+      const res = await apiFetch(
+        `/admin/messages/${deleteMsgTarget.reported_message_id}`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({ reason: deleteMsgReason }),
+        },
+      );
+      if (res.success) {
+        toast("Pesan berhasil dihapus oleh admin! 🗿", "success");
+        setShowDeleteMsgConfirm(false);
+        setDeleteMsgTarget(null);
+        setDeleteMsgReason("");
+        fetchReports(reportsPagination.page);
+      } else {
+        toast(res.error || "Gagal menghapus pesan", "error");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+      toast(msg, "error");
+    }
+  };
 
   const isSuperAdmin = user.system_role === "super_admin";
 
@@ -359,11 +480,30 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
         await Promise.all([fetchInvites(), fetchModerators()]);
       } else if (activeTab === "logs") {
         await fetchLogs(1);
+      } else if (activeTab === "reports") {
+        await fetchReports(1);
       }
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, statusFilter, roleFilter]);
+  }, [activeTab, statusFilter, roleFilter, reportStatusFilter]);
+
+  // Refs to avoid stale closures in socket events
+  const fetchReportsRef = useRef(fetchReports);
+  const fetchUsersRef = useRef(fetchUsers);
+  const fetchModeratorsRef = useRef(fetchModerators);
+  const fetchInvitesRef = useRef(fetchInvites);
+  const reportsPaginationRef = useRef(reportsPagination);
+  const paginationRef = useRef(pagination);
+
+  useEffect(() => {
+    fetchReportsRef.current = fetchReports;
+    fetchUsersRef.current = fetchUsers;
+    fetchModeratorsRef.current = fetchModerators;
+    fetchInvitesRef.current = fetchInvites;
+    reportsPaginationRef.current = reportsPagination;
+    paginationRef.current = pagination;
+  });
 
   // Real-time updates via Socket.IO
   useEffect(() => {
@@ -373,28 +513,77 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
     socket.connect();
 
     const handleModeratorInvited = () => {
-      fetchInvites();
+      fetchInvitesRef.current();
     };
 
     const handleModeratorInviteAccepted = () => {
-      fetchInvites();
-      fetchModerators();
+      fetchInvitesRef.current();
+      fetchModeratorsRef.current();
     };
 
     const handleModeratorStatusChanged = () => {
-      fetchModerators();
-      fetchUsers(pagination.page);
+      fetchModeratorsRef.current();
+      fetchUsersRef.current(paginationRef.current.page);
+      fetchReportsRef.current(reportsPaginationRef.current.page);
     };
 
-    const handleUserStatusChanged = () => {
-      fetchUsers(pagination.page);
-      fetchModerators();
+    const handleUserStatusChanged = (data: { id: string; status: string }) => {
+      fetchUsersRef.current(paginationRef.current.page);
+      fetchModeratorsRef.current();
+      
+      // Update reportsList locally for instant feedback
+      setReportsList(prev =>
+        prev.map(report => {
+          if (report.reported_user && report.reported_user.id === data.id) {
+            return {
+              ...report,
+              reported_user: {
+                ...report.reported_user,
+                status: data.status as "active" | "suspended" | "banned"
+              }
+            };
+          }
+          return report;
+        })
+      );
+
+      // Refetch reports to ensure 100% database parity
+      fetchReportsRef.current(reportsPaginationRef.current.page);
+    };
+
+    const handleNewReport = () => {
+      fetchReportsRef.current(1);
+    };
+
+    const handleReportResolved = () => {
+      fetchReportsRef.current(reportsPaginationRef.current.page);
+    };
+
+    const handleAdminMessageDeleted = (data: { message_id: string; deleted_by: string }) => {
+      setReportsList(prev =>
+        prev.map(report => {
+          if (report.reported_message && report.reported_message.id === data.message_id) {
+            return {
+              ...report,
+              reported_message: {
+                ...report.reported_message,
+                deleted_at: new Date().toISOString(),
+                deleted_by: data.deleted_by
+              }
+            };
+          }
+          return report;
+        })
+      );
     };
 
     socket.on("admin:moderator_invited", handleModeratorInvited);
     socket.on("admin:moderator_invite_accepted", handleModeratorInviteAccepted);
     socket.on("admin:moderator_status_changed", handleModeratorStatusChanged);
     socket.on("admin:user_status_changed", handleUserStatusChanged);
+    socket.on("admin:new_report", handleNewReport);
+    socket.on("admin:report_resolved", handleReportResolved);
+    socket.on("admin:message_deleted", handleAdminMessageDeleted);
 
     // Listen for notifications aimed at this staff member
     const handleNewNotification = (notif: {
@@ -429,11 +618,14 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
         handleModeratorStatusChanged,
       );
       socket.off("admin:user_status_changed", handleUserStatusChanged);
+      socket.off("admin:new_report", handleNewReport);
+      socket.off("admin:report_resolved", handleReportResolved);
+      socket.off("admin:message_deleted", handleAdminMessageDeleted);
       socket.off("notification:new", handleNewNotification);
       socket.off("auth:kick", handleAuthKick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, pagination.page]);
+  }, [token]);
 
   // Close notification dropdown on click outside
   useEffect(() => {
@@ -768,6 +960,19 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
         >
           <Users className="w-4 h-4" />
           <span>Daftar User</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("reports")}
+          className={clsx(
+            "px-5 py-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2",
+            activeTab === "reports"
+              ? "border-accent-default text-text-primary"
+              : "border-transparent text-text-muted hover:text-text-primary",
+          )}
+        >
+          <ShieldAlert className="w-4 h-4" />
+          <span>Laporan Masuk</span>
         </button>
 
         {isSuperAdmin && (
@@ -1574,6 +1779,359 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
             </div>
           </div>
         )}
+
+        {activeTab === "reports" && (
+          <div className="flex flex-col flex-1 gap-4 overflow-hidden animate-in fade-in duration-150">
+            {/* Filters Bar */}
+            <div className="flex flex-col md:flex-row gap-3 bg-secondary/20 border border-white/5 p-4 rounded-2xl shrink-0">
+              <div className="flex-1 flex items-center">
+                <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5 text-yellow-500" />
+                  Daftar Laporan Pelanggaran
+                </h3>
+              </div>
+              <div className="flex gap-3">
+                <CustomSelect
+                  value={reportStatusFilter}
+                  onChange={setReportStatusFilter}
+                  placeholder="Status Laporan"
+                  options={[
+                    { value: "pending", label: "Menunggu Tindakan" },
+                    { value: "resolved", label: "Sudah Diselesaikan" },
+                  ]}
+                />
+              </div>
+            </div>
+
+            {/* Grid Cards Area */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 relative p-1">
+              {isLoadingReports && (
+                <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flexcc flex-col gap-2 z-20">
+                  <Loader2 className="w-8 h-8 text-accent-default animate-spin" />
+                  <span className="text-text-muted text-xs font-bold">
+                    Memuat data laporan...
+                  </span>
+                </div>
+              )}
+
+              {reportsList.length === 0 ? (
+                <div className="flexcc flex-col gap-3 py-24 text-text-muted bg-secondary/10 border border-white/5 rounded-2xl">
+                  <ShieldAlert className="w-12 h-12 text-text-muted/30" />
+                  <p className="text-sm">
+                    Belum ada laporan pelanggaran kategori ini.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {reportsList.map((report) => (
+                      <div
+                        key={report.id}
+                        className="bg-secondary/40 border border-white/5 rounded-3xl p-5 flex flex-col gap-4 hover:border-white/10 hover:bg-secondary/60 transall relative shadow-lg"
+                      >
+                        {/* Card Top: Reporter and Reported Info */}
+                        <div className="flex items-center justify-between gap-2 bg-primary/30 p-3 rounded-2xl border border-white/5">
+                          {/* Reporter Info */}
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <Image
+                              src={
+                                report.reporter?.avatar_url ||
+                                "/images/default-avatar.png"
+                              }
+                              alt="avatar"
+                              width={28}
+                              height={28}
+                              className="w-7 h-7 rounded-full border border-white/10 shrink-0"
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                e.currentTarget.srcset = "";
+                                e.currentTarget.src =
+                                  "/images/default-avatar.png";
+                              }}
+                            />
+                            <div className="truncate min-w-0">
+                              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block">
+                                Pelapor
+                              </span>
+                              <span
+                                className="font-bold text-white text-xs block truncate"
+                                title={
+                                  report.reporter?.full_name ||
+                                  report.reporter?.username
+                                }
+                              >
+                                {report.reporter?.full_name ||
+                                  report.reporter?.username}
+                              </span>
+                              <span className="text-[10px] text-text-muted block truncate">
+                                @{report.reporter?.username}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Arrow/Indicator */}
+                          <span className="text-text-muted font-bold text-xs shrink-0 px-1">
+                            ➜
+                          </span>
+
+                          {/* Reported User Info */}
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1 justify-end text-right">
+                            <div className="truncate min-w-0">
+                              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block">
+                                Terlapor
+                              </span>
+                              {report.reported_user ? (
+                                <>
+                                  <span
+                                    className="font-bold text-white text-xs block truncate"
+                                    title={
+                                      report.reported_user.full_name ||
+                                      report.reported_user.username
+                                    }
+                                  >
+                                    {report.reported_user.full_name ||
+                                      report.reported_user.username}
+                                  </span>
+                                  <span className="text-[10px] text-text-muted block truncate">
+                                    @{report.reported_user.username}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-xs text-text-muted italic block">
+                                  User Terhapus
+                                </span>
+                              )}
+                            </div>
+                            {report.reported_user && (
+                              <Image
+                                src={
+                                  report.reported_user.avatar_url ||
+                                  "/images/default-avatar.png"
+                                }
+                                alt="avatar"
+                                width={28}
+                                height={28}
+                                className="w-7 h-7 rounded-full border border-white/10 shrink-0"
+                                referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                  e.currentTarget.srcset = "";
+                                  e.currentTarget.src =
+                                    "/images/default-avatar.png";
+                                }}
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Reported User Status Badge */}
+                        {report.reported_user &&
+                          report.reported_user.status !== "active" && (
+                            <div className="flex justify-end -mt-2">
+                              <span
+                                className={clsx(
+                                  "px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border",
+                                  report.reported_user.status === "banned"
+                                    ? "bg-red-500/10 text-red-400 border-red-500/20"
+                                    : "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+                                )}
+                              >
+                                {report.reported_user.status}
+                              </span>
+                            </div>
+                          )}
+
+                        {/* Violation Reason Category */}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">
+                            Alasan Laporan
+                          </span>
+                          <div>
+                            <span className="text-xs text-yellow-400 font-bold px-2 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-lg inline-block wrap-break-word">
+                              {report.reason}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Violation Content Area */}
+                        <div className="flex-1 flex flex-col gap-1 min-h-22.5">
+                          <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">
+                            {report.reported_message
+                              ? "Konten Pelanggaran (Pesan)"
+                              : "Laporan Akun"}
+                          </span>
+                          {report.reported_message ? (
+                            <div className="p-3 bg-elevated/40 border border-white/5 rounded-2xl text-xs flex flex-col gap-2 flex-1 justify-between">
+                              {report.reported_message.deleted_at ? (
+                                <span className="italic text-red-400/80 block py-1">
+                                  [Pesan telah dihapus]
+                                </span>
+                              ) : (
+                                <p className="text-text-primary wrap-break-word font-medium whitespace-pre-wrap select-text flex-1">
+                                  &ldquo;{report.reported_message.content}
+                                  &rdquo;
+                                </p>
+                              )}
+                              <div className="flex items-center justify-between text-[9px] text-text-muted border-t border-white/5 pt-2 mt-1">
+                                <span>
+                                  Pesan dari @
+                                  {report.reported_message.sender?.username ||
+                                    "unknown"}
+                                </span>
+                                <span>
+                                  {new Date(
+                                    report.reported_message.created_at,
+                                  ).toLocaleString("id-ID", {
+                                    timeStyle: "short",
+                                    dateStyle: "short",
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="p-3 bg-primary/10 border border-white/5 rounded-2xl text-xs text-text-secondary italic flex-1 flex items-center justify-center text-center">
+                              Dilaporkan langsung dari profil user.
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Card Footer: Timestamp and Actions */}
+                        <div className="border-t border-white/5 pt-3.5 flex items-center justify-between gap-3 mt-auto shrink-0">
+                          <span className="text-[9px] text-text-muted">
+                            {new Date(report.created_at).toLocaleDateString(
+                              "id-ID",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "2-digit",
+                              },
+                            )}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {report.status === "pending" ? (
+                              <>
+                                {/* Hapus Pesan Button */}
+                                {report.reported_message &&
+                                  !report.reported_message.deleted_at && (
+                                    <Tooltip content="Hapus Pesan Pelanggaran">
+                                      <button
+                                        onClick={() => {
+                                          setDeleteMsgTarget(report);
+                                          setDeleteMsgReason("");
+                                          setShowDeleteMsgConfirm(true);
+                                        }}
+                                        className="p-2 bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-red-500 text-red-500 hover:text-white rounded-xl transall cursor-pointer active:scale-95"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    </Tooltip>
+                                  )}
+
+                                {/* Suspend / Ban User Button */}
+                                {report.reported_user &&
+                                  report.reported_user.status === "active" && (
+                                    <Tooltip content="Tindak / Suspend User">
+                                      <button
+                                        onClick={() => {
+                                          setTargetUser({
+                                            id: report.reported_user!.id,
+                                            username:
+                                              report.reported_user!.username,
+                                            full_name:
+                                              report.reported_user!.full_name ||
+                                              undefined,
+                                            avatar_url:
+                                              report.reported_user!
+                                                .avatar_url || undefined,
+                                            email: report.reported_user!.email,
+                                            status:
+                                              report.reported_user!.status,
+                                            created_at: "",
+                                          });
+                                          setPendingStatusChange("suspended");
+                                          setStatusReason(
+                                            `Dilaporkan oleh @${report.reporter?.username || "user"}: ${report.reason}`,
+                                          );
+                                          setShowStatusConfirm(true);
+                                        }}
+                                        className="p-2 bg-yellow-500/10 hover:bg-yellow-500 border border-yellow-500/20 hover:border-yellow-500 text-yellow-500 hover:text-black rounded-xl transall cursor-pointer active:scale-95"
+                                      >
+                                        <Ban className="w-4 h-4" />
+                                      </button>
+                                    </Tooltip>
+                                  )}
+
+                                {/* Selesaikan Laporan Button */}
+                                <Tooltip content="Tandai Selesai">
+                                  <button
+                                    onClick={() =>
+                                      handleResolveReport(report.id)
+                                    }
+                                    className="p-2 bg-green-500/10 hover:bg-green-500 border border-green-500/20 hover:border-green-500 text-green-500 hover:text-white rounded-xl transall cursor-pointer active:scale-95"
+                                  >
+                                    <UserCheck className="w-4 h-4" />
+                                  </button>
+                                </Tooltip>
+                              </>
+                            ) : (
+                              <span className="text-xs text-green-500 font-black uppercase tracking-wider flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-xl">
+                                <UserCheck className="w-4 h-4" /> Resolved
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {reportsPagination.total_pages > 1 && (
+                    <div className="bg-secondary/40 border border-white/5 rounded-2xl px-6 py-4 flex items-center justify-between shrink-0 shadow-md">
+                      <div className="text-xs text-text-muted">
+                        Menampilkan{" "}
+                        <span className="font-bold text-white">
+                          {reportsList.length}
+                        </span>{" "}
+                        dari{" "}
+                        <span className="font-bold text-white">
+                          {reportsPagination.total}
+                        </span>{" "}
+                        laporan
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          disabled={reportsPagination.page === 1}
+                          onClick={() =>
+                            fetchReports(reportsPagination.page - 1)
+                          }
+                          className="p-2 bg-secondary border border-border-divider/50 rounded-lg text-text-primary hover:bg-elevated disabled:opacity-40 disabled:pointer-events-none transall"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span className="px-3.5 py-2 bg-elevated border border-border-divider rounded-lg text-xs font-bold text-white flexcc">
+                          {reportsPagination.page} /{" "}
+                          {reportsPagination.total_pages}
+                        </span>
+                        <button
+                          disabled={
+                            reportsPagination.page ===
+                            reportsPagination.total_pages
+                          }
+                          onClick={() =>
+                            fetchReports(reportsPagination.page + 1)
+                          }
+                          className="p-2 bg-secondary border border-border-divider/50 rounded-lg text-text-primary hover:bg-elevated disabled:opacity-40 disabled:pointer-events-none transall"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Official Notification Modal */}
@@ -1833,7 +2391,8 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
               <strong className="text-text-primary">
                 @{demoteTargetUser.username}
               </strong>{" "}
-              menjadi user biasa? Akun akan langsung kehilangan hak akses moderator dan dikeluarkan dari panel admin secara real-time.
+              menjadi user biasa? Akun akan langsung kehilangan hak akses
+              moderator dan dikeluarkan dari panel admin secara real-time.
             </p>
 
             <div className="flex gap-2 justify-end">
@@ -1853,6 +2412,86 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
                 className="px-4 py-2 text-xs font-black rounded-lg transition-all cursor-pointer bg-purple-600 hover:bg-purple-750 text-white"
               >
                 Ya, Turunkan Jabatan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteMsgConfirm && deleteMsgTarget && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDeleteMsgConfirm(false);
+              setDeleteMsgTarget(null);
+              setDeleteMsgReason("");
+            }
+          }}
+          className="fixed inset-0 bg-black/70 flexcc z-999 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+        >
+          <div className="w-full max-w-md bg-secondary border border-border-divider p-6 rounded-3xl relative shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeleteMsgConfirm(false);
+                setDeleteMsgTarget(null);
+                setDeleteMsgReason("");
+              }}
+              className="absolute top-4 right-4 p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h2 className="text-lg font-black text-text-primary flex items-center gap-2 mb-2">
+              <X className="w-5 h-5 text-red-500" />
+              <span>Hapus Pesan Pelanggaran?</span>
+            </h2>
+
+            <p className="text-xs text-text-secondary leading-relaxed mb-4">
+              Yakin ingin menghapus pesan pelanggaran ini secara permanen dari
+              ruang obrolan asalnya? Pesan akan dihapus untuk semua anggota
+              grup/DM dan digantikan dengan teks pemberitahuan moderasi staf.
+            </p>
+
+            <div className="bg-primary/50 border border-white/5 p-3 rounded-2xl text-xs mb-4 max-h-24 overflow-y-auto custom-scrollbar">
+              <p className="font-bold text-text-muted mb-1">Isi pesan:</p>
+              <p className="text-text-primary italic">
+                &ldquo;{deleteMsgTarget.reported_message?.content}&rdquo;
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                Alasan Penghapusan (Opsional)
+              </label>
+              <input
+                type="text"
+                placeholder="Contoh: Spam berulang / SARA / Ujaran kebencian"
+                value={deleteMsgReason}
+                onChange={(e) => setDeleteMsgReason(e.target.value)}
+                className="w-full bg-primary border border-border-divider rounded-xl px-4 py-2.5 text-xs text-text-primary focus:border-red-500 focus:outline-none transition-all"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteMsgConfirm(false);
+                  setDeleteMsgTarget(null);
+                  setDeleteMsgReason("");
+                }}
+                className="px-4 py-2 border border-border-divider/50 hover:border-border-divider bg-transparent hover:bg-white/5 text-text-muted hover:text-text-primary text-xs font-bold rounded-lg transition-all cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteReportedMessage}
+                className="px-4 py-2 text-xs font-black rounded-lg transition-all cursor-pointer bg-red-600 hover:bg-red-755 text-white"
+              >
+                Ya, Hapus Pesan
               </button>
             </div>
           </div>

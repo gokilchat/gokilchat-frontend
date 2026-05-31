@@ -12,6 +12,7 @@ import EmptyState from "./partials/EmptyState";
 import UserProfileSlider from "../modals/UserProfileSlider";
 import SearchMessageSlider from "../modals/SearchMessageSlider";
 import ForwardMessageModal from "../modals/ForwardMessageModal";
+import ReportModal from "../modals/ReportModal";
 
 interface ChatWindowProps {
   activeRoom: Room | null;
@@ -58,6 +59,9 @@ export default function ChatWindow({
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<"owner" | "admin" | "user">("user");
   const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
+  const [reportingMessage, setReportingMessage] = useState<Message | null>(null);
+  const [reportingUser, setReportingUser] = useState<Partial<User> | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const handleUserClick = (userId: string) => {
     setSelectedUserId(userId);
@@ -236,6 +240,11 @@ export default function ChatWindow({
         onReplyClick={(msg) => setReplyingTo(msg)}
         onForwardClick={(msg) => setForwardingMessage(msg)}
         onDeleteClick={onDeleteMessage}
+        onReportClick={(msg) => {
+          setReportingMessage(msg);
+          setReportingUser(null);
+          setShowReportModal(true);
+        }}
         canDelete={currentUserRole === "owner" || currentUserRole === "admin"}
       />
 
@@ -259,6 +268,16 @@ export default function ChatWindow({
           isOpen={showUserProfile}
           onClose={() => setShowUserProfile(false)}
           userId={selectedUserId}
+          onReportClick={(repUser) => {
+            setReportingUser({
+              id: repUser.id,
+              username: repUser.username,
+              full_name: repUser.full_name || undefined,
+              avatar_url: repUser.avatar_url || undefined,
+            });
+            setReportingMessage(null);
+            setShowReportModal(true);
+          }}
         />
       </main>
 
@@ -280,6 +299,19 @@ export default function ChatWindow({
           isOpen={!!forwardingMessage}
           onClose={() => setForwardingMessage(null)}
           message={forwardingMessage}
+        />
+      )}
+
+      {showReportModal && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => {
+            setShowReportModal(false);
+            setReportingMessage(null);
+            setReportingUser(null);
+          }}
+          reportedMessage={reportingMessage}
+          reportedUser={reportingUser}
         />
       )}
     </div>

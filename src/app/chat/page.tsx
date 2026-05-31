@@ -31,6 +31,7 @@ export default function ChatPage() {
     setActiveRoomId,
     setMessages,
     addMessage,
+    deleteMessage,
   } = useChatStore();
 
   const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
@@ -281,6 +282,13 @@ export default function ChatPage() {
       },
     );
 
+    socket.on(
+      "message:deleted",
+      (data: { message_id: string; room_id: string; deleted_by_self?: boolean }) => {
+        deleteMessage(data.message_id, new Date().toISOString(), data.deleted_by_self ? undefined : "admin");
+      }
+    );
+
     socket.on("room:added", (data: { room_id: string }) => {
       // Refresh list room dari API supaya grup baru muncul di sidebar
       apiFetch("/rooms").then((res) => {
@@ -391,9 +399,10 @@ export default function ChatPage() {
       socket.off("room:member_joined");
       socket.off("room:member_left");
       socket.off("receipt:update:batch");
+      socket.off("message:deleted");
       disconnectSocket();
     };
-  }, [isHydrated, user, token, setRooms, addMessage, addNotification, toast, logout]);
+  }, [isHydrated, user, token, setRooms, addMessage, deleteMessage, addNotification, toast, logout]);
 
   // Patroli Status On-Demand (Hemat Resource) 🗿
   useEffect(() => {
