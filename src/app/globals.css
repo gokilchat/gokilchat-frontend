@@ -95,6 +95,11 @@
     cursor: grabbing;
   }
 
+  /* Admin Scrollbar specifically to avoid cutting table header */
+  .admin-table-scrollbar::-webkit-scrollbar-track {
+    background: var(--color-secondary);
+  }
+
   /* Thinner scrollbar on mobile 📱 */
   @media (max-width: 768px) {
     .custom-scrollbar::-webkit-scrollbar {

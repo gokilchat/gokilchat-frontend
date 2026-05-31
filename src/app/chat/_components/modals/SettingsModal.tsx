@@ -25,6 +25,8 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ onClose }: SettingsModalProps) {
   const { user, setAuth, token } = useAuthStore();
+  const isStaff =
+    user?.system_role === "super_admin" || user?.system_role === "moderator";
   const [activeTab, setActiveTab] = useState<"profile" | "privacy">("profile");
   const [fontSize, setFontSize] = useState<FontSizeOption>("medium");
 
@@ -161,16 +163,13 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 
     try {
       const token = useAuthStore.getState().token;
-      const res = await fetch(
-        `${CHAT_SERVER_URL}/users/${user.id}/avatar`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
+      const res = await fetch(`${CHAT_SERVER_URL}/users/${user.id}/avatar`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: formData,
+      });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal upload");
@@ -233,30 +232,32 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
         ) : (
           <div className="flex flex-col h-full">
             {/* Tabs */}
-            <div className="flex border-b border-border-divider">
-              <button
-                onClick={() => setActiveTab("profile")}
-                className={clsx(
-                  "cursor-pointer flex-1 py-3 text-sm font-bold flexcc gap-2 transall border-b-2",
-                  activeTab === "profile"
-                    ? "border-accent-default text-accent-default bg-accent-default/5"
-                    : "border-transparent text-text-secondary hover:text-white hover:bg-elevated/50",
-                )}
-              >
-                <UserIcon className="w-4 h-4" /> Profil
-              </button>
-              <button
-                onClick={() => setActiveTab("privacy")}
-                className={clsx(
-                  "cursor-pointer flex-1 py-3 text-sm font-bold flexcc gap-2 transall border-b-2",
-                  activeTab === "privacy"
-                    ? "border-accent-default text-accent-default bg-accent-default/5"
-                    : "border-transparent text-text-secondary hover:text-white hover:bg-elevated/50",
-                )}
-              >
-                <Shield className="w-4 h-4" /> Privasi
-              </button>
-            </div>
+            {!isStaff && (
+              <div className="flex border-b border-border-divider">
+                <button
+                  onClick={() => setActiveTab("profile")}
+                  className={clsx(
+                    "cursor-pointer flex-1 py-3 text-sm font-bold flexcc gap-2 transall border-b-2",
+                    activeTab === "profile"
+                      ? "border-accent-default text-accent-default bg-accent-default/5"
+                      : "border-transparent text-text-secondary hover:text-white hover:bg-elevated/50",
+                  )}
+                >
+                  <UserIcon className="w-4 h-4" /> Profil
+                </button>
+                <button
+                  onClick={() => setActiveTab("privacy")}
+                  className={clsx(
+                    "cursor-pointer flex-1 py-3 text-sm font-bold flexcc gap-2 transall border-b-2",
+                    activeTab === "privacy"
+                      ? "border-accent-default text-accent-default bg-accent-default/5"
+                      : "border-transparent text-text-secondary hover:text-white hover:bg-elevated/50",
+                  )}
+                >
+                  <Shield className="w-4 h-4" /> Privasi
+                </button>
+              </div>
+            )}
 
             {/* Content */}
             <div className="p-4 md:p-6">
@@ -334,7 +335,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                     {/* Font Size Settings */}
                     <div className="space-y-2 pt-4 border-t border-border-divider/50">
                       <label className="text-xs font-bold text-text-secondary uppercase tracking-wider pl-1 flex items-center gap-1.5">
-                        Ukuran Teks (Local)
+                        Ukuran Teks
                       </label>
                       <div className="flex gap-2 bg-secondary p-1 rounded-2xl border border-border-divider">
                         {(["small", "medium", "large"] as const).map((sz) => (
