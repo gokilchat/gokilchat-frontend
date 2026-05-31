@@ -21,11 +21,19 @@ export function proxy(request: NextRequest) {
   }
 
   // 3. Jika di halaman join (/join/xxx) dan belum login, lempar ke login beserta param redirect
-  if (pathname.startsWith('/join/')) {
+  // KECUALI untuk /join/moderator karena halaman ini punya form login mandiri (khusus invite staff)
+  if (pathname.startsWith('/join/') && !pathname.startsWith('/join/moderator')) {
     if (!token) {
       const loginUrl = new URL('/', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
+      loginUrl.searchParams.set('redirect', request.url.replace(request.nextUrl.origin, '')); // preserve full url including ?token=
       return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // 4. Jika di halaman admin (/admin) dan belum login, redirect ke login
+  if (pathname.startsWith('/admin')) {
+    if (!token) {
+      return NextResponse.redirect(new URL('/', request.url));
     }
   }
 
@@ -33,5 +41,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/chat/:path*', '/join/:path*'],
+  matcher: ['/', '/chat/:path*', '/join/:path*', '/admin/:path*'],
 };

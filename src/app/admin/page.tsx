@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import AdminPanel from "../chat/_components/AdminPanel";
 import { Loader2 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, token, setAuth, logout } = useAuthStore();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -21,19 +22,49 @@ export default function AdminPage() {
     const checkAuth = async () => {
       if (!isHydrated) return;
       
-      if (!user) {
+      if (!user || !token) {
         router.push("/");
         return;
       }
 
-      if (user.system_role === "super_admin" || user.system_role === "moderator") {
-        setIsAuthorized(true);
-      } else {
-        router.push("/chat");
+      try {
+        // Fetch fresh profile from server to check for demotion, suspension, or ban
+        const res = await apiFetch("/auth/me");
+        if (res.success && res.data) {
+          const freshUser = res.data;
+          
+          // Update client-side session store with latest data from DB
+          setAuth(freshUser, token);
+
+          if (freshUser.status === "suspended" || freshUser.status === "banned") {
+            logout();
+            router.push(`/?error=${encodeURIComponent(
+              freshUser.status === "banned"
+                ? "Akun Anda telah dibanned permanen 🗿"
+                : "Akun Anda ditangguhkan (Suspended) 🗿"
+            )}`);
+            return;
+          }
+
+          if (freshUser.system_role === "super_admin" || freshUser.system_role === "moderator") {
+            setIsAuthorized(true);
+          } else {
+            // User was demoted, push them out of admin panel to regular chat area
+            router.push("/chat");
+          }
+        } else {
+          logout();
+          router.push("/");
+        }
+      } catch {
+        // In case token is invalid, expired, or server rejects it, kick user to login
+        logout();
+        router.push("/");
       }
     };
     checkAuth();
-  }, [user, isHydrated, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated, router]);
 
   if (!isHydrated || !isAuthorized || !user) {
     return (

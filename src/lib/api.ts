@@ -52,7 +52,16 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const data = await response.json();
 
   if (!response.ok) {
-    if (response.status === 403 && (data.error?.includes('ditangguhkan') || data.error?.includes('banned'))) {
+    if (endpoint.startsWith('/auth/google')) {
+      return {
+        success: false,
+        error: data.error || 'Terjadi kesalahan pada server'
+      };
+    }
+
+    if (response.status === 403 && 
+        (data.error?.includes('ditangguhkan') || data.error?.includes('banned')) && 
+        !endpoint.startsWith('/auth/google')) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('supabase_jwt');
         localStorage.removeItem('gokilchat-auth');

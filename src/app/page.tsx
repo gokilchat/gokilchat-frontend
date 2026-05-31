@@ -52,8 +52,10 @@ function LoginPageContent() {
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
-      if (!credentialResponse.credential)
-        throw new Error("No credential returned");
+      if (!credentialResponse.credential) {
+        setError("Kredensial Google tidak ditemukan");
+        return;
+      }
 
       const response = await loginWithGoogle(credentialResponse.credential);
 
@@ -78,13 +80,13 @@ function LoginPageContent() {
         // Redirect ke tujuan
         router.push(redirect || "/chat");
       } else {
-        throw new Error(response.error || "Login gagal dari server");
+        setError(response.error || "Login gagal dari server");
       }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Gagal masuk dengan Google";
       setError(errorMessage);
-      console.error(err);
+      console.warn("Auth warning:", err);
     }
   };
 

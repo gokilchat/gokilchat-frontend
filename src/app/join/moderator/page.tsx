@@ -4,9 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { loginModeratorWithGoogle, setAuthToken } from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
-import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
-import Image from "next/image";
 import { ShieldAlert, CheckCircle, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
@@ -40,11 +38,13 @@ function JoinModeratorContent() {
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
       if (!credentialResponse.credential) {
-        throw new Error("Kredensial Google tidak ditemukan");
+        setError("Kredensial Google tidak ditemukan");
+        return;
       }
 
       if (!inviteToken) {
-        throw new Error("Token undangan moderator tidak ditemukan di URL");
+        setError("Token undangan moderator tidak ditemukan di URL");
+        return;
       }
 
       const response = await loginModeratorWithGoogle(
@@ -69,13 +69,13 @@ function JoinModeratorContent() {
           router.push("/chat");
         }, 1500);
       } else {
-        throw new Error(response.error || "Aktivasi moderator gagal");
+        setError(response.error || "Aktivasi moderator gagal");
       }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Gagal mengaktifkan akun moderator";
       setError(errorMessage);
-      console.error(err);
+      console.warn("Aktivasi moderator warning:", err);
     }
   };
 

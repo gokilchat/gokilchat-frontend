@@ -16,6 +16,7 @@ export interface Room {
   avatar_url?: string;
   dm_user_id?: string;
   dm_user_status?: string;
+  dm_user_role?: string;
   members_count?: number;
   unread_count?: number;
   last_message?: {
