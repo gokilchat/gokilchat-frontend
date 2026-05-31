@@ -52,10 +52,10 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const data = await response.json();
 
   if (!response.ok) {
-    if (endpoint.startsWith('/auth/google')) {
+    if (endpoint.startsWith('/auth/google') || endpoint.startsWith('/auth/appeal')) {
       return {
         success: false,
-        error: data.error || 'Terjadi kesalahan pada server'
+        ...data
       };
     }
 
@@ -100,5 +100,12 @@ export const updateRoomDetails = async (roomId: string, data: { name?: string, d
   return apiFetch(`/rooms/${roomId}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
+  });
+};
+
+export const submitAppeal = async (google_id_token: string, reason: string) => {
+  return apiFetch('/auth/appeal', {
+    method: 'POST',
+    body: JSON.stringify({ google_id_token, reason }),
   });
 };

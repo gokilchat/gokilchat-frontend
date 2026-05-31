@@ -5,15 +5,13 @@ export default function EmptyState() {
     <main className="flex-1 flexcc bg-primary relative overflow-hidden group">
       <div className="absolute inset-0 bg-[url('/images/chat-bg.png')] bg-fixed opacity-5" />
       <div className="relative text-center p-12">
-        <div className="size-52 flexcc mx-auto mb-4 relative">
-          <div>
-            <Image
-              src="/images/logo-light.png"
-              alt="logo"
-              fill
-              className="object-cover"
-            />
-          </div>
+        <div className="size-52 mx-auto mb-4 relative">
+          <Image
+            src="/images/logo-light.png"
+            alt="logo"
+            fill
+            className="object-contain"
+          />
         </div>
         <h2 className="text-3xl font-black text-white mb-4 tracking-tighter">
           Selamat Datang di GokilChat!

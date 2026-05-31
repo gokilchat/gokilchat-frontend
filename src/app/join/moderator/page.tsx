@@ -81,7 +81,7 @@ function JoinModeratorContent() {
 
   if (!inviteToken) {
     return (
-      <div className="min-h-screen w-full flexcc p-4 bg-[#0A0E17]">
+      <div className="min-h-screen w-full flexcc p-4 bg-primary">
         <div className="w-full max-w-md p-8 md:p-10 rounded-3xl relative z-10 bg-secondary/40 backdrop-blur-xl border border-white/5 shadow-2xl text-center">
           <div className="w-16 h-16 bg-red-500/10 rounded-full flexcc mx-auto mb-6">
             <AlertTriangle className="w-8 h-8 text-red-500" />
@@ -102,10 +102,7 @@ function JoinModeratorContent() {
   }
 
   return (
-    <div className="min-h-screen w-full flexcc p-4 bg-[#0A0E17]">
-      {/* Decorative Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-125 bg-accent-default/10 rounded-full blur-[120px] pointer-events-none" />
-
+    <div className="min-h-screen w-full flexcc p-4 bg-primary">
       <div className="w-full max-w-md p-6 md:p-10 rounded-3xl relative z-10 bg-secondary/40 backdrop-blur-xl border border-white/5 shadow-2xl shadow-black/50">
         <div className="absolute inset-0 rounded-3xl border border-accent-default/20 pointer-events-none" />
 
@@ -121,9 +118,8 @@ function JoinModeratorContent() {
           ) : (
             <>
               <div className="relative">
-                <div className="absolute inset-0 bg-accent-default blur-2xl opacity-20" />
                 <div className="w-24 h-24 bg-accent-default/10 rounded-full flexcc border border-accent-default/30">
-                  <ShieldAlert className="w-12 h-12 text-accent-default drop-shadow-[0_0_15px_rgba(249,115,22,0.4)]" />
+                  <ShieldAlert className="w-12 h-12 text-accent-default" />
                 </div>
               </div>
 
@@ -169,7 +165,7 @@ export default function JoinModeratorPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen w-full flexcc p-4 bg-[#0A0E17]">
+        <div className="min-h-screen w-full flexcc p-4 bg-primary">
           {/* Loading */}
         </div>
       }

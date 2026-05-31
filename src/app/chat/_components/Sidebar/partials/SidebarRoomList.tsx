@@ -50,7 +50,7 @@ export default function SidebarRoomList({
           <div className="relative shrink-0">
             <div
               className={clsx(
-                "size-[3.3rem] rounded-full flexcc font-black text-lg transall shadow-sm overflow-hidden",
+                "size-[3.3rem] rounded-full flexcc font-black text-lg transall shadow-sm overflow-hidden relative",
                 activeRoomId === room.id
                   ? "bg-white/20 text-white"
                   : "bg-secondary text-accent-default",
@@ -60,9 +60,8 @@ export default function SidebarRoomList({
                 <Image
                   src={room.avatar_url}
                   alt={room.name || ""}
-                  width={55}
-                  height={50}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
                     e.currentTarget.srcset = "";

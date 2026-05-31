@@ -98,18 +98,19 @@ export default function MessageBubble({
             onClick={!isConsecutive ? () => onUserClick?.(message.sender_id) : undefined}
           >
             {!isConsecutive ? (
-              <Image
-                src={message.sender_avatar || "/images/default-avatar.png"}
-                alt="avatar"
-                width={36}
-                height={36}
-                className="rounded-full shadow-sm w-8 h-8 md:w-10 md:h-10"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  e.currentTarget.srcset = "";
-                  e.currentTarget.src = "/images/default-avatar.png";
-                }}
-              />
+              <div className="relative w-8 h-8 md:w-10 md:h-10 shrink-0">
+                <Image
+                  src={message.sender_avatar || "/images/default-avatar.png"}
+                  alt="avatar"
+                  fill
+                  className="rounded-full shadow-sm object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.srcset = "";
+                    e.currentTarget.src = "/images/default-avatar.png";
+                  }}
+                />
+              </div>
             ) : (
               <div className="w-8 h-8 md:w-10 md:h-10 shrink-0" />
             )}

@@ -85,14 +85,13 @@ export default function ChatHeader({
                 className="flex items-center gap-4 max-w-full min-w-0"
               >
                 <div className="relative shrink-0">
-                  <div className="size-9 md:size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner">
+                  <div className="size-9 md:size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner relative">
                     {activeRoom.avatar_url ? (
                       <Image
                         src={activeRoom.avatar_url}
                         alt={activeRoom.name || ""}
-                        width={44}
-                        height={44}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                         referrerPolicy="no-referrer"
                         onError={(e) => {
                           e.currentTarget.srcset = "";
@@ -154,14 +153,13 @@ export default function ChatHeader({
                 className="flex items-center gap-2.5 md:gap-4 max-w-full min-w-0"
               >
                 <div className="relative shrink-0">
-                  <div className="size-9 md:size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner">
+                  <div className="size-9 md:size-11 rounded-full bg-elevated flexcc border border-border-divider/50 overflow-hidden shadow-inner relative">
                     {activeRoom.avatar_url ? (
                       <Image
                         src={activeRoom.avatar_url}
                         alt={activeRoom.name || ""}
-                        width={44}
-                        height={44}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                         referrerPolicy="no-referrer"
                         onError={(e) => {
                           e.currentTarget.srcset = "";

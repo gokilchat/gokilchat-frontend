@@ -22,6 +22,7 @@ import {
   History,
   ShieldAlert,
   Bell,
+  Scale,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { User } from "@/types/chat";
@@ -156,7 +157,7 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
     clearAllNotifications,
   } = useNotificationStore();
   const [activeTab, setActiveTab] = useState<
-    "users" | "moderators" | "logs" | "reports"
+    "users" | "moderators" | "logs" | "reports" | "appeals"
   >("users");
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -280,6 +281,42 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
   const [reportStatusFilter, setReportStatusFilter] = useState("pending");
   const [isLoadingReports, setIsLoadingReports] = useState(false);
 
+  // Appeals State
+  interface Appeal {
+    id: string;
+    user_id: string;
+    reason: string;
+    status: "pending" | "approved" | "rejected";
+    created_at: string;
+    resolved_at: string | null;
+    resolved_by: string | null;
+    users: {
+      id: string;
+      username: string;
+      full_name: string | null;
+      avatar_url: string | null;
+      email: string;
+      status: "active" | "suspended" | "banned";
+    } | null;
+  }
+  const [appealsList, setAppealsList] = useState<Appeal[]>([]);
+  const [appealsPagination, setAppealsPagination] = useState({
+    page: 1,
+    limit: 15,
+    total: 0,
+    total_pages: 1,
+  });
+  const [appealStatusFilter, setAppealStatusFilter] = useState("pending");
+  const [isLoadingAppeals, setIsLoadingAppeals] = useState(false);
+
+  // Appeal Resolution Confirmation Modal State
+  const [showAppealConfirm, setShowAppealConfirm] = useState(false);
+  const [appealToResolve, setAppealToResolve] = useState<Appeal | null>(null);
+  const [resolutionAction, setResolutionAction] = useState<
+    "approved" | "rejected" | null
+  >(null);
+  const [resolutionDetails, setResolutionDetails] = useState("");
+
   // Soft Delete Message State
   const [showDeleteMsgConfirm, setShowDeleteMsgConfirm] = useState(false);
   const [deleteMsgTarget, setDeleteMsgTarget] = useState<Report | null>(null);
@@ -345,6 +382,57 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
         fetchReports(reportsPagination.page);
       } else {
         toast(res.error || "Gagal menghapus pesan", "error");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+      toast(msg, "error");
+    }
+  };
+
+  const fetchAppeals = async (page = 1) => {
+    setIsLoadingAppeals(true);
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: appealsPagination.limit.toString(),
+      });
+      if (appealStatusFilter) {
+        queryParams.append("status", appealStatusFilter);
+      }
+
+      const res = await apiFetch(`/admin/appeals?${queryParams.toString()}`);
+      if (res.success) {
+        setAppealsList(res.data.appeals);
+        setAppealsPagination(res.data.pagination);
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Gagal mengambil data banding";
+      toast(msg, "error");
+    } finally {
+      setIsLoadingAppeals(false);
+    }
+  };
+
+  const handleResolveAppeal = async (
+    id: string,
+    status: "approved" | "rejected",
+    details?: string,
+  ) => {
+    try {
+      const res = await apiFetch(`/admin/appeals/${id}/resolve`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, details }),
+      });
+      if (res.success) {
+        toast(
+          `Permohonan banding berhasil ${status === "approved" ? "disetujui" : "ditolak"}! 🗿`,
+          "success",
+        );
+        fetchAppeals(appealsPagination.page);
+        fetchUsers(pagination.page);
+      } else {
+        toast(res.error || "Gagal memproses permohonan banding", "error");
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
@@ -482,18 +570,28 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
         await fetchLogs(1);
       } else if (activeTab === "reports") {
         await fetchReports(1);
+      } else if (activeTab === "appeals") {
+        await fetchAppeals(1);
       }
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, statusFilter, roleFilter, reportStatusFilter]);
+  }, [
+    activeTab,
+    statusFilter,
+    roleFilter,
+    reportStatusFilter,
+    appealStatusFilter,
+  ]);
 
   // Refs to avoid stale closures in socket events
   const fetchReportsRef = useRef(fetchReports);
   const fetchUsersRef = useRef(fetchUsers);
   const fetchModeratorsRef = useRef(fetchModerators);
   const fetchInvitesRef = useRef(fetchInvites);
+  const fetchAppealsRef = useRef(fetchAppeals);
   const reportsPaginationRef = useRef(reportsPagination);
+  const appealsPaginationRef = useRef(appealsPagination);
   const paginationRef = useRef(pagination);
 
   useEffect(() => {
@@ -501,7 +599,9 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
     fetchUsersRef.current = fetchUsers;
     fetchModeratorsRef.current = fetchModerators;
     fetchInvitesRef.current = fetchInvites;
+    fetchAppealsRef.current = fetchAppeals;
     reportsPaginationRef.current = reportsPagination;
+    appealsPaginationRef.current = appealsPagination;
     paginationRef.current = pagination;
   });
 
@@ -530,21 +630,21 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
     const handleUserStatusChanged = (data: { id: string; status: string }) => {
       fetchUsersRef.current(paginationRef.current.page);
       fetchModeratorsRef.current();
-      
+
       // Update reportsList locally for instant feedback
-      setReportsList(prev =>
-        prev.map(report => {
+      setReportsList((prev) =>
+        prev.map((report) => {
           if (report.reported_user && report.reported_user.id === data.id) {
             return {
               ...report,
               reported_user: {
                 ...report.reported_user,
-                status: data.status as "active" | "suspended" | "banned"
-              }
+                status: data.status as "active" | "suspended" | "banned",
+              },
             };
           }
           return report;
-        })
+        }),
       );
 
       // Refetch reports to ensure 100% database parity
@@ -559,31 +659,47 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
       fetchReportsRef.current(reportsPaginationRef.current.page);
     };
 
-    const handleAdminMessageDeleted = (data: { message_id: string; deleted_by: string }) => {
-      setReportsList(prev =>
-        prev.map(report => {
-          if (report.reported_message && report.reported_message.id === data.message_id) {
+    const handleAdminMessageDeleted = (data: {
+      message_id: string;
+      deleted_by: string;
+    }) => {
+      setReportsList((prev) =>
+        prev.map((report) => {
+          if (
+            report.reported_message &&
+            report.reported_message.id === data.message_id
+          ) {
             return {
               ...report,
               reported_message: {
                 ...report.reported_message,
                 deleted_at: new Date().toISOString(),
-                deleted_by: data.deleted_by
-              }
+                deleted_by: data.deleted_by,
+              },
             };
           }
           return report;
-        })
+        }),
       );
     };
 
     socket.on("admin:moderator_invited", handleModeratorInvited);
     socket.on("admin:moderator_invite_accepted", handleModeratorInviteAccepted);
     socket.on("admin:moderator_status_changed", handleModeratorStatusChanged);
+    const handleNewAppeal = () => {
+      fetchAppealsRef.current(1);
+    };
+
+    const handleAppealResolved = () => {
+      fetchAppealsRef.current(appealsPaginationRef.current.page);
+    };
+
     socket.on("admin:user_status_changed", handleUserStatusChanged);
     socket.on("admin:new_report", handleNewReport);
     socket.on("admin:report_resolved", handleReportResolved);
     socket.on("admin:message_deleted", handleAdminMessageDeleted);
+    socket.on("admin:new_appeal", handleNewAppeal);
+    socket.on("admin:appeal_resolved", handleAppealResolved);
 
     // Listen for notifications aimed at this staff member
     const handleNewNotification = (notif: {
@@ -973,6 +1089,19 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
         >
           <ShieldAlert className="w-4 h-4" />
           <span>Laporan Masuk</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("appeals")}
+          className={clsx(
+            "px-5 py-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2",
+            activeTab === "appeals"
+              ? "border-accent-default text-text-primary"
+              : "border-transparent text-text-muted hover:text-text-primary",
+          )}
+        >
+          <Scale className="w-4 h-4" />
+          <span>Banding Masuk</span>
         </button>
 
         {isSuperAdmin && (
@@ -2050,7 +2179,7 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
                                           });
                                           setPendingStatusChange("suspended");
                                           setStatusReason(
-                                            `Dilaporkan oleh @${report.reporter?.username || "user"}: ${report.reason}`,
+                                            `Pelanggaran: ${report.reason}`,
                                           );
                                           setShowStatusConfirm(true);
                                         }}
@@ -2132,7 +2261,388 @@ export default function AdminPanel({ user, logout }: AdminPanelProps) {
             </div>
           </div>
         )}
+
+        {activeTab === "appeals" && (
+          <div className="flex flex-col flex-1 gap-4 overflow-hidden animate-in fade-in duration-150">
+            {/* Filters Bar */}
+            <div className="flex flex-col md:flex-row gap-3 bg-secondary/20 border border-white/5 p-4 rounded-2xl shrink-0">
+              <div className="flex-1 flex items-center">
+                <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <Scale className="w-5 h-5 text-red-500" />
+                  Daftar Permohonan Banding
+                </h3>
+              </div>
+              <div className="flex gap-3">
+                <CustomSelect
+                  value={appealStatusFilter}
+                  onChange={setAppealStatusFilter}
+                  placeholder="Status Banding"
+                  options={[
+                    { value: "pending", label: "Menunggu Peninjauan" },
+                    { value: "approved", label: "Disetujui" },
+                    { value: "rejected", label: "Ditolak" },
+                  ]}
+                />
+              </div>
+            </div>
+
+            {/* Grid Cards Area */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 relative p-1">
+              {isLoadingAppeals && (
+                <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flexcc flex-col gap-2 z-20">
+                  <Loader2 className="w-8 h-8 text-accent-default animate-spin" />
+                  <span className="text-text-muted text-xs font-bold">
+                    Memuat data banding...
+                  </span>
+                </div>
+              )}
+
+              {appealsList.length === 0 ? (
+                <div className="flexcc flex-col gap-3 py-24 text-text-muted bg-secondary/10 border border-white/5 rounded-2xl">
+                  <Scale className="w-12 h-12 text-text-muted/30" />
+                  <p className="text-sm">
+                    Belum ada permohonan banding kategori ini.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {appealsList.map((appeal) => (
+                      <div
+                        key={appeal.id}
+                        className="bg-secondary/40 border border-white/5 rounded-3xl p-5 flex flex-col gap-4 hover:border-white/10 hover:bg-secondary/60 transall relative shadow-lg"
+                      >
+                        {/* User Profile Info */}
+                        <div className="flex items-center justify-between gap-2 bg-primary/30 p-3 rounded-2xl border border-white/5">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            {appeal.users?.avatar_url ? (
+                              <Image
+                                src={appeal.users.avatar_url}
+                                alt="avatar"
+                                width={36}
+                                height={36}
+                                className="w-9 h-9 rounded-full object-cover border border-white/10 shrink-0"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-accent-default/10 text-accent-default border border-accent-default/20 flexcc font-black text-sm shrink-0">
+                                {appeal.users?.username
+                                  ?.charAt(0)
+                                  .toUpperCase() || "?"}
+                              </div>
+                            )}
+                            <div className="truncate min-w-0">
+                              <span className="font-bold text-white text-xs block truncate">
+                                {appeal.users?.full_name ||
+                                  appeal.users?.username}
+                              </span>
+                              <span className="text-[10px] text-text-muted block truncate">
+                                @{appeal.users?.username}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block">
+                              Status Akun
+                            </span>
+                            <span
+                              className={clsx(
+                                "px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border inline-block mt-0.5",
+                                appeal.users?.status === "banned"
+                                  ? "bg-red-500/10 text-red-400 border-red-500/20"
+                                  : "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+                              )}
+                            >
+                              {appeal.users?.status || "active"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Appeal Message */}
+                        <div className="flex flex-col gap-1 flex-1 min-h-20">
+                          <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">
+                            Pesan Banding User
+                          </span>
+                          <div className="p-3.5 bg-elevated/40 border border-white/5 rounded-2xl text-xs text-text-primary leading-relaxed whitespace-pre-wrap select-text flex-1">
+                            &ldquo;{appeal.reason}&rdquo;
+                          </div>
+                        </div>
+
+                        {/* Resolution Info */}
+                        {appeal.status !== "pending" && (
+                          <div className="p-3 bg-white/2 border border-white/5 rounded-2xl flex flex-col gap-1 text-[10px]">
+                            <div className="flex justify-between items-center">
+                              <span className="text-text-muted">
+                                Diselesaikan Oleh:
+                              </span>
+                              <span className="font-bold text-white">
+                                ID {appeal.resolved_by?.substring(0, 8)}...
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-text-muted">Waktu:</span>
+                              <span className="font-medium text-text-secondary">
+                                {new Date(appeal.resolved_at!).toLocaleString(
+                                  "id-ID",
+                                  {
+                                    dateStyle: "short",
+                                    timeStyle: "short",
+                                  },
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Card Footer: Timestamp and Action Buttons */}
+                        <div className="border-t border-white/5 pt-3.5 flex items-center justify-between gap-3 mt-auto shrink-0">
+                          <span className="text-[9px] text-text-muted">
+                            Diajukan:{" "}
+                            {new Date(appeal.created_at).toLocaleDateString(
+                              "id-ID",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "2-digit",
+                              },
+                            )}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {appeal.status === "pending" ? (
+                              isSuperAdmin ? (
+                                <>
+                                  {/* Reject Button */}
+                                  <Tooltip
+                                    content="Tolak Banding"
+                                    placement="top"
+                                  >
+                                    <button
+                                      onClick={() => {
+                                        setAppealToResolve(appeal);
+                                        setResolutionAction("rejected");
+                                        setResolutionDetails("");
+                                        setShowAppealConfirm(true);
+                                      }}
+                                      className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-red-500 text-red-500 hover:text-white rounded-xl transall cursor-pointer active:scale-95 text-xs font-bold flex items-center gap-1"
+                                    >
+                                      Tolak
+                                    </button>
+                                  </Tooltip>
+
+                                  {/* Approve Button */}
+                                  <Tooltip
+                                    content="Setujui & Reaktifkan"
+                                    placement="top"
+                                  >
+                                    <button
+                                      onClick={() => {
+                                        setAppealToResolve(appeal);
+                                        setResolutionAction("approved");
+                                        setResolutionDetails("");
+                                        setShowAppealConfirm(true);
+                                      }}
+                                      className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 border border-emerald-500/20 hover:border-emerald-500 text-emerald-500 hover:text-white rounded-xl transall cursor-pointer active:scale-95 text-xs font-bold flex items-center gap-1"
+                                    >
+                                      Setujui
+                                    </button>
+                                  </Tooltip>
+                                </>
+                              ) : (
+                                <span className="text-[10px] text-text-muted italic px-2">
+                                  Hanya Super Admin
+                                </span>
+                              )
+                            ) : (
+                              <span
+                                className={clsx(
+                                  "text-xs font-black uppercase tracking-wider flex items-center gap-1.5 px-3 py-1 border rounded-xl",
+                                  appeal.status === "approved"
+                                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                    : "bg-red-500/10 text-red-500 border-red-500/20",
+                                )}
+                              >
+                                {appeal.status === "approved"
+                                  ? "Disetujui"
+                                  : "Ditolak"}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {appealsPagination.total_pages > 1 && (
+                    <div className="bg-secondary/40 border border-white/5 rounded-2xl px-6 py-4 flex items-center justify-between shrink-0 shadow-md">
+                      <div className="text-xs text-text-muted">
+                        Menampilkan{" "}
+                        <span className="font-bold text-white">
+                          {appealsList.length}
+                        </span>{" "}
+                        dari{" "}
+                        <span className="font-bold text-white">
+                          {appealsPagination.total}
+                        </span>{" "}
+                        permohonan banding
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          disabled={appealsPagination.page === 1}
+                          onClick={() =>
+                            fetchAppeals(appealsPagination.page - 1)
+                          }
+                          className="p-2 bg-secondary border border-border-divider/50 rounded-lg text-text-primary hover:bg-elevated disabled:opacity-40 disabled:pointer-events-none transall"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span className="px-3.5 py-2 bg-elevated border border-border-divider rounded-lg text-xs font-bold text-white flexcc">
+                          {appealsPagination.page} /{" "}
+                          {appealsPagination.total_pages}
+                        </span>
+                        <button
+                          disabled={
+                            appealsPagination.page ===
+                            appealsPagination.total_pages
+                          }
+                          onClick={() =>
+                            fetchAppeals(appealsPagination.page + 1)
+                          }
+                          className="p-2 bg-secondary border border-border-divider/50 rounded-lg text-text-primary hover:bg-elevated disabled:opacity-40 disabled:pointer-events-none transall"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Appeal Resolution Modal */}
+      {showAppealConfirm && appealToResolve && resolutionAction && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAppealConfirm(false);
+              setAppealToResolve(null);
+              setResolutionAction(null);
+              setResolutionDetails("");
+            }
+          }}
+          className="fixed inset-0 bg-black/70 flexcc z-999 p-4 backdrop-blur-sm"
+        >
+          <div className="w-full max-w-md bg-secondary border border-white/5 p-6 rounded-3xl relative shadow-2xl flex flex-col gap-4">
+            <button
+              onClick={() => {
+                setShowAppealConfirm(false);
+                setAppealToResolve(null);
+                setResolutionAction(null);
+                setResolutionDetails("");
+              }}
+              className="absolute top-4 right-4 p-2 hover:bg-white/5 rounded-xl transition-all"
+            >
+              <X className="w-4 h-4 text-text-secondary" />
+            </button>
+
+            <div className="flex items-center gap-2.5 text-text-primary">
+              <Scale
+                className={clsx(
+                  "w-5 h-5",
+                  resolutionAction === "approved"
+                    ? "text-emerald-400"
+                    : "text-red-400",
+                )}
+              />
+              <h3 className="text-lg font-black">
+                {resolutionAction === "approved"
+                  ? "Setujui Permohonan Banding"
+                  : "Tolak Permohonan Banding"}
+              </h3>
+            </div>
+
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Apakah Anda yakin ingin{" "}
+              <strong
+                className={
+                  resolutionAction === "approved"
+                    ? "text-emerald-400"
+                    : "text-red-400"
+                }
+              >
+                {resolutionAction === "approved" ? "menyetujui" : "menolak"}
+              </strong>{" "}
+              permohonan banding dari{" "}
+              <strong className="text-white">
+                @{appealToResolve.users?.username}
+              </strong>
+              ?
+              {resolutionAction === "approved" &&
+                " Akun user akan otomatis diaktifkan kembali."}
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="resolution-details"
+                className="text-[10px] text-text-muted font-bold uppercase tracking-wider"
+              >
+                Catatan Resolusi (Opsional)
+              </label>
+              <textarea
+                id="resolution-details"
+                value={resolutionDetails}
+                onChange={(e) => setResolutionDetails(e.target.value)}
+                placeholder="Berikan alasan atau catatan tambahan untuk riwayat audit log..."
+                className="w-full h-24 px-4.5 py-3 bg-white/2 border border-white/5 rounded-2xl text-xs text-white placeholder-text-muted focus:outline-hidden focus:border-accent-default resize-none transition-all duration-150 animate-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3.5 mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAppealConfirm(false);
+                  setAppealToResolve(null);
+                  setResolutionAction(null);
+                  setResolutionDetails("");
+                }}
+                className="px-4.5 py-2.5 bg-secondary hover:bg-elevated text-xs font-bold text-text-primary rounded-xl transition-all cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleResolveAppeal(
+                    appealToResolve.id,
+                    resolutionAction,
+                    resolutionDetails,
+                  );
+                  setShowAppealConfirm(false);
+                  setAppealToResolve(null);
+                  setResolutionAction(null);
+                  setResolutionDetails("");
+                }}
+                className={clsx(
+                  "px-4.5 py-2.5 text-xs font-bold text-white rounded-xl transition-all cursor-pointer shadow-md",
+                  resolutionAction === "approved"
+                    ? "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/10"
+                    : "bg-red-500 hover:bg-red-600 shadow-red-500/10",
+                )}
+              >
+                {resolutionAction === "approved"
+                  ? "Setujui & Aktifkan"
+                  : "Tolak Banding"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Official Notification Modal */}
       {notifTargetUser && (

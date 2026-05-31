@@ -6,6 +6,10 @@ export interface User {
   avatar_url?: string;
   system_role?: string;
   status?: string;
+  latest_approved_appeal?: {
+    id: string;
+    note: string;
+  } | null;
 }
 
 export interface Room {
