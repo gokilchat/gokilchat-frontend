@@ -2,6 +2,7 @@ import { Paperclip, Smile, Send, X } from "lucide-react";
 import { Message } from "@/types/chat";
 import clsx from "clsx";
 import { FormEvent, RefObject, useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -24,7 +25,7 @@ export default function ChatInput({
   // Cegah keyboard HP/mobile otomatis muncul saat masuk room dengan me-blur textarea 📱
   useEffect(() => {
     shouldIgnoreFocus.current = true;
-    
+
     // Reset abaikan focus setelah 500ms (cukup buat ngelewatin transisi/hiding sidebar)
     const timer = setTimeout(() => {
       shouldIgnoreFocus.current = false;
@@ -47,7 +48,11 @@ export default function ChatInput({
   }, [replyingTo, inputRef]);
 
   const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-    if (shouldIgnoreFocus.current && typeof window !== "undefined" && window.innerWidth < 768) {
+    if (
+      shouldIgnoreFocus.current &&
+      typeof window !== "undefined" &&
+      window.innerWidth < 768
+    ) {
       e.currentTarget.blur();
     }
   };
@@ -70,25 +75,34 @@ export default function ChatInput({
         onSubmit={handleSubmit}
         className="relative bg-secondary border border-border-divider rounded-3xl md:rounded-4xl p-1.5 pr-2.5 md:p-2 md:pr-4 flex flex-col focus-within:border-accent-default/50 transall"
       >
-        {replyingTo && (
-          <div className="flex items-center justify-between bg-elevated/40 border-l-4 border-accent-default px-4 py-2.5 rounded-xl mb-2 mx-1 text-xs transall">
-            <div className="flex-1 min-w-0 pr-4 text-left">
-              <span className="font-black text-accent-default block mb-0.5 tracking-wide">
-                Membalas {replyingTo.sender_full_name || replyingTo.sender_username}
-              </span>
-              <span className="text-text-secondary truncate block font-medium">
-                {replyingTo.content}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={onCancelReply}
-              className="text-text-muted hover:text-white p-1 rounded-full hover:bg-white/5 transall shrink-0"
+        <AnimatePresence>
+          {replyingTo && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -10 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -10 }}
+              transition={{ type: "spring", duration: 0.25, bounce: 0 }}
+              className="overflow-hidden flex items-center justify-between bg-elevated/40 border-l-4 border-accent-default px-4 py-2.5 rounded-xl mb-2 mx-1 text-xs"
             >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+              <div className="flex-1 min-w-0 pr-4 text-left">
+                <span className="font-black text-accent-default block mb-0.5 tracking-wide">
+                  Membalas{" "}
+                  {replyingTo.sender_full_name || replyingTo.sender_username}
+                </span>
+                <span className="text-text-secondary truncate block font-medium">
+                  {replyingTo.content}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={onCancelReply}
+                className="text-text-muted hover:text-white p-1 rounded-full hover:bg-white/5 transall shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div className="flex items-end gap-1.5 md:gap-2 w-full">
           <div className="flex items-center gap-0.5 md:gap-1 pl-1 md:pl-2 mb-1.5">
             <button

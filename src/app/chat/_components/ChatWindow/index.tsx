@@ -24,6 +24,9 @@ interface ChatWindowProps {
   onLeaveGroupClick?: () => void;
   onSendMessage: (message: string, parentId?: string | null) => void;
   onDeleteMessage?: (message: Message) => void;
+  onHideMessage?: (message: Message) => void;
+  onUnhideMessage?: (message: Message) => void;
+  onClearChat?: () => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   presenceStatus?: Record<string, boolean>;
@@ -40,6 +43,9 @@ export default function ChatWindow({
   onLeaveGroupClick,
   onSendMessage,
   onDeleteMessage,
+  onHideMessage,
+  onUnhideMessage,
+  onClearChat,
   messagesEndRef,
   inputRef,
   presenceStatus = {},
@@ -88,10 +94,12 @@ export default function ChatWindow({
     setSearchQuery("");
     setSearchedMessageId("");
     setReplyingTo(null);
-    setCurrentUserRole(activeRoom?.type === "dm" ? "owner" : "user");
+    // Reset role ke "user" dulu tiap ganti room; effect di bawah yang fetch role asli buat grup.
+    // DM gak ada owner/admin — keduanya "user" (ERD v5), jadi default ini juga final buat DM.
+    setCurrentUserRole("user");
   }
 
-  // Fetch group members for the header subtitle and current user role
+  // Fetch group members for the header subtitle (boleh di-cache, nama jarang berubah)
   useEffect(() => {
     if (activeRoom && activeRoom.type !== "dm" && !membersCache[activeRoom.id]) {
       apiFetch(`/rooms/${activeRoom.id}`, { cache: "no-store" })
@@ -101,13 +109,6 @@ export default function ChatWindow({
               .map((m: { user: User }) => m.user.full_name || m.user.username)
               .join(", ");
             setMembersCache((prev) => ({ ...prev, [activeRoom.id]: names }));
-
-            const me = res.data.members.find(
-              (m: { user: User; role: "owner" | "admin" | "user" }) => m.user.id === user.id
-            );
-            if (me) {
-              setCurrentUserRole(me.role);
-            }
           }
         })
         .catch(() => {
@@ -115,6 +116,32 @@ export default function ChatWindow({
         });
     }
   }, [activeRoom, membersCache, user.id]);
+
+  // Role user di room ini WAJIB selalu fresh tiap ganti room — JANGAN di-cache.
+  // Dulu di-gate `!membersCache[room]`, jadi pas balik ke room ter-cache role nyangkut
+  // di "user" → owner/admin kehilangan hak "hapus untuk semua" sampai refresh. 🗿
+  // (Default "user" sudah di-set di blok render saat ganti room; di sini cuma fetch role asli grup.)
+  useEffect(() => {
+    if (!activeRoom || activeRoom.type === "dm") return;
+    let cancelled = false;
+    apiFetch(`/rooms/${activeRoom.id}`, { cache: "no-store" })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.success && res.data?.members) {
+          const me = res.data.members.find(
+            (m: { user: User; role: "owner" | "admin" | "user" }) =>
+              m.user.id === user.id,
+          );
+          setCurrentUserRole(me ? me.role : "user");
+        }
+      })
+      .catch(() => {
+        // 403 kalau user udah gak di room — biarin
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeRoom, user.id]);
 
   // Listen for socket events to update membersCache
   useEffect(() => {
@@ -142,13 +169,26 @@ export default function ChatWindow({
       }
     };
 
+    // Kalau role MILIK GUA berubah live (di-promote/demote owner), update canDelete instan
+    const handleRoleChanged = (data: {
+      room_id: string;
+      user_id: string;
+      role: "owner" | "admin" | "user";
+    }) => {
+      if (data.room_id === activeRoom.id && data.user_id === user.id) {
+        setCurrentUserRole(data.role);
+      }
+    };
+
     socket.on("room:member_left", handleMemberLeft);
     socket.on("room:member_joined", handleMemberJoined);
+    socket.on("room:member_role_changed", handleRoleChanged);
     return () => {
       socket.off("room:member_left", handleMemberLeft);
       socket.off("room:member_joined", handleMemberJoined);
+      socket.off("room:member_role_changed", handleRoleChanged);
     };
-  }, [activeRoom]);
+  }, [activeRoom, user.id]);
 
   // Handle subtitle hint animation
   useEffect(() => {
@@ -217,6 +257,7 @@ export default function ChatWindow({
         onInviteClick={onInviteClick}
         onGroupInfoClick={onGroupInfoClick}
         onLeaveGroupClick={onLeaveGroupClick}
+        onClearChat={onClearChat}
         membersCache={membersCache}
         showSubtitleHint={showSubtitleHint}
         isSearchActive={isSearchActive}
@@ -240,6 +281,8 @@ export default function ChatWindow({
         onReplyClick={(msg) => setReplyingTo(msg)}
         onForwardClick={(msg) => setForwardingMessage(msg)}
         onDeleteClick={onDeleteMessage}
+        onHideClick={onHideMessage}
+        onUnhideClick={onUnhideMessage}
         onReportClick={(msg) => {
           setReportingMessage(msg);
           setReportingUser(null);

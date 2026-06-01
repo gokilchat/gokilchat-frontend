@@ -2,13 +2,15 @@ import { Message } from "@/types/chat";
 import clsx from "clsx";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import MessageReceiptModal from "../modals/MessageReceiptModal";
 
 // Partials
 import RoomInviteContent from "./partials/RoomInviteContent";
 import ReceiptsIcon from "./partials/ReceiptsIcon";
-import MessageBubbleMenu from "./partials/MessageBubbleMenu";
+import MessageBubbleMenu, {
+  type MessageBubbleMenuHandle,
+} from "./partials/MessageBubbleMenu";
 
 interface MessageBubbleProps {
   message: Message;
@@ -21,6 +23,8 @@ interface MessageBubbleProps {
   onReplyClick?: (message: Message) => void;
   onForwardClick?: (message: Message) => void;
   onDeleteClick?: (message: Message) => void;
+  onHideClick?: (message: Message) => void;
+  onUnhideClick?: (message: Message) => void;
   onReportClick?: (message: Message) => void;
   canDelete?: boolean;
   parentMessage?: Message;
@@ -54,13 +58,24 @@ export default function MessageBubble({
   onReplyClick,
   onForwardClick,
   onDeleteClick,
+  onHideClick,
+  onUnhideClick,
   onReportClick,
   canDelete = false,
   parentMessage
 }: MessageBubbleProps) {
   const [showReceipts, setShowReceipts] = useState(false);
+  const menuRef = useRef<MessageBubbleMenuHandle>(null);
 
   const isDeleted = !!message.deleted_at;
+  const isHidden = !!message.hidden_for_me;
+
+  // Klik kanan di bubble → buka menu aksi di posisi kursor 🗿
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (isDeleted || isHidden) return;
+    e.preventDefault();
+    menuRef.current?.openAt(e.clientX, e.clientY);
+  };
   const deletedBySelf = message.deleted_by === message.sender_id;
   const deletedText = deletedBySelf 
     ? "Pesan ini telah dihapus"
@@ -123,6 +138,7 @@ export default function MessageBubble({
           )}
         >
           <div
+            onContextMenu={handleContextMenu}
             className={clsx(
               "px-3.5 py-2.5 md:px-5 md:py-3 shadow-lg shadow-secondary relative pr-8 md:pr-10 transall",
               isMe
@@ -136,13 +152,15 @@ export default function MessageBubble({
             )}
           >
             {/* Bubble Dropdown Menu */}
-            {!isDeleted && (
+            {!isDeleted && !isHidden && (
               <MessageBubbleMenu
+                ref={menuRef}
                 isMe={isMe}
                 onInfoClick={() => setShowReceipts(true)}
                 onReplyClick={() => onReplyClick?.(message)}
                 onForwardClick={() => onForwardClick?.(message)}
                 onDeleteClick={() => onDeleteClick?.(message)}
+                onHideClick={() => onHideClick?.(message)}
                 onReportClick={() => onReportClick?.(message)}
                 canDelete={canDelete}
               />
@@ -158,7 +176,7 @@ export default function MessageBubble({
             )}
 
             {/* Reply Preview inside bubble */}
-            {message.parent_id && (
+            {message.parent_id && !isHidden && (
               <div
                 onClick={handleScrollToParent}
                 className={clsx(
@@ -181,6 +199,24 @@ export default function MessageBubble({
               <p className="text-[13px] md:text-sm font-medium italic opacity-60 leading-relaxed whitespace-pre-wrap wrap-break-word [word-break:break-word] min-w-0">
                 {deletedText}
               </p>
+            ) : isHidden ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-[13px] md:text-sm font-medium italic opacity-60 leading-relaxed">
+                  Kamu menghapus pesan ini untuk dirimu
+                </p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUnhideClick?.(message);
+                  }}
+                  className={clsx(
+                    "text-[11px] md:text-xs font-bold underline underline-offset-2 transall cursor-pointer shrink-0",
+                    isMe ? "text-text-on-accent/90 hover:text-text-on-accent" : "text-accent-default hover:opacity-80",
+                  )}
+                >
+                  Tampilkan
+                </button>
+              </div>
             ) : message.template_type === "room_invite" && message.invite_info ? (
               <RoomInviteContent message={message} isMe={isMe} />
             ) : (

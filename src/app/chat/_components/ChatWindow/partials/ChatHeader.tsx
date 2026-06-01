@@ -6,6 +6,7 @@ import {
   LogOut,
   X,
   ArrowLeft,
+  Trash2,
 } from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
@@ -14,6 +15,7 @@ import { useState, useRef, useEffect } from "react";
 import Tooltip from "@/components/Tooltip";
 import GroupIcon from "@/components/GroupIcon";
 import { useChatStore } from "@/store/useChatStore";
+import { motion, AnimatePresence } from "motion/react";
 
 interface ChatHeaderProps {
   activeRoom: Room;
@@ -21,6 +23,7 @@ interface ChatHeaderProps {
   onInviteClick: () => void;
   onGroupInfoClick: () => void;
   onLeaveGroupClick?: () => void;
+  onClearChat?: () => void;
   membersCache: Record<string, string>;
   showSubtitleHint: boolean;
   isSearchActive: boolean;
@@ -35,6 +38,7 @@ export default function ChatHeader({
   onInviteClick,
   onGroupInfoClick,
   onLeaveGroupClick,
+  onClearChat,
   membersCache,
   showSubtitleHint,
   isSearchActive,
@@ -238,47 +242,61 @@ export default function ChatHeader({
             <MoreVertical className="w-5 h-5" />
           </button>
 
-          {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-elevated border border-border-divider rounded-2xl shadow-xl overflow-hidden z-50 flex flex-col p-1 origin-top-right">
-              {activeRoom.type !== "dm" ? (
-                <>
+          <AnimatePresence>
+            {isMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                transition={{ type: "spring", duration: 0.15, bounce: 0 }}
+                className="absolute right-0 top-full mt-2 w-48 bg-elevated border border-border-divider rounded-2xl shadow-xl overflow-hidden z-50 flex flex-col p-1 origin-top-right"
+              >
+                {activeRoom.type !== "dm" ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        onInviteClick();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-white/5 rounded-xl transall cursor-pointer"
+                    >
+                      <UserPlus className="w-4 h-4 text-text-secondary" /> Tambah
+                      Anggota
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        onGroupInfoClick();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-white/5 rounded-xl transall cursor-pointer"
+                    >
+                      <Info className="w-4 h-4 text-text-secondary" /> Info Grup
+                    </button>
+                    <div className="h-px bg-border-divider my-1 mx-2" />
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        onLeaveGroupClick?.();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-400/10 hover:text-red-300 rounded-xl transall cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" /> Keluar Grup
+                    </button>
+                  </>
+                ) : (
                   <button
                     onClick={() => {
                       setIsMenuOpen(false);
-                      onInviteClick();
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-white/5 rounded-xl transall cursor-pointer"
-                  >
-                    <UserPlus className="w-4 h-4 text-text-secondary" /> Tambah
-                    Anggota
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      onGroupInfoClick();
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-white/5 rounded-xl transall cursor-pointer"
-                  >
-                    <Info className="w-4 h-4 text-text-secondary" /> Info Grup
-                  </button>
-                  <div className="h-px bg-border-divider my-1 mx-2" />
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      onLeaveGroupClick?.();
+                      onClearChat?.();
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-400/10 hover:text-red-300 rounded-xl transall cursor-pointer"
                   >
-                    <LogOut className="w-4 h-4" /> Keluar Grup
+                    <Trash2 className="w-4 h-4" /> Bersihkan Chat
                   </button>
-                </>
-              ) : (
-                <div className="px-4 py-3 text-xs text-text-muted text-center font-medium">
-                  (Belum ada menu untuk DM)
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </header>

@@ -7,7 +7,7 @@ import { useNotificationStore } from "@/store/useNotificationStore";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { User, Room } from "@/types/chat";
+import { User, Room, Message } from "@/types/chat";
 import { useToast } from "@/components/Toast";
 
 // Components
@@ -32,6 +32,8 @@ export default function ChatPage() {
     setMessages,
     addMessage,
     deleteMessage,
+    setMessageHidden,
+    clearRoomMessages,
   } = useChatStore();
 
   const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
@@ -55,6 +57,10 @@ export default function ChatPage() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  // Target konfirmasi "hapus untuk semua" (soft delete, irreversible)
+  const [deleteTarget, setDeleteTarget] = useState<Message | null>(null);
+  // Target konfirmasi "bersihkan chat" DM
+  const [clearTarget, setClearTarget] = useState<Room | null>(null);
   const [modalContext, setModalContext] = useState<"dm" | "invite">("dm");
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -285,9 +291,18 @@ export default function ChatPage() {
     socket.on(
       "message:deleted",
       (data: { message_id: string; room_id: string; deleted_by_self?: boolean }) => {
-        deleteMessage(data.message_id, new Date().toISOString(), data.deleted_by_self ? undefined : "admin");
+        deleteMessage(data.message_id, new Date().toISOString(), !!data.deleted_by_self);
       }
     );
+
+    // Echo dari server abis persist — baru update state (persist-first, no optimistic)
+    socket.on("message:hidden", (data: { message_id: string }) => {
+      setMessageHidden(data.message_id, true);
+    });
+
+    socket.on("message:unhidden", (data: { message_id: string }) => {
+      setMessageHidden(data.message_id, false);
+    });
 
     socket.on("room:added", (data: { room_id: string }) => {
       // Refresh list room dari API supaya grup baru muncul di sidebar
@@ -400,9 +415,11 @@ export default function ChatPage() {
       socket.off("room:member_left");
       socket.off("receipt:update:batch");
       socket.off("message:deleted");
+      socket.off("message:hidden");
+      socket.off("message:unhidden");
       disconnectSocket();
     };
-  }, [isHydrated, user, token, setRooms, addMessage, deleteMessage, addNotification, toast, logout]);
+  }, [isHydrated, user, token, setRooms, addMessage, deleteMessage, setMessageHidden, addNotification, toast, logout]);
 
   // Patroli Status On-Demand (Hemat Resource) 🗿
   useEffect(() => {
@@ -577,6 +594,51 @@ export default function ChatPage() {
     }
   };
 
+  // "Hapus untuk semua" → soft delete + broadcast. Buka konfirmasi dulu (irreversible).
+  const handleDeleteMessage = (message: Message) => {
+    setDeleteTarget(message);
+  };
+
+  const handleDeleteConfirmed = () => {
+    if (!deleteTarget) return;
+    // Persist-first: emit doang, tunggu broadcast message:deleted buat update state.
+    getSocket()?.emit("message:delete", { message_id: deleteTarget.id });
+    setDeleteTarget(null);
+  };
+
+  // "Hapus untuk saya" → hide. Reversible (ada tombol Tampilkan), jadi gak perlu konfirmasi.
+  const handleHideMessage = (message: Message) => {
+    getSocket()?.emit("message:hide", { message_id: message.id });
+  };
+
+  // "Tampilkan" → un-hide pesan yang sebelumnya disembunyikan.
+  const handleUnhideMessage = (message: Message) => {
+    getSocket()?.emit("message:unhide", { message_id: message.id });
+  };
+
+  // "Bersihkan Chat" (DM) → buka konfirmasi dulu.
+  const handleClearChat = () => {
+    const room = rooms.find((r) => r.id === activeRoomId);
+    if (room) setClearTarget(room);
+  };
+
+  const handleClearConfirmed = async () => {
+    if (!clearTarget) return;
+    const roomId = clearTarget.id;
+    setClearTarget(null);
+    try {
+      const res = await apiFetch(`/rooms/${roomId}/clear`, { method: "POST" });
+      if (res.success) {
+        clearRoomMessages(roomId);
+        toast("Chat berhasil dibersihkan.", "info");
+      } else {
+        toast(res.error || "Gagal bersihkan chat", "error");
+      }
+    } catch {
+      toast("Terjadi kesalahan saat bersihkan chat", "error");
+    }
+  };
+
   const handleSearchUsers = async (q: string) => {
     setSearchQuery(q);
     if (q.length < 2) {
@@ -712,6 +774,10 @@ export default function ChatPage() {
         onGroupInfoClick={() => setShowGroupInfoModal(true)}
         onLeaveGroupClick={() => setShowLeaveConfirm(true)}
         onSendMessage={handleSendMessage}
+        onDeleteMessage={handleDeleteMessage}
+        onHideMessage={handleHideMessage}
+        onUnhideMessage={handleUnhideMessage}
+        onClearChat={handleClearChat}
         messagesEndRef={messagesEndRef}
         inputRef={inputRef}
         presenceStatus={presenceStatus}
@@ -766,6 +832,28 @@ export default function ChatPage() {
         title="Keluar dari Grup?"
         description="Lu yakin mau keluar dari grup ini? Lu nggak bakal bisa liat chat dan harus di-invite lagi buat masuk."
         confirmLabel="Keluar"
+        cancelLabel="Batal"
+        variant="danger"
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirmed}
+        title="Hapus untuk semua orang?"
+        description="Pesan ini bakal dihapus buat semua orang di chat. Aksi ini nggak bisa dibatalin."
+        confirmLabel="Hapus"
+        cancelLabel="Batal"
+        variant="danger"
+      />
+
+      <ConfirmModal
+        isOpen={!!clearTarget}
+        onCancel={() => setClearTarget(null)}
+        onConfirm={handleClearConfirmed}
+        title="Bersihkan chat ini?"
+        description="Semua riwayat chat bakal ilang dari layar kamu. Lawan chat masih bisa lihat pesannya."
+        confirmLabel="Bersihkan"
         cancelLabel="Batal"
         variant="danger"
       />

@@ -1,7 +1,8 @@
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ArrowDown } from "lucide-react";
 import { Message, User } from "@/types/chat";
 import MessageBubble from "../../MessageBubble";
-import { RefObject, useEffect, useRef } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -15,6 +16,8 @@ interface ChatMessagesProps {
   onReplyClick?: (message: Message) => void;
   onForwardClick?: (message: Message) => void;
   onDeleteClick?: (message: Message) => void;
+  onHideClick?: (message: Message) => void;
+  onUnhideClick?: (message: Message) => void;
   onReportClick?: (message: Message) => void;
   canDelete?: boolean;
 }
@@ -31,10 +34,32 @@ export default function ChatMessages({
   onReplyClick,
   onForwardClick,
   onDeleteClick,
+  onHideClick,
+  onUnhideClick,
   onReportClick,
   canDelete = false,
 }: ChatMessagesProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+      const isScrolledUp = scrollHeight - scrollTop - clientHeight > 300;
+      setShowScrollBtn(isScrolledUp);
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    } else if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
 
   // Auto-scroll to selected message from search
   useEffect(() => {
@@ -51,6 +76,7 @@ export default function ChatMessages({
     <div className="flex-1 relative overflow-hidden flex flex-col px-2.5 sm:px-0">
       <div
         ref={scrollContainerRef}
+        onScroll={handleScroll}
         onClick={() => {
           if ((searchedMessageId || searchQuery) && onClearHighlight) {
             onClearHighlight();
@@ -103,6 +129,8 @@ export default function ChatMessages({
                     onReplyClick={onReplyClick}
                     onForwardClick={onForwardClick}
                     onDeleteClick={onDeleteClick}
+                    onHideClick={onHideClick}
+                    onUnhideClick={onUnhideClick}
                     onReportClick={onReportClick}
                     canDelete={canDelete}
                     parentMessage={parentMsg}
@@ -117,6 +145,22 @@ export default function ChatMessages({
 
       {/* Efek Fade "Tenggelam" 🗿✨ */}
       <div className="absolute bottom-0 left-0 right-0 h-3 bg-primary pointer-events-none z-10" />
+
+      <AnimatePresence>
+        {showScrollBtn && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            transition={{ type: "spring", duration: 0.25, bounce: 0 }}
+            onClick={scrollToBottom}
+            className="absolute bottom-6 right-6 md:right-12 lg:right-24 z-30 w-10 h-10 rounded-full flex items-center justify-center bg-elevated/80 border border-border-divider/50 backdrop-blur-md text-text-secondary hover:text-white shadow-xl hover:bg-secondary cursor-pointer transition-colors duration-150"
+            style={{ border: "1px solid rgba(255, 255, 255, 0.08)" }}
+          >
+            <ArrowDown className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -221,7 +221,7 @@ export default function SidebarHeader({
                       setIsOpen(false);
                       onSelectDM();
                     }}
-                    className="w-full p-3 rounded-xl bg-primary/40 border border-border-divider hover:border-accent-default hover:bg-accent-default/5 flex items-center gap-3 transall group cursor-pointer"
+                    className="w-full p-3 rounded-xl bg-transparent border border-transparent hover:border-accent-default hover:bg-accent-default/5 flex items-center gap-3 transall group cursor-pointer"
                   >
                     <div className="w-10 h-10 rounded-full bg-accent-default/10 flexcc text-accent-default transall shrink-0">
                       <UserIcon className="w-5 h-5" />
@@ -241,7 +241,7 @@ export default function SidebarHeader({
                       setIsOpen(false);
                       onSelectGroup();
                     }}
-                    className="w-full p-3 rounded-xl bg-primary/40 border border-border-divider hover:border-accent-default hover:bg-accent-default/5 flex items-center gap-3 transall group cursor-pointer"
+                    className="w-full p-3 rounded-xl bg-transparent border border-transparent hover:border-accent-default hover:bg-accent-default/5 flex items-center gap-3 transall group cursor-pointer"
                   >
                     <div className="w-10 h-10 rounded-xl bg-accent-default/10 flexcc text-accent-default transall shrink-0">
                       <Users className="w-5 h-5" />

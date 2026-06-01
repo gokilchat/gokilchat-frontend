@@ -46,6 +46,7 @@ export interface Message {
   reply_preview?: string | null;
   deleted_at?: string | null;
   deleted_by?: string | null;
+  hidden_for_me?: boolean;
   invite_info?: {
     invitee_id: string;
     status: 'pending' | 'accepted' | 'rejected';

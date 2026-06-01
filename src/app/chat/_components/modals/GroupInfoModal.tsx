@@ -4,6 +4,8 @@ import {
   X,
   Users,
   ShieldAlert,
+  ShieldPlus,
+  ShieldMinus,
   Crown,
   UserMinus,
   Loader2,
@@ -16,7 +18,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
-import { apiFetch, kickMember, updateRoomDetails, getAuthToken, CHAT_SERVER_URL } from "@/lib/api";
+import { apiFetch, kickMember, updateMemberRole, updateRoomDetails, getAuthToken, CHAT_SERVER_URL } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useChatStore } from "@/store/useChatStore";
 import { getSocket } from "@/lib/socket";
@@ -72,6 +74,12 @@ export default function GroupInfoModal({
   const [confirmKickUser, setConfirmKickUser] = useState<{
     id: string;
     name: string;
+  } | null>(null);
+  const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
+  const [confirmRoleUser, setConfirmRoleUser] = useState<{
+    id: string;
+    name: string;
+    nextRole: "admin" | "user";
   } | null>(null);
   const [isConfirmingSaveDesc, setIsConfirmingSaveDesc] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -172,6 +180,41 @@ export default function GroupInfoModal({
     return false;
   };
 
+  // Cuma owner yang bisa angkat/turunkan admin, dan gak berlaku ke owner itu sendiri
+  const canManageRole = (targetRole: string, targetId: string) =>
+    currentUserRole === "owner" &&
+    targetId !== currentUser?.id &&
+    targetRole !== "owner";
+
+  const handleUpdateRole = async (
+    userId: string,
+    nextRole: "admin" | "user",
+  ) => {
+    try {
+      setIsUpdatingRole(userId);
+      await updateMemberRole(roomId, userId, nextRole);
+      // Optimistic local update — broadcast room:member_role_changed bakal nyamain juga
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.user.id === userId ? { ...m, role: nextRole } : m,
+        ),
+      );
+      toast(
+        nextRole === "admin"
+          ? "Member diangkat jadi admin 🛡️"
+          : "Admin diturunkan jadi anggota biasa.",
+        "success",
+      );
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Gagal mengubah role member",
+        "error",
+      );
+    } finally {
+      setIsUpdatingRole(null);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && roomId) {
       const timer = setTimeout(() => setIsLoading(true), 0);
@@ -229,6 +272,20 @@ export default function GroupInfoModal({
       }
     };
 
+    const handleRoleChanged = (data: {
+      room_id: string;
+      user_id: string;
+      role: "admin" | "user";
+    }) => {
+      if (data.room_id === roomId) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user.id === data.user_id ? { ...m, role: data.role } : m,
+          ),
+        );
+      }
+    };
+
     const handleCustomMemberJoined = (e: Event) => {
       const customEvent = e as CustomEvent<{ roomId: string }>;
       if (customEvent.detail.roomId === roomId) {
@@ -244,6 +301,7 @@ export default function GroupInfoModal({
       socket.on("room:member_left", handleMemberLeft);
       socket.on("room:member_joined", handleMemberJoined);
       socket.on("room:updated", handleRoomUpdated);
+      socket.on("room:member_role_changed", handleRoleChanged);
     }
 
     window.addEventListener(
@@ -256,6 +314,7 @@ export default function GroupInfoModal({
         socket.off("room:member_left", handleMemberLeft);
         socket.off("room:member_joined", handleMemberJoined);
         socket.off("room:updated", handleRoomUpdated);
+        socket.off("room:member_role_changed", handleRoleChanged);
       }
       window.removeEventListener(
         "gokilchat:member_joined",
@@ -566,6 +625,39 @@ export default function GroupInfoModal({
                                 Anggota
                               </span>
                             )}
+                            {canManageRole(m.role, m.user.id) && (
+                              <Tooltip
+                                content={m.role === "admin" ? "Turunkan dari Admin" : "Jadikan Admin"}
+                                placement="left"
+                                triggerClassName="inline-flex md:hidden md:group-hover:flex shrink-0"
+                              >
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmRoleUser({
+                                      id: m.user.id,
+                                      name: m.user.full_name || m.user.username,
+                                      nextRole: m.role === "admin" ? "user" : "admin",
+                                    });
+                                  }}
+                                  disabled={isUpdatingRole === m.user.id}
+                                  className={clsx(
+                                    "w-8 h-8 flex items-center justify-center rounded-lg transall disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0",
+                                    m.role === "admin"
+                                      ? "bg-white/5 hover:bg-white/10 text-text-secondary"
+                                      : "bg-accent-default/10 hover:bg-accent-default/20 text-accent-default",
+                                  )}
+                                >
+                                  {isUpdatingRole === m.user.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : m.role === "admin" ? (
+                                    <ShieldMinus className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <ShieldPlus className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              </Tooltip>
+                            )}
                             {canKick(m.role, m.user.id) && (
                               <Tooltip
                                 content="Kick Member"
@@ -646,6 +738,82 @@ export default function GroupInfoModal({
                       className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transall cursor-pointer text-sm"
                     >
                       Kick
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Confirm Promote/Demote Admin Dialog */}
+            {confirmRoleUser && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flexcc p-6">
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  className="w-full max-w-sm bg-secondary p-6 rounded-3xl border border-border-divider shadow-2xl text-center"
+                >
+                  <div
+                    className={clsx(
+                      "w-12 h-12 rounded-full flexcc mx-auto mb-4",
+                      confirmRoleUser.nextRole === "admin"
+                        ? "bg-accent-default/10 text-accent-default"
+                        : "bg-white/5 text-text-secondary",
+                    )}
+                  >
+                    {confirmRoleUser.nextRole === "admin" ? (
+                      <ShieldPlus className="w-6 h-6" />
+                    ) : (
+                      <ShieldMinus className="w-6 h-6" />
+                    )}
+                  </div>
+                  <h4 className="text-lg font-black text-white mb-2">
+                    {confirmRoleUser.nextRole === "admin"
+                      ? "Jadikan Admin?"
+                      : "Turunkan Admin?"}
+                  </h4>
+                  <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+                    {confirmRoleUser.nextRole === "admin" ? (
+                      <>
+                        Angkat{" "}
+                        <span className="text-white font-black">
+                          {confirmRoleUser.name}
+                        </span>{" "}
+                        jadi admin? Admin bisa kick member dan kirim undangan.
+                      </>
+                    ) : (
+                      <>
+                        Turunkan{" "}
+                        <span className="text-white font-black">
+                          {confirmRoleUser.name}
+                        </span>{" "}
+                        jadi anggota biasa?
+                      </>
+                    )}
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setConfirmRoleUser(null)}
+                      className="flex-1 py-3 bg-elevated hover:bg-elevated/80 text-white font-bold rounded-2xl transall cursor-pointer text-sm"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const { id, nextRole } = confirmRoleUser;
+                        setConfirmRoleUser(null);
+                        await handleUpdateRole(id, nextRole);
+                      }}
+                      className={clsx(
+                        "flex-1 py-3 text-white font-bold rounded-2xl transall cursor-pointer text-sm",
+                        confirmRoleUser.nextRole === "admin"
+                          ? "bg-accent-default hover:bg-accent-hover"
+                          : "bg-elevated hover:bg-elevated/80 border border-border-divider",
+                      )}
+                    >
+                      {confirmRoleUser.nextRole === "admin"
+                        ? "Jadikan Admin"
+                        : "Turunkan"}
                     </button>
                   </div>
                 </motion.div>

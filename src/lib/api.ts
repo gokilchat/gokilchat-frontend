@@ -90,6 +90,17 @@ export const loginModeratorWithGoogle = async (google_id_token: string, invite_t
   });
 };
 
+export const updateMemberRole = async (
+  roomId: string,
+  userId: string,
+  role: "admin" | "user",
+) => {
+  return apiFetch(`/rooms/${roomId}/members/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  });
+};
+
 export const kickMember = async (roomId: string, userId: string) => {
   return apiFetch(`/rooms/${roomId}/members/${userId}`, {
     method: 'DELETE',
