@@ -59,14 +59,16 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
       };
     }
 
-    if (response.status === 403 && 
-        (data.error?.includes('ditangguhkan') || data.error?.includes('banned')) && 
-        !endpoint.startsWith('/auth/google')) {
+    if ((response.status === 403 && 
+         (data.error?.includes('ditangguhkan') || data.error?.includes('banned')) && 
+         !endpoint.startsWith('/auth/google')) || 
+        response.status === 401) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('supabase_jwt');
         localStorage.removeItem('gokilchat-auth');
         document.cookie = 'supabase_jwt=; path=/; max-age=0; SameSite=Lax; Secure';
-        window.location.href = `/?error=${encodeURIComponent(data.error)}`;
+        const errMsg = response.status === 401 ? 'Sesi Anda telah berakhir. Silakan login kembali.' : data.error;
+        window.location.href = `/?error=${encodeURIComponent(errMsg)}`;
         return new Promise(() => {}); // prevent further execution/renders
       }
     }
@@ -101,13 +103,14 @@ export const updateMemberRole = async (
   });
 };
 
-export const kickMember = async (roomId: string, userId: string) => {
-  return apiFetch(`/rooms/${roomId}/members/${userId}`, {
+export const kickMember = async (roomId: string, userId: string, clearHistory?: boolean) => {
+  const query = clearHistory ? "?clearHistory=true" : "";
+  return apiFetch(`/rooms/${roomId}/members/${userId}${query}`, {
     method: 'DELETE',
   });
 };
 
-export const updateRoomDetails = async (roomId: string, data: { name?: string, description?: string }) => {
+export const updateRoomDetails = async (roomId: string, data: { name?: string, description?: string, avatar_url?: string, admins_only?: boolean }) => {
   return apiFetch(`/rooms/${roomId}`, {
     method: 'PATCH',
     body: JSON.stringify(data),

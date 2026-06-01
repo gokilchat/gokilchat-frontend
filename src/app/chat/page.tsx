@@ -368,6 +368,7 @@ export default function ChatPage() {
         name: string;
         description: string;
         avatar_url?: string;
+        admins_only?: boolean;
       }) => {
         setRooms((prevRooms: Room[]) =>
           prevRooms.map((r) =>
@@ -377,6 +378,7 @@ export default function ChatPage() {
                   name: data.name,
                   description: data.description,
                   avatar_url: data.avatar_url ?? r.avatar_url,
+                  admins_only: data.admins_only !== undefined ? data.admins_only : r.admins_only,
                 }
               : r,
           ),
@@ -413,6 +415,7 @@ export default function ChatPage() {
       socket.off("room:kicked");
       socket.off("room:member_joined");
       socket.off("room:member_left");
+      socket.off("room:updated");
       socket.off("receipt:update:batch");
       socket.off("message:deleted");
       socket.off("message:hidden");
@@ -794,6 +797,7 @@ export default function ChatPage() {
         presenceStatus={presenceStatus}
         isLoading={isLoadingMessages}
         typingUser={activeRoomId ? typingData[activeRoomId] : undefined}
+        onSuccessForward={handleRoomClick}
       />
 
       <CreateRoomModal

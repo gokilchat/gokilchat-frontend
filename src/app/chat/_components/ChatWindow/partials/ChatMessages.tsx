@@ -115,12 +115,30 @@ export default function ChatMessages({
             </div>
 
             {messages.map((msg, idx) => {
+              if (msg.deleted_at && msg.hidden_for_me) {
+                return null;
+              }
+
               const isConsecutive =
                 idx > 0 && messages[idx - 1].sender_id === msg.sender_id;
 
               const parentMsg = msg.parent_id
                 ? messages.find((m) => m.id === msg.parent_id)
                 : undefined;
+
+              if (msg.template_type === "system") {
+                return (
+                  <div
+                    key={msg.id || idx}
+                    id={`msg-${msg.id}`}
+                    className="flexcc my-4 select-none w-full"
+                  >
+                    <div className="px-4 py-1.5 bg-secondary/80 border border-border-divider/50 backdrop-blur-md rounded-2xl text-xs font-bold text-text-secondary shadow-sm text-center max-w-xs md:max-w-md transall">
+                      {msg.content}
+                    </div>
+                  </div>
+                );
+              }
 
               return (
                 <div
@@ -131,7 +149,7 @@ export default function ChatMessages({
                   <MessageBubble
                     message={msg}
                     isMe={msg.sender_id === user.id}
-                    isOnline={!!presenceStatus[msg.sender_id]}
+                    isOnline={!!msg.sender_id && !!presenceStatus[msg.sender_id]}
                     onUserClick={onUserClick}
                     searchQuery={searchQuery}
                     isHighlighted={msg.id === searchedMessageId}
@@ -142,7 +160,7 @@ export default function ChatMessages({
                     onHideClick={onHideClick}
                     onUnhideClick={onUnhideClick}
                     onReportClick={onReportClick}
-                    canDelete={canDeleteOthersMessage(msg.sender_id)}
+                    canDelete={msg.sender_id ? canDeleteOthersMessage(msg.sender_id) : false}
                     parentMessage={parentMsg}
                   />
                 </div>

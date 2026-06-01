@@ -13,6 +13,7 @@ interface ForwardMessageModalProps {
   isOpen: boolean;
   onClose: () => void;
   message: Message;
+  onSuccessForward?: (targetRoomId: string) => void;
 }
 
 // Target tujuan forward: room yang udah ada, atau user yang mungkin belum pernah di-DM
@@ -20,12 +21,13 @@ type ForwardTarget =
   | { kind: "room"; id: string; name: string }
   | { kind: "user"; user: User };
 
-const TEXT_TEMPLATE_ID = "00000000-0000-0000-0000-000000000001";
+const FORWARDED_TEMPLATE_ID = "00000000-0000-0000-0000-000000000003";
 
 export default function ForwardMessageModal({
   isOpen,
   onClose,
   message,
+  onSuccessForward,
 }: ForwardMessageModalProps) {
   const { toast } = useToast();
   const { rooms } = useChatStore();
@@ -91,7 +93,7 @@ export default function ForwardMessageModal({
   const emitForward = (roomId: string) => {
     getSocket()?.emit("message:send", {
       room_id: roomId,
-      template_id: TEXT_TEMPLATE_ID,
+      template_id: FORWARDED_TEMPLATE_ID,
       // Forward = pesan baru tanpa parent_id (bukan reply), cuma salin konten teks
       data: { content: message.content },
     });
@@ -114,7 +116,9 @@ export default function ForwardMessageModal({
 
     setIsForwarding(true);
     try {
+      let targetRoomId = "";
       if (target.kind === "room") {
+        targetRoomId = target.id;
         emitForward(target.id);
         toast(`Pesan berhasil diteruskan ke ${target.name}! 🗿`, "success");
       } else {
@@ -133,9 +137,11 @@ export default function ForwardMessageModal({
           roomId = res.data.id;
           socket.emit("room:join", { room_id: roomId });
         }
+        targetRoomId = roomId!;
         emitForward(roomId!);
         toast(`Pesan berhasil diteruskan ke ${targetName}! 🗿`, "success");
       }
+      onSuccessForward?.(targetRoomId);
       onClose();
     } catch (err) {
       console.error(err);

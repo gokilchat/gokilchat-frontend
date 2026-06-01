@@ -32,6 +32,7 @@ export default function InviteMemberModal({
 }: InviteMemberModalProps) {
   const { toast } = useToast();
   const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [inviteLink, setInviteLink] = useState<string>("");
   const [isCopied, setIsCopied] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isInviting, setIsInviting] = useState<string | null>(null);
@@ -39,20 +40,28 @@ export default function InviteMemberModal({
   useEffect(() => {
     if (isOpen && activeRoomId) {
       apiFetch(`/rooms/${activeRoomId}`).then(res => {
-        if (res.success && res.data.invite_token) {
-          setInviteToken(res.data.invite_token);
+        if (res.success) {
+          if (res.data.invite_token) {
+            setInviteToken(res.data.invite_token);
+          }
+          if (res.data.invite_link) {
+            setInviteLink(res.data.invite_link);
+          } else if (res.data.invite_token) {
+            const fallbackBase = typeof window !== "undefined" ? window.location.origin : "https://chat.gokilchat.online";
+            setInviteLink(`${fallbackBase}/join/${res.data.invite_token}`);
+          }
         }
       }).catch(() => {
         // Ignore error
       });
     } else {
-      const timer = setTimeout(() => setInviteToken(null), 0);
+      const timer = setTimeout(() => {
+        setInviteToken(null);
+        setInviteLink("");
+      }, 0);
       return () => clearTimeout(timer);
     }
   }, [isOpen, activeRoomId]);
-
-  const baseUrl = "https://chat.gokilchat.online";
-  const inviteLink = inviteToken ? `${baseUrl}/join/${inviteToken}` : "";
 
   const handleCopy = () => {
     if (!inviteLink) return;
@@ -68,6 +77,12 @@ export default function InviteMemberModal({
       const res = await apiFetch(`/rooms/${activeRoomId}/invite-token/regenerate`, { method: 'POST' });
       if (res.success) {
         setInviteToken(res.data.invite_token);
+        if (res.data.invite_link) {
+          setInviteLink(res.data.invite_link);
+        } else if (res.data.invite_token) {
+          const fallbackBase = typeof window !== "undefined" ? window.location.origin : "https://chat.gokilchat.online";
+          setInviteLink(`${fallbackBase}/join/${res.data.invite_token}`);
+        }
         setIsCopied(false);
       }
     } catch (err) {

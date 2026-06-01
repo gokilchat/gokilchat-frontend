@@ -57,6 +57,8 @@ export default function GroupInfoModal({
   const [isLoading, setIsLoading] = useState(false);
   const [roomName, setRoomName] = useState("");
   const [roomDescription, setRoomDescription] = useState("");
+  const [adminsOnly, setAdminsOnly] = useState(false);
+  const [isUpdatingAdminsOnly, setIsUpdatingAdminsOnly] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [tempDescription, setTempDescription] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
@@ -75,6 +77,7 @@ export default function GroupInfoModal({
     id: string;
     name: string;
   } | null>(null);
+  const [clearHistoryOnKick, setClearHistoryOnKick] = useState(false);
   const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
   const [confirmRoleUser, setConfirmRoleUser] = useState<{
     id: string;
@@ -92,10 +95,10 @@ export default function GroupInfoModal({
   const isOwnerOrAdmin =
     currentUserRole === "owner" || currentUserRole === "admin";
 
-  const handleKick = async (userId: string) => {
+  const handleKick = async (userId: string, clearHistory?: boolean) => {
     try {
       setIsKicking(userId);
-      await kickMember(roomId, userId);
+      await kickMember(roomId, userId, clearHistory);
       setMembers((prev) => prev.filter((m) => m.user.id !== userId));
     } catch (error) {
       toast(
@@ -173,6 +176,36 @@ export default function GroupInfoModal({
     }
   };
 
+  const handleToggleAdminsOnly = async (newValue: boolean) => {
+    try {
+      setIsUpdatingAdminsOnly(true);
+      const res = await updateRoomDetails(roomId, { admins_only: newValue });
+      if (res.success) {
+        setAdminsOnly(newValue);
+        setRooms((prevRooms) =>
+          prevRooms.map((r) =>
+            r.id === roomId ? { ...r, admins_only: newValue } : r,
+          ),
+        );
+        toast(
+          newValue
+            ? "Pesan grup dibatasi hanya untuk admin 🛡️"
+            : "Semua anggota sekarang dapat mengirim pesan.",
+          "success",
+        );
+      } else {
+        toast(res.error || "Gagal mengubah setelan grup", "error");
+      }
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Terjadi kesalahan",
+        "error",
+      );
+    } finally {
+      setIsUpdatingAdminsOnly(false);
+    }
+  };
+
   const canKick = (targetRole: string, targetId: string) => {
     if (targetId === currentUser?.id) return false;
     if (currentUserRole === "owner") return true;
@@ -224,6 +257,7 @@ export default function GroupInfoModal({
             setRoomName(res.data.name);
             setRoomDescription(res.data.description || "");
             setRoomAvatar(res.data.avatar_url || null);
+            setAdminsOnly(!!res.data.admins_only);
             if (res.data.members) {
               setMembers(res.data.members);
             }
@@ -239,6 +273,7 @@ export default function GroupInfoModal({
         setMembers([]);
         setRoomName("");
         setRoomDescription("");
+        setAdminsOnly(false);
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -264,11 +299,12 @@ export default function GroupInfoModal({
       }
     };
 
-    const handleRoomUpdated = (data: { room_id: string; name: string; description: string; avatar_url?: string }) => {
+    const handleRoomUpdated = (data: { room_id: string; name: string; description: string; avatar_url?: string; admins_only?: boolean }) => {
       if (data.room_id === roomId) {
         if (data.name) setRoomName(data.name);
         if (data.description !== undefined) setRoomDescription(data.description);
         if (data.avatar_url !== undefined) setRoomAvatar(data.avatar_url);
+        if (data.admins_only !== undefined) setAdminsOnly(data.admins_only);
       }
     };
 
@@ -542,6 +578,45 @@ export default function GroupInfoModal({
                     </div>
                   </div>
 
+                  {currentUserRole === "owner" && (
+                    <>
+                      <div className="h-2 bg-black/20 -mx-6 mb-4" />
+                      <div className="mb-4">
+                        <div className="flex flex-col gap-1 -mx-4 px-4 py-3 rounded-xl transall relative">
+                          <span className="text-xs font-bold text-accent-default uppercase tracking-wider mb-2">
+                            Setelan Grup
+                          </span>
+                          <div className="flex items-center justify-between py-1">
+                            <div className="flex flex-col pr-4">
+                              <span className="text-xs font-bold text-white">
+                                Hanya Admin yang Bisa Chat
+                              </span>
+                              <span className="text-[10px] text-text-muted mt-0.5 font-medium leading-relaxed">
+                                Jika diaktifkan, hanya owner dan admin yang bisa mengirim pesan ke grup ini.
+                              </span>
+                            </div>
+                            <button
+                              disabled={isUpdatingAdminsOnly}
+                              onClick={() => handleToggleAdminsOnly(!adminsOnly)}
+                              className={clsx(
+                                "w-11 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none shrink-0 relative cursor-pointer",
+                                adminsOnly ? "bg-accent-default" : "bg-elevated border border-border-divider",
+                                isUpdatingAdminsOnly && "opacity-50 cursor-not-allowed"
+                              )}
+                            >
+                              <div
+                                className={clsx(
+                                  "w-4 h-4 rounded-full bg-white transition-transform duration-200 shadow-sm",
+                                  adminsOnly ? "translate-x-5" : "translate-x-0"
+                                )}
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
                   <div className="h-2 bg-black/20 -mx-6 mb-4" />
 
                   <div className="space-y-1">
@@ -667,6 +742,7 @@ export default function GroupInfoModal({
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    setClearHistoryOnKick(false);
                                     setConfirmKickUser({
                                       id: m.user.id,
                                       name: m.user.full_name || m.user.username,
@@ -715,13 +791,31 @@ export default function GroupInfoModal({
                   <h4 className="text-lg font-black text-white mb-2">
                     Kick Member?
                   </h4>
-                  <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+                  <p className="text-sm text-text-secondary mb-4 leading-relaxed">
                     Apakah Anda yakin ingin mengeluarkan{" "}
                     <span className="text-white font-black">
                       @{confirmKickUser.name}
                     </span>{" "}
                     dari grup ini?
                   </p>
+
+                  <label className="flex items-start justify-start gap-3 bg-elevated/30 border border-border-divider/50 p-3 rounded-2xl mb-6 cursor-pointer hover:bg-elevated/50 transall select-none text-left">
+                    <input
+                      type="checkbox"
+                      checked={clearHistoryOnKick}
+                      onChange={(e) => setClearHistoryOnKick(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded text-accent-default focus:ring-accent-default bg-secondary border-border-divider cursor-pointer"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-white leading-none">
+                        Hapus Histori Chat
+                      </span>
+                      <span className="text-[10px] text-text-muted mt-1 font-semibold leading-tight">
+                        Anggota ini tidak akan bisa melihat riwayat chat grup yang dikirim sebelum dia di-kick jika bergabung kembali nanti.
+                      </span>
+                    </div>
+                  </label>
+
                   <div className="flex gap-3">
                     <button
                       onClick={() => setConfirmKickUser(null)}
@@ -733,7 +827,7 @@ export default function GroupInfoModal({
                       onClick={async () => {
                         const targetId = confirmKickUser.id;
                         setConfirmKickUser(null);
-                        await handleKick(targetId);
+                        await handleKick(targetId, clearHistoryOnKick);
                       }}
                       className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transall cursor-pointer text-sm"
                     >

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "motion/react";
 import { useState, useRef } from "react";
 import MessageReceiptModal from "../modals/MessageReceiptModal";
+import { Forward } from "lucide-react";
 
 // Partials
 import RoomInviteContent from "./partials/RoomInviteContent";
@@ -72,8 +73,9 @@ export default function MessageBubble({
 
   // Klik kanan di bubble → buka menu aksi di posisi kursor 🗿
   const handleContextMenu = (e: React.MouseEvent) => {
-    if (isDeleted || isHidden) return;
+    if (isHidden) return;
     e.preventDefault();
+    e.stopPropagation();
     menuRef.current?.openAt(e.clientX, e.clientY);
   };
   const deletedBySelf = message.deleted_by === message.sender_id;
@@ -140,7 +142,7 @@ export default function MessageBubble({
           <div
             onContextMenu={handleContextMenu}
             className={clsx(
-              "px-3.5 py-2.5 md:px-5 md:py-3 shadow-lg shadow-secondary relative pr-8 md:pr-10 transall",
+              "px-3.5 py-2.5 md:px-5 md:py-3 shadow-lg shadow-secondary relative pr-8 md:pr-10 transall min-w-0 w-fit max-w-full",
               isMe
                 ? (isConsecutive 
                     ? "bg-accent-hover text-text-on-accent rounded-3xl"
@@ -152,10 +154,11 @@ export default function MessageBubble({
             )}
           >
             {/* Bubble Dropdown Menu */}
-            {!isDeleted && !isHidden && (
+            {!isHidden && (
               <MessageBubbleMenu
                 ref={menuRef}
                 isMe={isMe}
+                isDeleted={isDeleted}
                 onInfoClick={() => setShowReceipts(true)}
                 onReplyClick={() => onReplyClick?.(message)}
                 onForwardClick={() => onForwardClick?.(message)}
@@ -164,6 +167,15 @@ export default function MessageBubble({
                 onReportClick={() => onReportClick?.(message)}
                 canDelete={canDelete}
               />
+            )}
+            {/* Forwarded label 🗿 */}
+            {message.template_type === "forwarded" && !isDeleted && !isHidden && (
+              <div className="flex items-center gap-1 opacity-60 mb-1 select-none">
+                <Forward className="w-3 h-3 shrink-0" />
+                <span className="text-[9px] font-bold italic tracking-wide">
+                  Diteruskan
+                </span>
+              </div>
             )}
             {/* Nama Pengirim ala Telegram 🗿✈️ */}
             {!isMe && !isConsecutive && (
@@ -180,7 +192,7 @@ export default function MessageBubble({
               <div
                 onClick={handleScrollToParent}
                 className={clsx(
-                  "cursor-pointer border-l-2 pl-2 py-0.5 mb-2 rounded-r-md text-[11px] select-none text-left bg-black/10 hover:bg-black/15 transall max-w-full overflow-hidden",
+                  "cursor-pointer border-l-2 pl-2 py-0.5 mb-2 rounded-r-md text-[11px] select-none text-left bg-black/10 hover:bg-black/15 transall w-full max-w-full overflow-hidden min-w-0",
                   isMe ? "border-text-on-accent/60" : "border-accent-default"
                 )}
               >

@@ -31,6 +31,7 @@ interface ChatWindowProps {
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   presenceStatus?: Record<string, boolean>;
   isLoading?: boolean;
+  onSuccessForward?: (targetRoomId: string) => void;
 }
 
 export default function ChatWindow({
@@ -51,6 +52,7 @@ export default function ChatWindow({
   presenceStatus = {},
   isLoading = false,
   typingUser,
+  onSuccessForward,
 }: ChatWindowProps & { typingUser?: string }) {
   const [membersCache, setMembersCache] = useState<Record<string, string>>({});
   const [showSubtitleHint, setShowSubtitleHint] = useState(false);
@@ -331,6 +333,7 @@ export default function ChatWindow({
             }, 1500);
           }
         }}
+        disabled={activeRoom.type !== "dm" && !!activeRoom.admins_only && currentUserRole === "user"}
       />
 
         <UserProfileSlider
@@ -368,6 +371,7 @@ export default function ChatWindow({
           isOpen={!!forwardingMessage}
           onClose={() => setForwardingMessage(null)}
           message={forwardingMessage}
+          onSuccessForward={onSuccessForward}
         />
       )}
 

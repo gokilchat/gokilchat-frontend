@@ -23,6 +23,7 @@ export interface Room {
   dm_user_role?: string;
   members_count?: number;
   unread_count?: number;
+  admins_only?: boolean;
   last_message?: {
     content: string;
     created_at: string;

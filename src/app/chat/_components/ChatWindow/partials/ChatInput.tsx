@@ -11,6 +11,7 @@ interface ChatInputProps {
   replyingTo: Message | null;
   onCancelReply: () => void;
   onPreviewClick?: (messageId: string) => void;
+  disabled?: boolean;
 }
 
 export default function ChatInput({
@@ -20,6 +21,7 @@ export default function ChatInput({
   replyingTo,
   onCancelReply,
   onPreviewClick,
+  disabled = false,
 }: ChatInputProps) {
   const [localInput, setLocalInput] = useState("");
   const shouldIgnoreFocus = useRef(true);
@@ -71,6 +73,16 @@ export default function ChatInput({
     onTyping();
   };
 
+  if (disabled) {
+    return (
+      <div className="px-6 sm:px-3 pb-4 mb-4 sm:mb-0 pt-0 md:px-6 md:pb-6 lg:px-24 lg:pb-8 bg-primary">
+        <div className="flexcc w-full bg-secondary/40 border border-border-divider/50 rounded-3xl p-4 text-xs font-semibold text-text-muted select-none">
+          🔒 Hanya admin yang dapat mengirim pesan ke grup ini.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-6 sm:px-3 pb-4 mb-4 sm:mb-0 pt-0 md:px-6 md:pb-6 lg:px-24 lg:pb-8 bg-primary">
       <form
@@ -95,7 +107,7 @@ export default function ChatInput({
                   Membalas{" "}
                   {replyingTo.sender_full_name || replyingTo.sender_username}
                 </span>
-                <span className="text-text-secondary line-clamp-3 block font-medium [word-break:break-word]">
+                <span className="text-text-secondary truncate block font-medium">
                   {replyingTo.content}
                 </span>
               </div>
