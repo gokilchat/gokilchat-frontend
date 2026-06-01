@@ -11,6 +11,7 @@ import {
   useState,
   useRef,
   useEffect,
+  useCallback,
   forwardRef,
   useImperativeHandle,
 } from "react";
@@ -60,13 +61,36 @@ const MessageBubbleMenu = forwardRef<
   });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [mounted, setMounted] = useState(false);
+  // ID unik per instance — biar event "tutup semua menu" gak nutup menu yang BARU dibuka
+  const instanceId = useRef(Symbol("bubble-menu"));
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Hanya boleh ADA SATU menu kebuka di seluruh chat. Pas satu menu buka, ia broadcast
+  // event ini; instance lain yang denger langsung nutup diri. Tanpa ini, buka menu chat A
+  // lalu chat B tanpa nutup A bikin DUA menu kebuka & klik bisa nyasar ke chat A. 🗿
+  useEffect(() => {
+    const handleCloseOthers = (e: Event) => {
+      const opener = (e as CustomEvent<symbol>).detail;
+      if (opener !== instanceId.current) setIsOpen(false);
+    };
+    window.addEventListener("gokilchat:bubble-menu-open", handleCloseOthers);
+    return () =>
+      window.removeEventListener("gokilchat:bubble-menu-open", handleCloseOthers);
+  }, []);
+
+  // Umumkan ke semua instance lain: "gua kebuka, lu semua tutup"
+  const broadcastOpen = () => {
+    window.dispatchEvent(
+      new CustomEvent("gokilchat:bubble-menu-open", { detail: instanceId.current }),
+    );
+  };
+
   // Buka menu di koordinat bebas (dipakai buat klik kanan di bubble) 🗿
-  const openAt = (x: number, y: number) => {
+  const openAt = useCallback((x: number, y: number) => {
+    broadcastOpen();
     const windowHeight = window.innerHeight;
     const windowWidth = window.innerWidth;
     const opensUp = y > windowHeight - 200;
@@ -80,9 +104,9 @@ const MessageBubbleMenu = forwardRef<
       alignRight,
     });
     setIsOpen(true);
-  };
+  }, []);
 
-  useImperativeHandle(ref, () => ({ openAt }), []);
+  useImperativeHandle(ref, () => ({ openAt }), [openAt]);
 
   const handleOpen = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -90,6 +114,7 @@ const MessageBubbleMenu = forwardRef<
       setIsOpen(false);
       return;
     }
+    broadcastOpen();
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;

@@ -64,6 +64,8 @@ export default function ChatWindow({
 
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<"owner" | "admin" | "user">("user");
+  // Map userId -> role di room ini, buat nentuin hak hapus per-pesan (hierarki owner>admin>user)
+  const [memberRoles, setMemberRoles] = useState<Record<string, "owner" | "admin" | "user">>({});
   const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
   const [reportingMessage, setReportingMessage] = useState<Message | null>(null);
   const [reportingUser, setReportingUser] = useState<Partial<User> | null>(null);
@@ -97,6 +99,7 @@ export default function ChatWindow({
     // Reset role ke "user" dulu tiap ganti room; effect di bawah yang fetch role asli buat grup.
     // DM gak ada owner/admin — keduanya "user" (ERD v5), jadi default ini juga final buat DM.
     setCurrentUserRole("user");
+    setMemberRoles({});
   }
 
   // Fetch group members for the header subtitle (boleh di-cache, nama jarang berubah)
@@ -133,6 +136,14 @@ export default function ChatWindow({
               m.user.id === user.id,
           );
           setCurrentUserRole(me ? me.role : "user");
+          // Bangun map role semua member buat gating tombol hapus per-pesan
+          const roleMap: Record<string, "owner" | "admin" | "user"> = {};
+          res.data.members.forEach(
+            (m: { user: User; role: "owner" | "admin" | "user" }) => {
+              roleMap[m.user.id] = m.role;
+            },
+          );
+          setMemberRoles(roleMap);
         }
       })
       .catch(() => {
@@ -175,8 +186,11 @@ export default function ChatWindow({
       user_id: string;
       role: "owner" | "admin" | "user";
     }) => {
-      if (data.room_id === activeRoom.id && data.user_id === user.id) {
-        setCurrentUserRole(data.role);
+      if (data.room_id === activeRoom.id) {
+        // Update map role semua member (buat gating hapus per-pesan)
+        setMemberRoles((prev) => ({ ...prev, [data.user_id]: data.role }));
+        // Kalau yang berubah role-nya gua sendiri, update juga currentUserRole
+        if (data.user_id === user.id) setCurrentUserRole(data.role);
       }
     };
 
@@ -288,7 +302,8 @@ export default function ChatWindow({
           setReportingUser(null);
           setShowReportModal(true);
         }}
-        canDelete={currentUserRole === "owner" || currentUserRole === "admin"}
+        currentUserRole={currentUserRole}
+        memberRoles={memberRoles}
       />
 
       <ChatInput
@@ -305,6 +320,17 @@ export default function ChatWindow({
         inputRef={inputRef}
         replyingTo={replyingTo}
         onCancelReply={() => setReplyingTo(null)}
+        onPreviewClick={(messageId) => {
+          // Scroll ke pesan asal yang lagi dibalas + kasih highlight sekejap 🗿
+          const el = document.getElementById(`msg-${messageId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.classList.add("ring-2", "ring-accent-default", "ring-offset-2", "ring-offset-primary");
+            setTimeout(() => {
+              el.classList.remove("ring-2", "ring-accent-default", "ring-offset-2", "ring-offset-primary");
+            }, 1500);
+          }
+        }}
       />
 
         <UserProfileSlider

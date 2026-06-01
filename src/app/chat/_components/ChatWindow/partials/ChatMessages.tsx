@@ -19,7 +19,8 @@ interface ChatMessagesProps {
   onHideClick?: (message: Message) => void;
   onUnhideClick?: (message: Message) => void;
   onReportClick?: (message: Message) => void;
-  canDelete?: boolean;
+  currentUserRole?: "owner" | "admin" | "user";
+  memberRoles?: Record<string, "owner" | "admin" | "user">;
 }
 
 export default function ChatMessages({
@@ -37,8 +38,17 @@ export default function ChatMessages({
   onHideClick,
   onUnhideClick,
   onReportClick,
-  canDelete = false,
+  currentUserRole = "user",
+  memberRoles = {},
 }: ChatMessagesProps) {
+  // Hak "hapus untuk semua" pesan ORANG LAIN, per-pesan (hierarki owner > admin > user).
+  // Pesan sendiri di-handle terpisah di MessageBubble (isMe selalu boleh).
+  const canDeleteOthersMessage = (senderId: string) => {
+    const senderRole = memberRoles[senderId] || "user";
+    if (currentUserRole === "owner") return true; // owner: hapus pesan siapapun
+    if (currentUserRole === "admin") return senderRole === "user"; // admin: cuma pesan user biasa
+    return false;
+  };
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
@@ -132,7 +142,7 @@ export default function ChatMessages({
                     onHideClick={onHideClick}
                     onUnhideClick={onUnhideClick}
                     onReportClick={onReportClick}
-                    canDelete={canDelete}
+                    canDelete={canDeleteOthersMessage(msg.sender_id)}
                     parentMessage={parentMsg}
                   />
                 </div>

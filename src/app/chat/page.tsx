@@ -497,7 +497,7 @@ export default function ChatPage() {
     }
   };
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string, parentId?: string | null) => {
     if (!message.trim() || !activeRoomId) return;
 
     let currentRoomId = activeRoomId;
@@ -541,6 +541,8 @@ export default function ChatPage() {
       getSocket()?.emit("message:send", {
         room_id: currentRoomId,
         template_id: "00000000-0000-0000-0000-000000000001",
+        // parent_id diisi kalau pesan ini adalah Balasan — backend generate reply_preview-nya
+        parent_id: parentId || null,
         data: { content: message },
       });
     } catch (err) {
@@ -602,7 +604,16 @@ export default function ChatPage() {
   const handleDeleteConfirmed = () => {
     if (!deleteTarget) return;
     // Persist-first: emit doang, tunggu broadcast message:deleted buat update state.
-    getSocket()?.emit("message:delete", { message_id: deleteTarget.id });
+    // Callback cuma buat nangkep penolakan izin (misal admin coba hapus pesan owner).
+    getSocket()?.emit(
+      "message:delete",
+      { message_id: deleteTarget.id },
+      (res?: { success: boolean; error?: string }) => {
+        if (res && !res.success) {
+          toast(res.error || "Gagal menghapus pesan", "error");
+        }
+      },
+    );
     setDeleteTarget(null);
   };
 

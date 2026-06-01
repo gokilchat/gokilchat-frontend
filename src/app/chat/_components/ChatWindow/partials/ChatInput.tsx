@@ -10,6 +10,7 @@ interface ChatInputProps {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   replyingTo: Message | null;
   onCancelReply: () => void;
+  onPreviewClick?: (messageId: string) => void;
 }
 
 export default function ChatInput({
@@ -18,6 +19,7 @@ export default function ChatInput({
   inputRef,
   replyingTo,
   onCancelReply,
+  onPreviewClick,
 }: ChatInputProps) {
   const [localInput, setLocalInput] = useState("");
   const shouldIgnoreFocus = useRef(true);
@@ -84,19 +86,23 @@ export default function ChatInput({
               transition={{ type: "spring", duration: 0.25, bounce: 0 }}
               className="overflow-hidden flex items-center justify-between bg-elevated/40 border-l-4 border-accent-default px-4 py-2.5 rounded-xl mb-2 mx-1 text-xs"
             >
-              <div className="flex-1 min-w-0 pr-4 text-left">
+              {/* Klik area preview → scroll ke pesan asal yang dibalas 🗿 */}
+              <div
+                onClick={() => onPreviewClick?.(replyingTo.id)}
+                className="flex-1 min-w-0 pr-4 text-left cursor-pointer"
+              >
                 <span className="font-black text-accent-default block mb-0.5 tracking-wide">
                   Membalas{" "}
                   {replyingTo.sender_full_name || replyingTo.sender_username}
                 </span>
-                <span className="text-text-secondary truncate block font-medium">
+                <span className="text-text-secondary line-clamp-3 block font-medium [word-break:break-word]">
                   {replyingTo.content}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={onCancelReply}
-                className="text-text-muted hover:text-white p-1 rounded-full hover:bg-white/5 transall shrink-0"
+                className="text-text-muted hover:text-white p-1 rounded-full hover:bg-white/5 transall shrink-0 self-start"
               >
                 <X className="w-4 h-4" />
               </button>
